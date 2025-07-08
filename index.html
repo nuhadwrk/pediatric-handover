@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pediatric Handover System</title>
+  <style>
+    /* Import Inter font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    :root {
+      --bg: #f4f7fb;
+      --primary: #0066cc;
+      --primary-dark: #004a99;
+      --accent: #2a9d8f;
+      --card-bg: #ffffff;
+      --text: #1d3557;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin: 0 0 12px;
+    }
+    h1 { font-weight: 700; }
+    h2 { font-weight: 600; }
+
+    .top-buttons {
+      text-align: center;
+      margin: 16px 0 32px;
+    }
+    .top-buttons button {
+      margin: 6px;
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .2s, transform .2s;
+    }
+    .top-buttons button:hover { transform: translateY(-2px); }
+    .add-btn {
+      background: var(--primary);
+      color: #fff;
+    }
+    .add-btn:hover { background: var(--primary-dark); }
+    .print-btn {
+      background: var(--accent);
+      color: #fff;
+    }
+    .print-btn:hover { background: #1f7b72; }
+
+    .form-section {
+      display: none;
+      background: var(--card-bg);
+      padding: 24px 28px;
+      border-radius: 12px;
+      max-width: 520px;
+      margin: 0 auto 40px;
+      box-shadow: var(--shadow);
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 14px;
+    }
+    input, select, textarea {
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    textarea { resize: vertical; }
+    .inline-group {
+      display: flex;
+      gap: 12px;
+    }
+    .inline-group > div { flex: 1; }
+
+    button[type="submit"] {
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .ward-section {
+      margin-bottom: 48px;
+    }
+    .ward-section h2 {
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
+    }
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: center;
+    }
+    .patient-card {
+      background: var(--card-bg);
+      width: 300px;
+      padding: 18px 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform .18s ease;
+    }
+    .patient-card:hover { transform: scale(1.015); }
+    .patient-card h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.3;
+      color: var(--primary-dark);
+    }
+    .patient-card p { margin: 4px 0; }
+
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e63946;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .delete-btn:hover { opacity: 0.85; }
+
+    .editable {
+      padding: 2px 4px;
+      border: 1px dashed transparent;
+      border-radius: 4px;
+      cursor: text;
+    }
+    .editable:focus {
+      outline: none;
+      border-color: #888;
+      background: #eef7ff;
+    }
+
+    @media(max-width: 768px) {
+      .card-grid { flex-direction: column; align-items: center; }
+      .patient-card { width: 90%; }
+      .inline-group { flex-direction: column; }
+    }  </style>
+</head>
+<body>
+  <h1>Pediatric Handover System</h1>
+  <div class="top-buttons">
+    <button class="add-btn" onclick="toggleForm()">➕ Add Patient</button>
+    <button class="print-btn" onclick="printHandover()">🖸️ Print / Copy Handover</button>
+  </div>
+
+  <div id="handoverHeader" contenteditable="true" style="max-width: 680px; margin: 0 auto 24px; background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td><strong>Date:</strong> <span id="handoverDate"></span></td>
+        <td colspan="4"></td>
+      </tr>
+      <tr>
+        <td><strong>Shift:</strong></td>
+        <td><strong>Morning</strong></td>
+        <td><strong>Evening</strong></td>
+        <td><strong>Night</strong></td>
+        <td><strong>Total</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Admissions:</strong></td>
+        <td contenteditable="true">1</td>
+        <td contenteditable="true">1</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">2</td>
+      </tr>
+      <tr>
+        <td><strong>Discharges:</strong></td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">1</td>
+        <td contenteditable="true">0</td>
+        <td contenteditable="true">1</td>
+      </tr>
+      <tr>
+        <td><strong>Total:</strong> <span contenteditable="true">3</span></td>
+        <td colspan="4"></td>
+      </tr>
+      <tr>
+        <td colspan="5" contenteditable="true"><strong>PW:</strong> 0 <strong>GW:</strong> 0 <strong>SW:</strong> 0 <strong>PVT:</strong> 0 <strong>ICU:</strong> 0 <strong>NICU:</strong> 0</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="form-section" id="formSection">
+    <form id="patientForm">
+      <label>Patient Name:</label>
+<input type="text" id="name" required />
+<label>Patient ID:</label>
+<input type="text" id="id" required />
+<label>Bed Number:</label>
+<input type="text" id="bed" required />
+<div class="inline-group">
+  <div>
+    <label>Age:</label>
+    <input type="text" id="age" required />
+  </div>
+  <div>
+    <label>Sex:</label>
+    <select id="sex" required>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+  </div>
+</div>
+<label>Diagnosis:</label>
+<input type="text" id="diagnosis" required />
+<label>Medications:</label>
+<input type="text" id="medications" required />
+<label>Ward:</label>
+<select id="ward">
+  <option value="PW">PW</option>
+  <option value="GW">GW</option>
+  <option value="SW">SW</option>
+  <option value="PVT">PVT</option>
+  <option value="ICU">ICU</option>
+  <option value="NICU">NICU</option>
+</select>
+<label>Plan:</label>
+<textarea id="plan" rows="3"></textarea>
+<button type="submit">Add Patient</button>
+    </form>
+  </div>
+
+  <div id="wardsContainer">
+    <div class="ward-section" id="PW"><h2>PW</h2><div class="card-grid"></div></div>
+<div class="ward-section" id="GW"><h2>GW</h2><div class="card-grid"></div></div>
+<div class="ward-section" id="SW"><h2>SW</h2><div class="card-grid"></div></div>
+<div class="ward-section" id="PVT"><h2>PVT</h2><div class="card-grid"></div></div>
+<div class="ward-section" id="ICU"><h2>ICU</h2><div class="card-grid"></div></div>
+<div class="ward-section" id="NICU"><h2>NICU</h2><div class="card-grid"></div></div>
+  </div>
+
+  <script>
+function toggleForm() {
+  const form = document.getElementById('formSection');
+  form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const dateEl = document.getElementById('handoverDate');
+  if (dateEl) dateEl.innerText = new Date().toISOString().split('T')[0];
+  loadData();
+});
+
+const form = document.getElementById('patientForm');
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const name = document.getElementById('name').value;
+  const id = document.getElementById('id').value;
+  const bed = document.getElementById('bed').value;
+  const age = document.getElementById('age').value;
+  const sex = document.getElementById('sex').value;
+  const diagnosis = document.getElementById('diagnosis').value;
+  const medications = document.getElementById('medications').value;
+  const ward = document.getElementById('ward').value;
+  const plan = document.getElementById('plan').value;
+
+  const patientCard = document.createElement('div');
+  patientCard.classList.add('patient-card');
+  const header = document.createElement('h3');
+  header.innerHTML = `
+    <span class="editable" contenteditable="true">${name}</span>
+    (ID: <span class="editable" contenteditable="true">${id}</span>)<br>
+    <strong>Bed:</strong> <span class="editable" contenteditable="true">${bed}</span>`;
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.classList.add('delete-btn');
+  deleteBtn.onclick = function() {
+    patientCard.remove();
+    saveData();
+  };
+
+  header.appendChild(deleteBtn);
+  patientCard.appendChild(header);
+  patientCard.innerHTML += `<p><strong>Age:</strong> <span class="editable" contenteditable="true">${age}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Sex:</strong> <span class="editable" contenteditable="true">${sex}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Diagnosis:</strong> <span class="editable" contenteditable="true">${diagnosis}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Medications:</strong> <span class="editable" contenteditable="true">${medications}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Plan:</strong> <span class="editable" contenteditable="true">${plan}</span></p>`;
+
+  const grid = document.querySelector(`#${ward} .card-grid`);
+  if (grid) {
+    grid.appendChild(patientCard);
+  }
+
+  form.reset();
+  document.getElementById('formSection').style.display = 'none';
+  saveData();
+
+  // Send data to Google Sheets
+  fetch('https://script.google.com/macros/s/AKfycbxQZxvfLYFT7KaZGQyOjmta3-8DwDgeS7TyR8wm2pDQ0V4GHLLxR-mCjEB-LiAtDHyEmA/exec', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name, id, bed, age, sex, diagnosis, medications, ward, plan
+    })
+  })
+  .then(res => res.text())
+  .then(result => console.log('Google Sheet response:', result))
+  .catch(err => console.error('Error sending to sheet:', err));
+});
+
+function printHandover() {
+  const clone = document.getElementById('wardsContainer').cloneNode(true);
+  const deleteButtons = clone.querySelectorAll('.delete-btn');
+  deleteButtons.forEach(btn => btn.remove());
+  const editableFields = clone.querySelectorAll('[contenteditable]');
+  editableFields.forEach(el => el.removeAttribute('contenteditable'));
+
+  const headerClone = document.getElementById('handoverHeader').cloneNode(true);
+  headerClone.removeAttribute('contenteditable');
+
+  const newWin = window.open('', '', 'width=800,height=600');
+  newWin.document.write('<html><head><title>Pediatric Handover</title>');
+  newWin.document.write('<style>body{font-family:sans-serif;padding:20px}h2{border-bottom:1px solid #ccc}div{margin-bottom:20px}p{margin:5px 0}</style>');
+  newWin.document.write('</head><body>');
+  newWin.document.write('<h1>Pediatric Handover Summary</h1>');
+  newWin.document.write(headerClone.innerHTML);
+  newWin.document.write(clone.innerHTML);
+  newWin.document.write('</body></html>');
+  newWin.document.close();
+  newWin.focus();
+}
+
+function saveData() {
+  const headerHTML = document.getElementById('handoverHeader').innerHTML;
+  const wardHTML = document.getElementById('wardsContainer').innerHTML;
+  localStorage.setItem('handoverHeader', headerHTML);
+  localStorage.setItem('wardData', wardHTML);
+}
+
+function loadData() {
+  const headerHTML = localStorage.getItem('handoverHeader');
+  const wardHTML = localStorage.getItem('wardData');
+
+  if (headerHTML) document.getElementById('handoverHeader').innerHTML = headerHTML;
+  if (wardHTML) document.getElementById('wardsContainer').innerHTML = wardHTML;
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.onclick = function () {
+      btn.parentElement.parentElement.remove();
+      saveData();
+    };
+  });
+}
+
+document.addEventListener('input', saveData);
+document.addEventListener('click', function (e) {
+  if (e.target.matches('.delete-btn')) {
+    saveData();
+  }
+});
+  </script>
+</body>
+</html>
