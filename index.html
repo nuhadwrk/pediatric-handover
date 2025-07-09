@@ -1,205 +1,346 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Pediatric Handover System</title>
-
-  <!-- ─── Inter Font ─────────────────────────────── -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <!-- ─── Styles ─────────────────────────────────── -->
   <style>
-    :root{
-      --bg:#f4f7fb;--primary:#0066cc;--primary-dark:#004a99;
-      --accent:#2a9d8f;--card-bg:#fff;--text:#1d3557;
-      --shadow:0 4px 12px rgba(0,0,0,.08)
-    }
-    *{box-sizing:border-box}body{
-      font-family:'Inter',sans-serif;background:var(--bg);
-      color:var(--text);margin:0;padding:24px;
-    }
-    h1{font-weight:700;margin:0 0 20px;text-align:center}
-    /* top buttons */
-    .top-buttons{text-align:center;margin:12px 0 32px}
-    .top-buttons button{
-      margin:6px;padding:10px 20px;font-weight:600;
-      border:none;border-radius:8px;cursor:pointer;
-      transition:background .2s,transform .2s
-    }
-    .top-buttons button:hover{transform:translateY(-2px)}
-    .add-btn{background:var(--primary);color:#fff}
-    .add-btn:hover{background:var(--primary-dark)}
-    .print-btn{background:var(--accent);color:#fff}
-    .print-btn:hover{background:#1f7b72}
 
-    /* form */
-    .form-section{
-      display:none;background:var(--card-bg);padding:24px 28px;
-      border-radius:12px;max-width:520px;margin:0 auto 40px;
-      box-shadow:var(--shadow)
-    }
-    label{font-weight:600;display:block;margin-top:14px}
-    input,select,textarea{
-      width:100%;margin-top:6px;margin-bottom:10px;padding:10px 12px;
-      border-radius:8px;border:1px solid #ccc;font-size:14px
-    }
-    textarea{resize:vertical}.inline-group{display:flex;gap:12px}
-    .inline-group>div{flex:1}
-    button[type=submit]{width:100%;margin-top:18px;padding:12px;
-      background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-    /* cards & grid */
-    .card-grid{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
-    .patient-card{
-      background:var(--card-bg);width:300px;padding:18px 16px;
-      border-radius:12px;box-shadow:var(--shadow);position:relative;
-      transition:transform .18s ease
-    }
-    .patient-card:hover{transform:scale(1.015)}
-    .patient-card h3{margin:0 0 8px;font-size:18px;color:var(--primary-dark)}
-    .patient-card p{margin:4px 0}
-    .delete-btn{
-      position:absolute;top:10px;right:10px;background:#e63946;
-      color:#fff;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px
-    }
-    .delete-btn:hover{opacity:.85}
+:root{
+  --bg: #f4f7fb;
+  --primary: #0066cc;
+  --primary-dark: #004a99;
+  --accent: #2a9d8f;
+  --card-bg: #ffffff;
+  --text: #1d3557;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
 
-    @media(max-width:768px){
-      .card-grid{flex-direction:column;align-items:center}
-      .patient-card{width:90%}.inline-group{flex-direction:column}
-    }
+*{box-sizing:border-box;}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  margin:0;
+  padding:24px;
+}
+
+h1,h2{
+  text-align:center;
+  margin:0 0 12px;
+}
+h1{font-weight:700;}
+h2{font-weight:600;}
+
+/* Top buttons */
+.top-buttons{
+  text-align:center;
+  margin:16px 0 32px;
+}
+.top-buttons button{
+  margin:6px;
+  padding:10px 20px;
+  font-size:15px;
+  font-weight:600;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:background .2s,transform .2s;
+}
+.top-buttons button:hover{transform:translateY(-2px);}
+.add-btn{
+  background:var(--primary);
+  color:#fff;
+}
+.add-btn:hover{background:var(--primary-dark);}
+.print-btn{
+  background:var(--accent);
+  color:#fff;
+}
+.print-btn:hover{background:#1f7b72;}
+
+/* Form section */
+.form-section{
+  display:none;
+  background:var(--card-bg);
+  padding:24px 28px;
+  border-radius:12px;
+  max-width:520px;
+  margin:0 auto 40px;
+  box-shadow:var(--shadow);
+}
+label{
+  font-weight:600;
+  display:block;
+  margin-top:14px;
+}
+input,select,textarea{
+  width:100%;
+  margin-top:6px;
+  margin-bottom:10px;
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:14px;
+}
+textarea{resize:vertical;}
+.inline-group{
+  display:flex;
+  gap:12px;
+}
+.inline-group>div{flex:1;}
+
+button[type="submit"]{
+  width:100%;
+  margin-top:18px;
+  padding:12px;
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+/* Wards and cards */
+.ward-section{
+  margin-bottom:48px;
+}
+.ward-section h2{
+  border-bottom:2px solid var(--accent);
+  padding-bottom:6px;
+}
+.card-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px;
+  justify-content:center;
+}
+.patient-card{
+  background:var(--card-bg);
+  width:300px;
+  padding:18px 16px;
+  border-radius:12px;
+  box-shadow:var(--shadow);
+  position:relative;
+  transition:transform .18s ease;
+}
+.patient-card:hover{transform:scale(1.015);}
+.patient-card h3{
+  margin:0 0 8px;
+  font-size:18px;
+  line-height:1.3;
+  color:var(--primary-dark);
+}
+.patient-card p{margin:4px 0;}
+
+.delete-btn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#e63946;
+  color:#fff;
+  border:none;
+  border-radius:4px;
+  padding:4px 8px;
+  cursor:pointer;
+  font-size:12px;
+}
+.delete-btn:hover{opacity:0.85;}
+
+.editable{
+  padding:2px 4px;
+  border:1px dashed transparent;
+  border-radius:4px;
+  cursor:text;
+}
+.editable:focus{
+  outline:none;
+  border-color:#888;
+  background:#eef7ff;
+}
+
+@media(max-width:768px){
+  .card-grid{flex-direction:column;align-items:center;}
+  .patient-card{width:90%;}
+  .inline-group{flex-direction:column;}
+}
+
   </style>
 </head>
 <body>
-  <h1>Pediatric Handover</h1>
-
-  <!-- Top Buttons -->
+  <h1>Pediatric Handover System</h1>
   <div class="top-buttons">
     <button class="add-btn" onclick="toggleForm()">➕ Add Patient</button>
-    <button class="print-btn" onclick="printHandover()">🖨️ Print</button>
+    <button class="print-btn" onclick="printHandover()">🖨️ Print / Copy Handover</button>
   </div>
 
-  <!-- Date header -->
-  <div id="handoverHeader" style="text-align:center;margin-bottom:32px">
-    <strong>Date:</strong> <span id="handoverDate"></span>
-  </div>
+  <div id="handoverHeader" contenteditable="true" style="max-width: 680px; margin: 0 auto 24px; background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+  <table style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td><strong>Date:</strong> <span id="handoverDate"></span></td>
+      <td colspan="4"></td>
+    </tr>
+    <tr>
+      <td><strong>Shift:</strong></td>
+      <td><strong>Morning</strong></td>
+      <td><strong>Evening</strong></td>
+      <td><strong>Night</strong></td>
+      <td><strong>Total</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Admissions:</strong></td>
+      <td contenteditable="true">1</td>
+      <td contenteditable="true">1</td>
+      <td contenteditable="true">0</td>
+      <td contenteditable="true">2</td>
+    </tr>
+    <tr>
+      <td><strong>Discharges:</strong></td>
+      <td contenteditable="true">0</td>
+      <td contenteditable="true">1</td>
+      <td contenteditable="true">0</td>
+      <td contenteditable="true">1</td>
+    </tr>
+    <tr>
+      <td><strong>Total:</strong> <span contenteditable="true">3</span></td>
+      <td colspan="4"></td>
+    </tr>
+    <tr>
+  <td colspan="5" contenteditable="true"><strong>PW:</strong> 0 <strong>GW:</strong> 0 <strong>SW:</strong> 0 <strong>PVT:</strong> 0 <strong>ICU:</strong> 0 <strong>NICU:</strong> 0</td>
+</tr>
+  </table>
+</div>
 
-  <!-- Patient Form -->
-  <div id="formSection" class="form-section">
+  <div class="form-section" id="formSection">
     <form id="patientForm">
-      <label>Name</label>
-      <input id="name" required>
-      <label>ID</label>
-      <input id="pid" required>
-      <label>Bed</label>
-      <input id="bed" required>
+      <label>Patient Name:</label>
+      <input type="text" id="name" required />
+      <label>Patient ID:</label>
+      <input type="text" id="id" required />
+      <label>Bed Number:</label>
+      <input type="text" id="bed" required />
       <div class="inline-group">
         <div>
-          <label>Age</label>
-          <input id="age" required>
+          <label>Age:</label>
+          <input type="text" id="age" required />
         </div>
         <div>
-          <label>Sex</label>
-          <select id="sex"><option value="Male">Male</option><option value="Female">Female</option></select>
+          <label>Sex:</label>
+          <select id="sex" required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
         </div>
       </div>
-      <label>Diagnosis</label>
-      <input id="diagnosis">
-      <label>Medications</label>
-      <input id="medications">
-      <label>Ward</label>
+      <label>Diagnosis:</label>
+      <input type="text" id="diagnosis" required />
+      <label>Medications:</label>
+      <input type="text" id="medications" required />
+      <label>Ward:</label>
       <select id="ward">
-        <option>PW</option><option>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>NICU</option>
+        <option value="PW">PW</option>
+        <option value="GW">GW</option>
+        <option value="SW">SW</option>
+        <option value="PVT">PVT</option>
+        <option value="ICU">ICU</option>
+        <option value="NICU">NICU</option>
       </select>
-      <label>Plan</label>
+      <label>Plan:</label>
       <textarea id="plan" rows="3"></textarea>
-      <button type="submit">Submit</button>
+      <button type="submit">Add Patient</button>
     </form>
   </div>
 
-  <!-- Patient Cards -->
-  <div class="card-grid" id="cards"></div>
-
-  <!-- Firebase SDK (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <div id="wardsContainer">
+    <div class="ward-section" id="PW"><h2>PW</h2><div class="card-grid"></div></div>
+    <div class="ward-section" id="GW"><h2>GW</h2><div class="card-grid"></div></div>
+    <div class="ward-section" id="SW"><h2>SW</h2><div class="card-grid"></div></div>
+    <div class="ward-section" id="PVT"><h2>PVT</h2><div class="card-grid"></div></div>
+    <div class="ward-section" id="ICU"><h2>ICU</h2><div class="card-grid"></div></div>
+    <div class="ward-section" id="NICU"><h2>NICU</h2><div class="card-grid"></div></div>
+  </div>
 
   <script>
-    /* ───── Firebase Config ───── */
-    firebase.initializeApp({
-      apiKey: "AIzaSyC3_DD-ezlWahQeCdPLcFh_lohLn63Q7eY",
-      authDomain: "pediatric-handover.firebaseapp.com",
-      projectId: "pediatric-handover",
-      storageBucket: "pediatric-handover.appspot.com",
-      messagingSenderId: "104007714087",
-      appId: "1:104007714087:web:77811513530b0ee9859502"
-    });
-    const db = firebase.firestore();
 
-    /* ───── Utility ───── */
-    const $ = id => document.getElementById(id);
-    $('handoverDate').textContent = new Date().toISOString().split('T')[0];
+function toggleForm() {
+  const form = document.getElementById('formSection');
+  form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+}
 
-    function toggleForm() {
-      const f = $('formSection');
-      f.style.display = f.style.display==='block' ? 'none' : 'block';
-    }
+document.getElementById('handoverDate').innerText = new Date().toISOString().split('T')[0];
 
-    function clearForm() {
-      ['name','pid','bed','age','diagnosis','medications','plan']
-        .forEach(id=>$(id).value='');
-      $('sex').value = 'Male'; $('ward').value='PW';
-    }
+const form = document.getElementById('patientForm');
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const name = document.getElementById('name').value;
+  const id = document.getElementById('id').value;
+  const bed = document.getElementById('bed').value;
+  const age = document.getElementById('age').value;
+  const sex = document.getElementById('sex').value;
+  const diagnosis = document.getElementById('diagnosis').value;
+  const medications = document.getElementById('medications').value;
+  const ward = document.getElementById('ward').value;
+  const plan = document.getElementById('plan').value;
 
-    /* ───── Add Patient ───── */
-    $('patientForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const p = {
-        name: $('name').value.trim(),
-        id:   $('pid').value.trim(),
-        bed:  $('bed').value.trim(),
-        age:  $('age').value.trim(),
-        sex:  $('sex').value,
-        diagnosis: $('diagnosis').value.trim(),
-        medications:$('medications').value.trim(),
-        ward: $('ward').value,
-        plan: $('plan').value.trim(),
-        ts: Date.now()
-      };
-      if(!p.name) return alert('Name required');
-      db.collection('patients').add(p)
-        .then(()=>{ toggleForm(); clearForm(); loadPatients(); })
-        .catch(err=>{console.error(err); alert('Save failed');});
-    });
+  const patientCard = document.createElement('div');
+  patientCard.classList.add('patient-card');
+  const header = document.createElement('h3');
+  header.innerHTML = `
+    <span class="editable" contenteditable="true">${name}</span>
+    (ID: <span class="editable" contenteditable="true">${id}</span>)<br>
+    <strong>Bed:</strong> <span class="editable" contenteditable="true">${bed}</span>`;
 
-    /* ───── Delete ───── */
-    function del(id){ db.collection('patients').doc(id).delete().then(loadPatients); }
+  const deleteBtn = document.createElement('button');
+  deleteBtn.textContent = 'Delete';
+  deleteBtn.classList.add('delete-btn');
+  deleteBtn.onclick = function() {
+    patientCard.remove();
+  };
 
-    /* ───── Load & Render ───── */
-    function loadPatients(){
-      const wrap=$('cards');wrap.innerHTML='';
-      db.collection('patients').orderBy('ts','desc').get().then(q=>{
-        q.forEach(doc=>{
-          const d=doc.data();
-          const card=document.createElement('div');card.className='patient-card';
-          card.innerHTML=`
-            <button class="delete-btn" onclick="del('${doc.id}')">✕</button>
-            <h3>${d.name} (ID:${d.id})</h3>
-            <p><strong>Bed:</strong> ${d.bed}</p>
-            <p>Age ${d.age} • ${d.sex}</p>
-            <p><em>${d.diagnosis||''}</em></p>
-            <p>${d.medications||''}</p>
-            <p>${d.plan||''}</p>
-            <p><small>Ward: ${d.ward}</small></p>`;
-          wrap.appendChild(card);
-        });
-      });
-    }
+  header.appendChild(deleteBtn);
+  patientCard.appendChild(header);
+  patientCard.innerHTML += `<p><strong>Age:</strong> <span class="editable" contenteditable="true">${age}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Sex:</strong> <span class="editable" contenteditable="true">${sex}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Diagnosis:</strong> <span class="editable" contenteditable="true">${diagnosis}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Medications:</strong> <span class="editable" contenteditable="true">${medications}</span></p>`;
+  patientCard.innerHTML += `<p><strong>Plan:</strong> <span class="editable" contenteditable="true">${plan}</span></p>`;
 
-    /* ───── Print ───── */
-    function printHandover(){window.print();}
+  const grid = document.querySelector(`#${ward} .card-grid`);
+  if (grid) {
+    grid.appendChild(patientCard);
+  }
 
-    loadPatients(); // initial
+  form.reset();
+  document.getElementById('formSection').style.display = 'none';
+});
+
+function printHandover() {
+  const clone = document.getElementById('wardsContainer').cloneNode(true);
+  const deleteButtons = clone.querySelectorAll('.delete-btn');
+  deleteButtons.forEach(btn => btn.remove());
+  const editableFields = clone.querySelectorAll('[contenteditable]');
+  editableFields.forEach(el => el.removeAttribute('contenteditable'));
+
+  const headerClone = document.getElementById('handoverHeader').cloneNode(true);
+  headerClone.removeAttribute('contenteditable');
+
+  const newWin = window.open('', '', 'width=800,height=600');
+  newWin.document.write('<html><head><title>Pediatric Handover</title>');
+  newWin.document.write('<style>body{font-family:sans-serif;padding:20px}h2{border-bottom:1px solid #ccc}div{margin-bottom:20px}p{margin:5px 0}</style>');
+  newWin.document.write('</head><body>');
+  newWin.document.write('<h1>Pediatric Handover Summary</h1>');
+  newWin.document.write(headerClone.innerHTML);
+  newWin.document.write(clone.innerHTML);
+  newWin.document.write('</body></html>');
+  newWin.document.close();
+  newWin.focus();
+}
+
   </script>
 </body>
 </html>
