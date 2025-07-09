@@ -4,151 +4,202 @@
   <meta charset="UTF-8" />
   <title>Pediatric Handover System</title>
 
-  <!-- ─── Styles ─────────────────────────────────────────────── -->
+  <!-- ─── Inter Font ─────────────────────────────── -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- ─── Styles ─────────────────────────────────── -->
   <style>
-    body{font-family:sans-serif;margin:0;padding:24px;background:#f4f7fb}
-    h1{margin:0 0 24px;text-align:center}
-    .top-buttons{margin-bottom:24px;text-align:center}
-    .top-buttons button{padding:10px 18px;margin:0 6px;font-weight:600;cursor:pointer}
-    .form-section,.patient-card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,.05);margin-bottom:24px}
-    .form-section input,.form-section select,.form-section textarea{width:100%;margin-bottom:12px;padding:8px}
-    .card-grid{display:flex;flex-wrap:wrap;gap:18px}
-    .patient-card{width:290px;position:relative}
-    .delete-btn{position:absolute;top:8px;right:8px;background:#e74c3c;color:#fff;border:none;padding:4px 8px;cursor:pointer}
+    :root{
+      --bg:#f4f7fb;--primary:#0066cc;--primary-dark:#004a99;
+      --accent:#2a9d8f;--card-bg:#fff;--text:#1d3557;
+      --shadow:0 4px 12px rgba(0,0,0,.08)
+    }
+    *{box-sizing:border-box}body{
+      font-family:'Inter',sans-serif;background:var(--bg);
+      color:var(--text);margin:0;padding:24px;
+    }
+    h1{font-weight:700;margin:0 0 20px;text-align:center}
+    /* top buttons */
+    .top-buttons{text-align:center;margin:12px 0 32px}
+    .top-buttons button{
+      margin:6px;padding:10px 20px;font-weight:600;
+      border:none;border-radius:8px;cursor:pointer;
+      transition:background .2s,transform .2s
+    }
+    .top-buttons button:hover{transform:translateY(-2px)}
+    .add-btn{background:var(--primary);color:#fff}
+    .add-btn:hover{background:var(--primary-dark)}
+    .print-btn{background:var(--accent);color:#fff}
+    .print-btn:hover{background:#1f7b72}
+
+    /* form */
+    .form-section{
+      display:none;background:var(--card-bg);padding:24px 28px;
+      border-radius:12px;max-width:520px;margin:0 auto 40px;
+      box-shadow:var(--shadow)
+    }
+    label{font-weight:600;display:block;margin-top:14px}
+    input,select,textarea{
+      width:100%;margin-top:6px;margin-bottom:10px;padding:10px 12px;
+      border-radius:8px;border:1px solid #ccc;font-size:14px
+    }
+    textarea{resize:vertical}.inline-group{display:flex;gap:12px}
+    .inline-group>div{flex:1}
+    button[type=submit]{width:100%;margin-top:18px;padding:12px;
+      background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600}
+
+    /* cards & grid */
+    .card-grid{display:flex;flex-wrap:wrap;gap:18px;justify-content:center}
+    .patient-card{
+      background:var(--card-bg);width:300px;padding:18px 16px;
+      border-radius:12px;box-shadow:var(--shadow);position:relative;
+      transition:transform .18s ease
+    }
+    .patient-card:hover{transform:scale(1.015)}
+    .patient-card h3{margin:0 0 8px;font-size:18px;color:var(--primary-dark)}
+    .patient-card p{margin:4px 0}
+    .delete-btn{
+      position:absolute;top:10px;right:10px;background:#e63946;
+      color:#fff;border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px
+    }
+    .delete-btn:hover{opacity:.85}
+
+    @media(max-width:768px){
+      .card-grid{flex-direction:column;align-items:center}
+      .patient-card{width:90%}.inline-group{flex-direction:column}
+    }
   </style>
 </head>
 <body>
-
   <h1>Pediatric Handover</h1>
 
-  <!-- ─── Buttons ────────────────────────────────────────────── -->
+  <!-- Top Buttons -->
   <div class="top-buttons">
-    <button onclick="document.getElementById('formSection').style.display='block'">➕ Add Patient</button>
-    <button onclick="printHandover()">🖨️ Print</button>
+    <button class="add-btn" onclick="toggleForm()">➕ Add Patient</button>
+    <button class="print-btn" onclick="printHandover()">🖨️ Print</button>
   </div>
 
-  <!-- ─── Header (date etc.) ─────────────────────────────────── -->
-  <div id="handoverHeader">
+  <!-- Date header -->
+  <div id="handoverHeader" style="text-align:center;margin-bottom:32px">
     <strong>Date:</strong> <span id="handoverDate"></span>
   </div>
 
-  <!-- ─── Patient Form ───────────────────────────────────────── -->
-  <div id="formSection" class="form-section" style="display:none;">
-    <input id="name"        placeholder="Name"        required>
-    <input id="id"          placeholder="ID"          required>
-    <input id="bed"         placeholder="Bed"         required>
-    <input id="age"         placeholder="Age"         required>
-    <select id="sex">
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-    </select>
-    <input id="diagnosis"   placeholder="Diagnosis">
-    <input id="medications" placeholder="Medications">
-    <select id="ward">
-      <option value="PW">PW</option><option value="GW">GW</option><option value="SW">SW</option>
-      <option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
-    </select>
-    <textarea id="plan" placeholder="Plan"></textarea>
-    <button onclick="addPatient()">Submit</button>
+  <!-- Patient Form -->
+  <div id="formSection" class="form-section">
+    <form id="patientForm">
+      <label>Name</label>
+      <input id="name" required>
+      <label>ID</label>
+      <input id="pid" required>
+      <label>Bed</label>
+      <input id="bed" required>
+      <div class="inline-group">
+        <div>
+          <label>Age</label>
+          <input id="age" required>
+        </div>
+        <div>
+          <label>Sex</label>
+          <select id="sex"><option value="Male">Male</option><option value="Female">Female</option></select>
+        </div>
+      </div>
+      <label>Diagnosis</label>
+      <input id="diagnosis">
+      <label>Medications</label>
+      <input id="medications">
+      <label>Ward</label>
+      <select id="ward">
+        <option>PW</option><option>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>NICU</option>
+      </select>
+      <label>Plan</label>
+      <textarea id="plan" rows="3"></textarea>
+      <button type="submit">Submit</button>
+    </form>
   </div>
 
-  <!-- ─── Patient Cards ──────────────────────────────────────── -->
-  <div id="wardsContainer">
-    <div id="patientCards" class="card-grid"></div>
-  </div>
+  <!-- Patient Cards -->
+  <div class="card-grid" id="cards"></div>
 
-  <!-- ─── Firebase SDKs (compat) ─────────────────────────────── -->
+  <!-- Firebase SDK (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-  <!-- ─── App Logic ──────────────────────────────────────────── -->
   <script>
-    /* ---------- 1. Firebase config ---------- */
-    const firebaseConfig = {
+    /* ───── Firebase Config ───── */
+    firebase.initializeApp({
       apiKey: "AIzaSyC3_DD-ezlWahQeCdPLcFh_lohLn63Q7eY",
       authDomain: "pediatric-handover.firebaseapp.com",
       projectId: "pediatric-handover",
       storageBucket: "pediatric-handover.appspot.com",
       messagingSenderId: "104007714087",
       appId: "1:104007714087:web:77811513530b0ee9859502"
-    };
-    firebase.initializeApp(firebaseConfig);
+    });
     const db = firebase.firestore();
 
-    /* ---------- 2. Helpers ---------- */
-    document.getElementById('handoverDate').textContent =
-      new Date().toISOString().split('T')[0];
+    /* ───── Utility ───── */
+    const $ = id => document.getElementById(id);
+    $('handoverDate').textContent = new Date().toISOString().split('T')[0];
+
+    function toggleForm() {
+      const f = $('formSection');
+      f.style.display = f.style.display==='block' ? 'none' : 'block';
+    }
 
     function clearForm() {
-      ['name','id','bed','age','diagnosis','medications','plan'].forEach(id => 
-        document.getElementById(id).value = '');
-      document.getElementById('sex').value  = 'Male';
-      document.getElementById('ward').value = 'PW';
+      ['name','pid','bed','age','diagnosis','medications','plan']
+        .forEach(id=>$(id).value='');
+      $('sex').value = 'Male'; $('ward').value='PW';
     }
 
-    /* ---------- 3. Add patient ---------- */
-    function addPatient() {
-      const patient = {
-        name:        name.value.trim(),
-        id:          id.value.trim(),
-        bed:         bed.value.trim(),
-        age:         age.value.trim(),
-        sex:         sex.value,
-        diagnosis:   diagnosis.value.trim(),
-        medications: medications.value.trim(),
-        ward:        ward.value,
-        plan:        plan.value.trim(),
-        ts:          Date.now()
+    /* ───── Add Patient ───── */
+    $('patientForm').addEventListener('submit', e=>{
+      e.preventDefault();
+      const p = {
+        name: $('name').value.trim(),
+        id:   $('pid').value.trim(),
+        bed:  $('bed').value.trim(),
+        age:  $('age').value.trim(),
+        sex:  $('sex').value,
+        diagnosis: $('diagnosis').value.trim(),
+        medications:$('medications').value.trim(),
+        ward: $('ward').value,
+        plan: $('plan').value.trim(),
+        ts: Date.now()
       };
-      if(!patient.name) return alert('Name is required');
+      if(!p.name) return alert('Name required');
+      db.collection('patients').add(p)
+        .then(()=>{ toggleForm(); clearForm(); loadPatients(); })
+        .catch(err=>{console.error(err); alert('Save failed');});
+    });
 
-      db.collection('patients').add(patient)
-        .then(() => {
-          document.getElementById('formSection').style.display='none';
-          clearForm();
-          loadPatients(); // refresh list
-        })
-        .catch(err => {
-          console.error('Firestore add error:', err);
-          alert('Could not save – see console');
+    /* ───── Delete ───── */
+    function del(id){ db.collection('patients').doc(id).delete().then(loadPatients); }
+
+    /* ───── Load & Render ───── */
+    function loadPatients(){
+      const wrap=$('cards');wrap.innerHTML='';
+      db.collection('patients').orderBy('ts','desc').get().then(q=>{
+        q.forEach(doc=>{
+          const d=doc.data();
+          const card=document.createElement('div');card.className='patient-card';
+          card.innerHTML=`
+            <button class="delete-btn" onclick="del('${doc.id}')">✕</button>
+            <h3>${d.name} (ID:${d.id})</h3>
+            <p><strong>Bed:</strong> ${d.bed}</p>
+            <p>Age ${d.age} • ${d.sex}</p>
+            <p><em>${d.diagnosis||''}</em></p>
+            <p>${d.medications||''}</p>
+            <p>${d.plan||''}</p>
+            <p><small>Ward: ${d.ward}</small></p>`;
+          wrap.appendChild(card);
         });
+      });
     }
 
-    /* ---------- 4. Load patients ---------- */
-    function loadPatients() {
-      const wrap = document.getElementById('patientCards');
-      wrap.innerHTML = '';
-      db.collection('patients').orderBy('ts','desc').get()
-        .then(qs => {
-          qs.forEach(doc => {
-            const d = doc.data();
-            const card = document.createElement('div');
-            card.className = 'patient-card';
-            card.innerHTML = `
-              <button class="delete-btn" onclick="delPatient('${doc.id}')">✕</button>
-              <p><strong>${d.name}</strong> (ID: ${d.id})</p>
-              <p>Bed ${d.bed} • ${d.age}y • ${d.sex}</p>
-              <p><em>${d.diagnosis}</em></p>
-              <p>${d.medications}</p>
-              <p>${d.plan}</p>
-              <p><small>Ward: ${d.ward}</small></p>`;
-            wrap.appendChild(card);
-          });
-        })
-        .catch(err => console.error('Load error:', err));
-    }
+    /* ───── Print ───── */
+    function printHandover(){window.print();}
 
-    /* ---------- 5. Delete patient ---------- */
-    function delPatient(id) {
-      db.collection('patients').doc(id).delete()
-        .then(loadPatients);
-    }
-
-    /* ---------- 6. Print ---------- */
-    function printHandover() { window.print(); }
-
-    /* ---------- 7. Initial load ---------- */
-    loadPatients();
+    loadPatients(); // initial
   </script>
 </body>
 </html>
