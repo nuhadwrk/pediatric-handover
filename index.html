@@ -42,24 +42,15 @@
     .delete-btn:hover {opacity:.85}
     .editable {border:none; background:transparent; border-bottom:1px dashed #ccc; padding:0 4px; min-width:20px}
     .editable:focus {outline:none; border-bottom:1px solid #888}
-
-    .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    @media(max-width:768px){
-      .card-grid {flex-direction:column;align-items:center}
-      .patient-card {width:90%}
-    }
+    .card-grid {display: flex; flex-wrap: wrap; gap: 16px;}
+    @media(max-width:768px){.card-grid{flex-direction:column;align-items:center}.patient-card{width:90%}}
   </style>
 </head>
 <body>
   <h1>Pediatric Handover</h1>
   <div class="top-buttons">
     <button class="add" onclick="toggleForm()">Add Patient</button>
-    <button class="print" onclick="printHandover()">🖨️ Print</button>
+    <button class="print" onclick="printHandover()">🖸️ Print</button>
   </div>
 
   <div id="handoverHeader">
@@ -168,9 +159,13 @@
       const disM = +document.getElementById('disM').value || 0;
       const disE = +document.getElementById('disE').value || 0;
       const disN = +document.getElementById('disN').value || 0;
+
       document.getElementById('totalAd').innerText = adM + adE + adN;
       document.getElementById('totalDis').innerText = disM + disE + disN;
-      localStorage.setItem('summary', JSON.stringify({ adM, adE, adN, disM, disE, disN }));
+
+      const data = { adM, adE, adN, disM, disE, disN, date: new Date().toISOString().split("T")[0] };
+      localStorage.setItem('summary', JSON.stringify(data));
+      db.collection('summaries').doc('current').set(data);
     }
 
     function restoreSummary() {
@@ -184,7 +179,18 @@
         document.getElementById('disE').value = disE;
         document.getElementById('disN').value = disN;
       }
-      recalcSummary();
+      db.collection('summaries').doc('current').get().then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          document.getElementById('adM').value = data.adM;
+          document.getElementById('adE').value = data.adE;
+          document.getElementById('adN').value = data.adN;
+          document.getElementById('disM').value = data.disM;
+          document.getElementById('disE').value = data.disE;
+          document.getElementById('disN').value = data.disN;
+          recalcSummary();
+        }
+      });
     }
 
     function loadPatients() {
