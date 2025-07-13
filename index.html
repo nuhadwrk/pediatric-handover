@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,7 +42,17 @@
     .delete-btn:hover {opacity:.85}
     .editable {border:none; background:transparent; border-bottom:1px dashed #ccc; padding:0 4px; min-width:20px}
     .editable:focus {outline:none; border-bottom:1px solid #888}
-    @media(max-width:768px){.card-grid{flex-direction:column;align-items:center}.patient-card{width:90%}}
+
+    .card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    @media(max-width:768px){
+      .card-grid {flex-direction:column;align-items:center}
+      .patient-card {width:90%}
+    }
   </style>
 </head>
 <body>
