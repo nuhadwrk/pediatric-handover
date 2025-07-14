@@ -40,7 +40,14 @@
     .delete-btn {position:absolute; top:10px; right:10px; background:#e63946; color:#fff;
       border:none; border-radius:4px; padding:4px 8px; cursor:pointer; font-size:12px}
     .delete-btn:hover {opacity:.85}
-    .editable {border:none; background:transparent; border-bottom:1px dashed #ccc; padding:0 4px; min-width:20px}
+    .editable {
+      border:none;
+      background:transparent;
+      border-bottom:1px dashed #ccc;
+      padding:0 4px;
+      min-width:20px;
+      white-space:pre-wrap;
+    }
     .editable:focus {outline:none; border-bottom:1px solid #888}
     .card-grid {display: flex; flex-wrap: wrap; gap: 16px;}
     @media(max-width:768px){.card-grid{flex-direction:column;align-items:center}.patient-card{width:90%}}
@@ -86,6 +93,7 @@
     </select>
     <input type="text" id="diagnosis" placeholder="Diagnosis" />
     <input type="text" id="medications" placeholder="Medications" />
+    <input type="text" id="issues" placeholder="Issues" />
     <select id="ward">
       <option value="PW">PW</option>
       <option value="GW">GW</option>
@@ -130,6 +138,7 @@
         sex: document.getElementById('sex').value,
         diagnosis: document.getElementById('diagnosis').value,
         medications: document.getElementById('medications').value,
+        issues: document.getElementById('issues').value,
         ward: document.getElementById('ward').value,
         plan: document.getElementById('plan').value,
         timestamp: Date.now()
@@ -146,6 +155,10 @@
 
     function updateField(id, field, value) {
       db.collection('patients').doc(id).update({ [field]: value });
+    }
+
+    function changeWard(id, newWard) {
+      db.collection('patients').doc(id).update({ ward: newWard }).then(loadPatients);
     }
 
     function printHandover() {
@@ -233,7 +246,14 @@
             ${makeEditable('sex', 'Sex: ')}
             ${makeEditable('diagnosis', 'Diagnosis: ')}
             ${makeEditable('medications', 'Medications: ')}
+            ${makeEditable('issues', 'Issues: ')}
             ${makeEditable('plan', 'Plan: ')}
+            <p>
+              Ward:
+              <select onchange="changeWard('${doc.id}', this.value)">
+                ${wards.map(w => `<option value="${w}" ${w === d.ward ? 'selected' : ''}>${w}</option>`).join('')}
+              </select>
+            </p>
           `;
           wardGrids[d.ward]?.appendChild(card);
         });
@@ -252,3 +272,4 @@
   </script>
 </body>
 </html>
+
