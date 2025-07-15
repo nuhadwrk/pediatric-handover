@@ -150,7 +150,10 @@
     }
 
     function deletePatient(id) {
-      db.collection('patients').doc(id).delete().then(loadPatients);
+      // Add confirmation before deleting
+      if (confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
+        db.collection('patients').doc(id).delete().then(loadPatients);
+      }
     }
 
     function updateField(id, field, value) {
@@ -229,16 +232,25 @@
             text += '----------------------------------------\n';
             
             patients.forEach(patient => {
-              text += `Name: ${patient.name || 'N/A'}\n`;
-              text += `ID: ${patient.id || 'N/A'}\n`;
-              text += `Bed: ${patient.bed || 'N/A'}\n`;
-              text += `Age: ${patient.age || 'N/A'}\n`;
-              text += `Sex: ${patient.sex || 'N/A'}\n`;
-              text += `Diagnosis: ${patient.diagnosis || 'N/A'}\n`;
-              text += `Medications: ${patient.medications || 'N/A'}\n`;
-              text += `Issues: ${patient.issues || 'None'}\n`;
-              text += `Plan: ${patient.plan || 'N/A'}\n`;
-              text += `Ward: ${patient.ward}\n`;
+              // Format first line: BED 22 - 3Y/M, LRTI
+              const sexAbbr = patient.sex.charAt(0).toUpperCase();
+              text += `BED ${patient.bed} - ${patient.age}/${sexAbbr}, ${patient.diagnosis || 'N/A'}\n`;
+              
+              // Add medications if present
+              if (patient.medications) {
+                text += `Medications: ${patient.medications}\n`;
+              }
+              
+              // Add issues if present
+              if (patient.issues) {
+                text += `Issues: ${patient.issues}\n`;
+              }
+              
+              // Add plan if present
+              if (patient.plan) {
+                text += `Plan: ${patient.plan}\n`;
+              }
+              
               text += '----------------------------------------\n';
             });
             
