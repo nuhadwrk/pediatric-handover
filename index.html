@@ -162,7 +162,99 @@
     }
 
     function printHandover() {
-      window.print();
+      // Get header information
+      const date = document.getElementById('handoverDate').innerText;
+      const adM = document.getElementById('adM').value;
+      const adE = document.getElementById('adE').value;
+      const adN = document.getElementById('adN').value;
+      const disM = document.getElementById('disM').value;
+      const disE = document.getElementById('disE').value;
+      const disN = document.getElementById('disN').value;
+      const totalAd = document.getElementById('totalAd').innerText;
+      const totalDis = document.getElementById('totalDis').innerText;
+      const totalCount = document.getElementById('totalCount').innerText;
+      
+      // Start building text output
+      let text = `PEDIATRIC HANDOVER REPORT\n`;
+      text += `Date: ${date}\n\n`;
+      
+      text += `ADMISSIONS/DISCHARGES SUMMARY\n`;
+      text += `Admissions (Morning): ${adM}\n`;
+      text += `Admissions (Evening): ${adE}\n`;
+      text += `Admissions (Night): ${adN}\n`;
+      text += `Total Admissions: ${totalAd}\n\n`;
+      
+      text += `Discharges (Morning): ${disM}\n`;
+      text += `Discharges (Evening): ${disE}\n`;
+      text += `Discharges (Night): ${disN}\n`;
+      text += `Total Discharges: ${totalDis}\n\n`;
+      
+      text += `Total Patients: ${totalCount}\n\n`;
+      text += `========================================\n\n`;
+      
+      // Fetch patient data
+      db.collection('patients').get().then(snap => {
+        const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
+        const patientsByWard = {};
+        
+        // Initialize ward arrays
+        wards.forEach(ward => {
+          patientsByWard[ward] = [];
+        });
+        
+        // Group patients by ward
+        snap.forEach(doc => {
+          const patient = doc.data();
+          const ward = patient.ward;
+          if (wards.includes(ward)) {
+            patientsByWard[ward].push({
+              id: doc.id,
+              ...patient
+            });
+          }
+        });
+        
+        // Sort patients by bed number within each ward
+        wards.forEach(ward => {
+          patientsByWard[ward].sort((a, b) => {
+            return (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0);
+          });
+        });
+        
+        // Add patient data to text output
+        wards.forEach(ward => {
+          const patients = patientsByWard[ward];
+          if (patients.length > 0) {
+            text += `${ward.toUpperCase()} WARD (${patients.length} patients)\n`;
+            text += '----------------------------------------\n';
+            
+            patients.forEach(patient => {
+              text += `Name: ${patient.name || 'N/A'}\n`;
+              text += `ID: ${patient.id || 'N/A'}\n`;
+              text += `Bed: ${patient.bed || 'N/A'}\n`;
+              text += `Age: ${patient.age || 'N/A'}\n`;
+              text += `Sex: ${patient.sex || 'N/A'}\n`;
+              text += `Diagnosis: ${patient.diagnosis || 'N/A'}\n`;
+              text += `Medications: ${patient.medications || 'N/A'}\n`;
+              text += `Issues: ${patient.issues || 'None'}\n`;
+              text += `Plan: ${patient.plan || 'N/A'}\n`;
+              text += `Ward: ${patient.ward}\n`;
+              text += '----------------------------------------\n';
+            });
+            
+            text += '\n\n';
+          }
+        });
+        
+        // Create new window with text output
+        const textWindow = window.open('', '_blank');
+        textWindow.document.write(`<pre>${text}</pre>`);
+        textWindow.document.title = `Handover Report - ${date}`;
+        textWindow.document.close();
+      }).catch(error => {
+        console.error("Error generating report:", error);
+        alert("Error generating handover report");
+      });
     }
 
     function recalcSummary() {
@@ -212,6 +304,8 @@
       const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
       const wardGrids = {};
       const wardCounts = {};
+      const patientsByWard = {};
+
       wards.forEach(w => {
         const sec = document.createElement('div');
         const header = document.createElement('h2');
@@ -227,38 +321,51 @@
         container.appendChild(sec);
         wardGrids[w] = grid;
         wardCounts[w] = 0;
+        patientsByWard[w] = [];
       });
 
-      db.collection('patients').orderBy('timestamp', 'desc').get().then(snap => {
+      db.collection('patients').get().then(snap => {
         document.getElementById('totalCount').innerText = snap.size;
         snap.forEach(doc => {
           const d = doc.data();
-          wardCounts[d.ward] = (wardCounts[d.ward] || 0) + 1;
-          const makeEditable = (field, label = '') =>
-            `<p>${label}<span contenteditable class="editable" onblur="updateField('${doc.id}', '${field}', this.innerText)">${d[field]}</span></p>`;
-          const card = document.createElement('div');
-          card.className = 'patient-card';
-          card.innerHTML = `
-            <button class="delete-btn" onclick="deletePatient('${doc.id}')">×</button>
-            <p><strong><span contenteditable class="editable" onblur="updateField('${doc.id}', 'name', this.innerText)">${d.name}</span></strong> (ID: ${d.id})</p>
-            ${makeEditable('bed', 'Bed: ')}
-            ${makeEditable('age', 'Age: ')}
-            ${makeEditable('sex', 'Sex: ')}
-            ${makeEditable('diagnosis', 'Diagnosis: ')}
-            ${makeEditable('medications', 'Medications: ')}
-            ${makeEditable('issues', 'Issues: ')}
-            ${makeEditable('plan', 'Plan: ')}
-            <p>
-              Ward:
-              <select onchange="changeWard('${doc.id}', this.value)">
-                ${wards.map(w => `<option value="${w}" ${w === d.ward ? 'selected' : ''}>${w}</option>`).join('')}
-              </select>
-            </p>
-          `;
-          wardGrids[d.ward]?.appendChild(card);
+          if (wards.includes(d.ward)) {
+            patientsByWard[d.ward].push({ id: doc.id, data: d });
+            wardCounts[d.ward]++;
+          }
         });
 
-        Object.keys(wardCounts).forEach(w => {
+        wards.forEach(w => {
+          patientsByWard[w].sort((a, b) => {
+            const bedA = parseInt(a.data.bed) || 0;
+            const bedB = parseInt(b.data.bed) || 0;
+            return bedA - bedB;
+          });
+
+          patientsByWard[w].forEach(({ id, data: d }) => {
+            const makeEditable = (field, label = '') =>
+              `<p>${label}<span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field]}</span></p>`;
+            const card = document.createElement('div');
+            card.className = 'patient-card';
+            card.innerHTML = `
+              <button class="delete-btn" onclick="deletePatient('${id}')">×</button>
+              <p><strong><span contenteditable class="editable" onblur="updateField('${id}', 'name', this.innerText)">${d.name}</span></strong> (ID: ${d.id})</p>
+              ${makeEditable('bed', 'Bed: ')}
+              ${makeEditable('age', 'Age: ')}
+              ${makeEditable('sex', 'Sex: ')}
+              ${makeEditable('diagnosis', 'Diagnosis: ')}
+              ${makeEditable('medications', 'Medications: ')}
+              ${makeEditable('issues', 'Issues: ')}
+              ${makeEditable('plan', 'Plan: ')}
+              <p>
+                Ward:
+                <select onchange="changeWard('${id}', this.value)">
+                  ${wards.map(wr => `<option value="${wr}" ${wr === d.ward ? 'selected' : ''}>${wr}</option>`).join('')}
+                </select>
+              </p>
+            `;
+            wardGrids[w].appendChild(card);
+          });
+
           const header = document.getElementById(`header-${w}`);
           if (header) {
             header.innerText = `${w} (${wardCounts[w]} patient${wardCounts[w] !== 1 ? 's' : ''})`;
@@ -272,4 +379,3 @@
   </script>
 </body>
 </html>
-
