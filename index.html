@@ -1,69 +1,264 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
+
+<html lang="en" data-theme="dark"><head><script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script>
+
+
+  <meta charset="UTF-8">
   <title>Pediatric Handover System</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     :root {
-      --bg:#f4f7fb; --primary:#0066cc; --primary-dark:#004a99; --accent:#2a9d8f;
-      --text:#1d3557; --card-bg:#ffffff; --shadow:0 4px 12px rgba(0,0,0,0.08);
-      --PW:#d1e7ff; --GW:#fde2e4; --SW:#e2f0cb; --PVT:#fff3cd; --ICU:#d4edda; --NICU:#f8d7da;
+      /* Light mode colors */
+      --bg: #f4f7fb;
+      --primary: #0066cc;
+      --primary-dark: #004a99;
+      --accent: #2a9d8f;
+      --text: #1d3557;
+      --card-bg: #ffffff;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      --border: #aaa;
+      --editable-border: #ccc;
+      --editable-focus: #888;
+      --PW: #d1e7ff;
+      --GW: #fde2e4;
+      --SW: #e2f0cb;
+      --PVT: #fff3cd;
+      --ICU: #d4edda;
+      --NICU: #f8d7da;
     }
-    * {box-sizing:border-box; font-family:'Inter',sans-serif}
-    body {margin:0; padding:24px; background:var(--bg); color:var(--text)}
-    h1 {margin:0 0 24px; text-align:center; font-weight:700}
-    .top-buttons {text-align:center; margin-bottom:32px}
-    .top-buttons button {margin:6px; padding:10px 20px; font-weight:600; border:none;
-      border-radius:8px; cursor:pointer; transition:background .2s,transform .2s;}
-    .top-buttons button:hover {transform:translateY(-2px)}
-    .add {background:var(--primary); color:#fff}.add:hover {background:var(--primary-dark)}
-    .print {background:var(--accent); color:#fff}.print:hover {background:#1f7b72}
-    #handoverHeader {max-width:800px; margin:0 auto 32px; text-align:center; background:var(--card-bg);
-      padding:18px; border-radius:12px; box-shadow:var(--shadow)}
-    #handoverHeader table {margin:16px auto 0; border-collapse:collapse; width:100%; max-width:500px}
-    #handoverHeader th, #handoverHeader td {border:none; padding:6px; font-size:14px}
-    #handoverHeader th {background:var(--bg)}
-    #handoverHeader input {width:60px; padding:4px; border:1px solid #aaa; border-radius:4px; text-align:center}
-    .form-section {display:none; background:var(--card-bg); padding:24px; border-radius:12px;
-      max-width:520px; margin:0 auto 48px; box-shadow:var(--shadow)}
+    [data-theme="dark"] {
+      /* Dark mode colors */
+      --bg: #1a202c;
+      --primary: #4299e1;
+      --primary-dark: #2b6cb0;
+      --accent: #38b2ac;
+      --text: #e2e8f0;
+      --card-bg: #2d3748;
+      --shadow: 0 4px 12px rgba(0,0,0,0.3);
+      --border: #4a5568;
+      --editable-border: #718096;
+      --editable-focus: #a0aec0;
+      --PW: #2c5282;
+      --GW: #9b2c2c;
+      --SW: #5a7f3f;
+      --PVT: #b7791f;
+      --ICU: #276749;
+      --NICU: #9b2c2c;
+    }
+    * {box-sizing: border-box; font-family: 'Inter', sans-serif;}
+    body {margin: 0; padding: 24px; background: var(--bg); color: var(--text);}
+    h1 {margin: 0 0 24px; text-align: center; font-weight: 700;}
+    .top-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .top-buttons button {
+      padding: 10px 20px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .top-buttons button:hover {transform: translateY(-2px);}
+    .add {background: var(--primary); color: #fff;}
+    .add:hover {background: var(--primary-dark);}
+    .print {background: var(--accent); color: #fff;}
+    .print:hover {background: #2c7a7b;}
+    .theme-toggle {
+      background: #6b7280;
+      color: #fff;
+      font-size: 18px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .theme-toggle:hover {background: #4b5563;}
+    .theme-toggle::before {content: '☀';}
+    [data-theme="dark"] .theme-toggle::before {content: '🌙';}
+    #handoverHeader {
+      max-width: 800px;
+      margin: 0 auto 32px;
+      text-align: center;
+      background: var(--card-bg);
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    #handoverHeader table {
+      margin: 16px auto 0;
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 500px;
+    }
+    #handoverHeader th, #handoverHeader td {
+      border: none;
+      padding: 6px;
+      font-size: 14px;
+    }
+    #handoverHeader th {background: var(--bg);}
+    #handoverHeader input {
+      width: 60px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+      background: var(--card-bg);
+      color: var(--text);
+    }
+    .form-section {
+      display: none;
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 520px;
+      margin: 0 auto 48px;
+      box-shadow: var(--shadow);
+    }
     .form-section input, .form-section select, .form-section textarea {
-      width:100%; margin:6px 0 12px; padding:10px; border:none; border-radius:8px; font-size:14px
+      width: 100%;
+      margin: 6px 0 12px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
     }
-    .form-section button {width:100%; padding:12px; background:var(--primary); color:#fff; border:none;
-      border-radius:8px; font-weight:600}
-    .ward-header {text-align:center; font-size:20px; font-weight:600; margin:32px 0 8px; padding:8px; border-radius:8px}
-    .patient-card {background:var(--card-bg); width:300px; padding:18px; border-radius:12px;
-      box-shadow:var(--shadow); position:relative; transition:transform .18s}
-    .patient-card:hover {transform:scale(1.015)}
-    .patient-card p {margin:4px 0}
-    .delete-btn {position:absolute; top:10px; right:10px; background:#e63946; color:#fff;
-      border:none; border-radius:4px; padding:4px 8px; cursor:pointer; font-size:12px}
-    .delete-btn:hover {opacity:.85}
+    .form-section button {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .ward-header {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 32px 0 8px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .patient-card {
+      background: var(--card-bg);
+      width: 300px;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform 0.18s;
+    }
+    .patient-card:hover {transform: scale(1.015);}
+    .patient-card p {margin: 4px 0;}
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e63946;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .delete-btn:hover {opacity: 0.85;}
     .editable {
-      border:none;
-      background:transparent;
-      border-bottom:1px dashed #ccc;
-      padding:0 4px;
-      min-width:20px;
-      white-space:pre-wrap;
+      border: none;
+      background: transparent;
+      border-bottom: 1px dashed var(--editable-border);
+      padding: 0 4px;
+      min-width: 20px;
+      white-space: pre-wrap;
     }
-    .editable:focus {outline:none; border-bottom:1px solid #888}
+    .editable:focus {
+      outline: none;
+      border-bottom: 1px solid var(--editable-focus);
+    }
     .card-grid {display: flex; flex-wrap: wrap; gap: 16px;}
-    @media(max-width:768px){.card-grid{flex-direction:column;align-items:center}.patient-card{width:90%}}
+    @media (max-width: 768px) {
+      .card-grid {flex-direction: column; align-items: center;}
+      .patient-card {width: 90%;}
+      .top-buttons {flex-direction: column; align-items: center;}
+    }
+    /* Styles for print window */
+    .print-window {padding: 20px;}
+    .copy-btn {
+      padding: 10px 20px;
+      font-weight: 600;
+      background: #6b7280;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover {background: #4b5563;}
+    pre {white-space: pre-wrap; font-family: 'Inter', monospace;}
   </style>
 </head>
 <body>
   <h1>Pediatric Handover</h1>
   <div class="top-buttons">
     <button class="add" onclick="toggleForm()">Add Patient</button>
-    <button class="print" onclick="printHandover()">🖸️ Print</button>
+    <button class="print" onclick="printAll()">Print All</button>
+    <button class="print" onclick="printNICU()">Print NICU</button>
+    <button class="print" onclick="printWard()">Print Ward</button>
+    <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
 
   <div id="handoverHeader">
-    <strong>Date:</strong> <span id="handoverDate"></span>
+    <strong>Date:</strong> <span id="handoverDate">2025-07-18</span>
     <table>
-      <tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
+      <tbody><tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
       <tr>
         <td>Admissions</td>
         <td><input type="number" id="adM" value="0" min="0" oninput="recalcSummary()"></td>
@@ -76,24 +271,24 @@
         <td><input type="number" id="disE" value="0" min="0" oninput="recalcSummary()"></td>
         <td><input type="number" id="disN" value="0" min="0" oninput="recalcSummary()"></td>
       </tr>
-      <tr><td>Total Admissions</td><td colspan="3" id="totalAd">0</td></tr>
-      <tr><td>Total Discharges</td><td colspan="3" id="totalDis">0</td></tr>
-      <tr><td>Total Patients</td><td colspan="3" id="totalCount">0</td></tr>
-    </table>
+      <tr><td>Total Admissions</td><td colspan="3" id="totalAd">2</td></tr>
+      <tr><td>Total Discharges</td><td colspan="3" id="totalDis">1</td></tr>
+      <tr><td>Total Patients</td><td colspan="3" id="totalCount">12</td></tr>
+    </tbody></table>
   </div>
 
   <div class="form-section" id="formSection">
-    <input type="text" id="name" placeholder="Name" required />
-    <input type="text" id="id" placeholder="ID" required />
-    <input type="text" id="bed" placeholder="Bed" required />
-    <input type="text" id="age" placeholder="Age" required />
+    <input type="text" id="name" placeholder="Name" required="">
+    <input type="text" id="id" placeholder="ID" required="">
+    <input type="text" id="bed" placeholder="Bed" required="">
+    <input type="text" id="age" placeholder="Age" required="">
     <select id="sex">
       <option value="Male">Male</option>
       <option value="Female">Female</option>
     </select>
-    <input type="text" id="diagnosis" placeholder="Diagnosis" />
-    <input type="text" id="medications" placeholder="Medications" />
-    <input type="text" id="issues" placeholder="Issues" />
+    <input type="text" id="diagnosis" placeholder="Diagnosis">
+    <input type="text" id="medications" placeholder="Medications">
+    <input type="text" id="issues" placeholder="Issues">
     <select id="ward">
       <option value="PW">PW</option>
       <option value="GW">GW</option>
@@ -106,7 +301,441 @@
     <button onclick="addPatient()">Submit</button>
   </div>
 
-  <div id="wardsContainer"></div>
+  <div id="wardsContainer"><div><h2 class="ward-header" id="header-PW" style="background: var(--PW);">PW (5 patients)</h2><div class="card-grid" id="ward-PW"><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('aTeImKYIqWmqOhXCTwo1')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'name', this.innerText)">Aizen Sinah Ahmed Jaleel</span></strong> (ID: 282627)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'bed', this.innerText)">22 </span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'age', this.innerText)">11 months </span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'diagnosis', this.innerText)">Fever under evaluation with seizure </span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'medications', this.innerText)">- Inj Paracetamol 135 mg QID,
+ regular medications 
+Tab Warfarin 1mg PO OD (0.1mg/kg)
+Tab Amlodipine 1.7mg PO OD (0.18mg/kg)
+Tab Phenytoin 25mg PO BD (5mg/kg/day)
+Tab Aspirin 45mg PO OD (5mg/kg)
+Tab Enalapril 0.5mg PO OD (0.05mg/kg/day)
+Syp Levetiracetam (100mg/ml) 2ml PO BD (40mg/kg/day)
+Syp Gaviscon 2.5ml PO BD
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'issues', this.innerText)">
+history
+
+According to the mother, child has been having fever since
+today morning, associated with nasal congestion. She also noted child to have
+uprolling of eyes lasting for a few seconds with absence gaze. Mother got
+worried and startled the baby and he returned to normal. Denies any frothing
+from mouth or jerky movements. Unsure of urinary incontinence as child was on
+diaper.
+
+No h/o any ARI symptoms
+
+Decreased oral intake since today – passing urine 
+
+No sick contacts at home
+
+Mother gave PCM syrup 2ml at 8:30am today.
+
+Past History: 
+
+Birth Hx: born via
+
+SVD on 25/7/24 @ 37 WOG, BW 2.8kg, cried immediately at delivery, APGAR 6,8,8
+
+Admitted from 29/7/24-31/7/24 for NNJ, child was noted to
+
+have a murmur at birth and was advised for echo, initially not followed up
+
+Rh incompatible child – mother A-ve, child A+ve
+
+Admitted from 08/06/25 – 03/07/25 for acute ischemic stroke
+with right sided hemiplegia. During this admission, echo was done (08/06/25)
+showing Good biventricular function 3mm PFO left to right shunt
+
+CT brain (12/06/2025): Left hypoplastic PCA, no
+other significant arterial or venous abnormality of brain or neck vessels. Poor
+collateral flow in ischemic bed.
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('aTeImKYIqWmqOhXCTwo1', 'plan', this.innerText)">
+- coagulation profile on next prick
+- inj midaz sos if seizure episode
+-Send cbc,crp, coagulogram next prick
+-Check Bp 8 hourly
+
+Evening:
+Febrile+
+-CRP 0.5-&gt; 2.5
+-start Inj ceftriaxone 50mg/kg/day BD
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('aTeImKYIqWmqOhXCTwo1', this.value)">
+                  <option value="PW" selected="">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('9di5BCkxwqy2XUGhFT7Q')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'name', this.innerText)">Aishath Rikzaa Binthi Yoosuf</span></strong> (ID: A448723)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'bed', this.innerText)">23</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'age', this.innerText)">7y</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'sex', this.innerText)">Female</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'diagnosis', this.innerText)">AEBA with LRTI</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'medications', this.innerText)">
+IVF 2/3rd maintenance EP at 37ml/hr, 
+Inj Ceftriaxone 230mg IV BD, 
+Syp Azithromycin 4.6Ml OD, 
+Inj PCM 180mg IV QID, Nebulization with A:I: NS  QID
+INJ Hydrocortisone TDS
+T. Montelukast 4mg HS
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'issues', this.innerText)">
+on and fever x 2days, 
+Cold and cough x 2 days, 
+SOB +, no episode of vomiting, NKDA, 
+k/c/o: Asthma, 
+h/o admission in 2024 with similar symptoms according to the mother
+O/e: 
+Lethargic
+B/L occasional wheeze+
+Tracheal tug+
+SCR+
+RR: 45&gt;36
+Temp: 37.5&gt;37.1
+Spo2: 95%on RA started on 1l via NP &gt; 100% on RA
+LABS: Hb/PCV: 13.6/38.4,
+TLC: 10.1 N/L: 65.7/17
+PLT: 354, CRP: 2.2
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('9di5BCkxwqy2XUGhFT7Q', 'plan', this.innerText)"> 
+-inj pcm sos
+-nebu a:i:ns (0.5:0.5:2) TDS
+-Inj hydrocortisone 90mg BD
+-T. Pantop 20mg OD
+- stop IVF if oral intake is adequate 
+
+Evening: 
+- O2 stopped, maintiaing saturation in RA, no distress 
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('9di5BCkxwqy2XUGhFT7Q', this.value)">
+                  <option value="PW" selected="">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('xF0Gt5UEgFKXhE4Zq03y')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'name', this.innerText)">B/O Aminath Nahusha </span></strong> (ID: 299895)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'bed', this.innerText)">24 </span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'age', this.innerText)">1 months</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'diagnosis', this.innerText)">Pneumonia </span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'medications', this.innerText)">
+-Inj ceftriaxone (50mg/kg/day) 265 mg IV OD  
+-Nebulization with A:I:NS (0.3:0.5:3) TDS  
+-Nasi saline drops 2 drops BN TDS  -Inj paracetamol (15mg/kg/dose) 80 mg IV SOS  -	
+-Syp Azithromycin (200mg/5ml)- (10mg/kg)- 1.3ml OD
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'issues', this.innerText)">HPC:  According to mother baby has been having chesty cough since 5th of July (10 days back) associated with nose block.  Consulted yesterday in pediatric OPD was advised to F/U with CXR and labs, they followed up with labs today and was advised for admission.  No H/O vomiting, fever, excessive crying, UOP - normal – B/B habits normal. Feeding well exposure to ARI from home – 2 siblings having cough and cold 
+Birth History: Term /BWT ( 3.7 kg)/SVD- no neonatal complications, DC with mother     Immunized according to schedule 
+
+labs: Hb/PCV: 10.7/32.9, TLC: 20.8, N/L: 6.3/86.7, Plt: 435, CRP &lt; 0.5 
+CXR: Patchy opacity in rt side  </span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('xF0Gt5UEgFKXhE4Zq03y', 'plan', this.innerText)">
+Send blood c/s, RFT, LFT, Na, K, Respiratory panel- trace reports
+-change ceftriaxone to OD
+-Syp azithro- 1.25ml OD
+- send cbc,crp
+ </span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('xF0Gt5UEgFKXhE4Zq03y', this.value)">
+                  <option value="PW" selected="">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('cqUuuz5trunOmq1opYF1')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'name', this.innerText)">Rayan </span></strong> (ID: 160291)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'bed', this.innerText)">25</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'age', this.innerText)">6y</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'diagnosis', this.innerText)">Fever with hematuria</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'medications', this.innerText)">Ivf ep full maint, inj ceftriaxone 465mg IV BD, inj pcm, inj ondan sos, inj pantop</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'issues', this.innerText)">Fever with cough and cold for 5 days. Initially high grade and continuous first 2 days . Consulted and was given symptomatic management. Todya presented with multiple episodes of vomiting with lower abd pain on and off vor 3 days and decreased urine output </span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('cqUuuz5trunOmq1opYF1', 'plan', this.innerText)">
+-Check Bp BD
+- check urine color
+-If repeat Urine re has blood then send ASO Titre
+-send G6PD
+- maintain IO chart
+-If oral intake is adequate then change IVF to 2/3 maintenance 
+-repeat Urine RE- Red cell 2+
+-USG WA: Left mild hydronephrotic changes
+-plan to send ASO titre, c3,c4 on Saturday to igmh 
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('cqUuuz5trunOmq1opYF1', this.value)">
+                  <option value="PW" selected="">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('SN73we7qx1D5rWjyV5mM')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'name', this.innerText)">300007 </span></strong> (ID:  )</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'bed', this.innerText)">27</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'age', this.innerText)"> 1m</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'diagnosis', this.innerText)">LONNS</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'medications', this.innerText)">
+Inj Ampi D3,
+Amika D4
+Nasi saline QID
+Ns nebu TDS 
+Nasivion mini TDS 
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'issues', this.innerText)">
+Fever spikes, last fever spike at 8 pm
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('SN73we7qx1D5rWjyV5mM', 'plan', this.innerText)">
+Glycerin suppo 1/2 stick(hold)
+Colovoir oral drop 0.5 ml SOS
+continue 5-7 days of abx 
+Stop cetirizine
+Stop ampicilin
+Start cefotaxim (50mg/kg/dose) 235mg TDs
+-send blood cs
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('SN73we7qx1D5rWjyV5mM', this.value)">
+                  <option value="PW" selected="">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div></div></div><div><h2 class="ward-header" id="header-GW" style="background: var(--GW);">GW (2 patients)</h2><div class="card-grid" id="ward-GW"><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('WM5A6qbtLj83muYDwNmi')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'name', this.innerText)">BO Aishath Zameera (NEW-shift 2)</span></strong> (ID: 302289)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'bed', this.innerText)">COT 5</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'age', this.innerText)">0D</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'sex', this.innerText)">Female</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'diagnosis', this.innerText)">S/L/T/F/AGA/SVD FOR OBSERVATION</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'medications', this.innerText)"></span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'issues', this.innerText)"></span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('WM5A6qbtLj83muYDwNmi', 'plan', this.innerText)"></span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('WM5A6qbtLj83muYDwNmi', this.value)">
+                  <option value="PW">PW</option><option value="GW" selected="">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('118b4dtxRVREjfjEcfFj')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'name', this.innerText)">B/O Mariyam Sama</span></strong> (ID: 303778)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'bed', this.innerText)">40</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'age', this.innerText)">2DOL
+</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'sex', this.innerText)">Female</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'diagnosis', this.innerText)">S/L/T/F/AGA/SVD/ congenital pneumonia 
+
+</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'medications', this.innerText)">
+- Inj Ampicillin (50mg/kg/dose)
+- Inj Amikacin (15mg/kg/dose) 
+- IVF 10% dextrose @60ml/kg/day
+
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'issues', this.innerText)">
+Off NP since 12pm today
+RR: 58/MIN
+
+VBG 
+pH: 7.272 —&gt; 7.289–&gt; 7.401
+PCO2: 53.1 -&gt; 46 –&gt;33.6
+P02 41 -&gt; 61 —&gt;29
+BE.  -2 —&gt; -5 
+HCO3. 24.5 —&gt;22.1 —&gt;20.8
+Lac. 1.95 —&gt; 1.89 —&gt; 3.83
+
+Feed: BF 10ml 3hrly
+TF: 60ml/kg/day IVF D10% 
+
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('118b4dtxRVREjfjEcfFj', 'plan', this.innerText)">
+- shift out to mothers side
+- Na/K next prick
+- Plan to continue Abx for 5 days
+-send procal, cbc, crp, TSB c/m
+
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('118b4dtxRVREjfjEcfFj', this.value)">
+                  <option value="PW">PW</option><option value="GW" selected="">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div></div></div><div><h2 class="ward-header" id="header-SW" style="background: var(--SW);">SW (1 patient)</h2><div class="card-grid" id="ward-SW"><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('nqEp6EONOyOSdnXWww6s')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'name', this.innerText)">Ahmed Alyaan</span></strong> (ID: 285262)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'bed', this.innerText)">47 (NEW ADMISSION)</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'age', this.innerText)">10Y</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'diagnosis', this.innerText)">Fever under evaluation (29kg)
+
+According to history given by the mother child has been having fever since yesterday morning - syp PCM given at home Mother mentioned that since child started having fever, it has not reduced, lowest was 38.5 C at home. Fever was associated with rhinorrhea and dry cough since yesterday.Taking well orally urine output adequate. No vomiting and 1 episode of loose stool.
+
+Known case Epilepsy, Last episode April 2018, took syp levipil for 5 years and stopped since November 2024.
+Born via NVD and was kept in NICU
+O/E- GC fair, mild dehydration, P-150,T-40,Spo2- 96%
+Chest- Clear, EAE
+A/E- Soft and NT
+
+</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'medications', this.innerText)">IVF EP @ 1/2 maintenance @ 30ml/hr, Inj.ceftriaxone 725mg BD, syp.azithro 7ml OD, inj pcm 435mg QID, syp. Meftal 18ml SOS, syp nutrolin B 5ml BD</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'issues', this.innerText)"></span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('nqEp6EONOyOSdnXWww6s', 'plan', this.innerText)">Trace blood and urine cs</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('nqEp6EONOyOSdnXWww6s', this.value)">
+                  <option value="PW">PW</option><option value="GW">GW</option><option value="SW" selected="">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div></div></div><div><h2 class="ward-header" id="header-PVT" style="background: var(--PVT);">PVT (3 patients)</h2><div class="card-grid" id="ward-PVT"><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('M5QavfwroDGJ7pWWo8Qt')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'name', this.innerText)">B/O Nasiha Ibrahim </span></strong> (ID: 303566)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'bed', this.innerText)">325</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'age', this.innerText)">5DOL/F</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'sex', this.innerText)">Female</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'diagnosis', this.innerText)">S/L/T/AGA/F/SVD/Rh negative mother/NNJ/EONNS </span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'medications', this.innerText)">Inj amikacin D3, inj Ampicillin D3 </span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'issues', this.innerText)">No issues</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('M5QavfwroDGJ7pWWo8Qt', 'plan', this.innerText)">Trace blood c/s
+Continue 5 days of antibiotics 
+-Plan Dc tomorrow 
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('M5QavfwroDGJ7pWWo8Qt', this.value)">
+                  <option value="PW">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT" selected="">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('WgrU4fLwW95fQQz2dEKi')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'name', this.innerText)">Airik Leethan </span></strong> (ID: 285089)</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'bed', this.innerText)">329 B</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'age', this.innerText)">6y</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'diagnosis', this.innerText)">LRTI</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'medications', this.innerText)">Inj Ceftriaxone 525 BD, Inj Hydrocory 100mg TDS, Inj PCM, Tab Montek, Syp Azithro, nebu A:I:NS QID</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'issues', this.innerText)">History: presented to OPD with fever, cold, cough for 1 day and sob after taking syp ascoril d. Was found to have RR of 52 with mild distress and frequent cough. Spo2 92-95. Gave history of frequent opd consultations for ARI. Treated for pneumonia in sept 2024.
+b/l wheeze and crepts. In er nebu hydrocort and pcm was given
+Labs--&gt; crp 2.6, wbc 9.1, n70.7
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('WgrU4fLwW95fQQz2dEKi', 'plan', this.innerText)">Ivf ep 1/2 maint, inj ceftriaxone, inj pcm, tab montek, sup azithro, nebu, target spo2 &gt;94%
+Plan: 
+- cont ceftriaxone for 5 days and azithro for 7 days
+- inj Hydrocort to stat then stop
+-Nebu A:I:NS (0.5:0.5:2) BD
+- stop IVF if orally well
+- syp cofsy 2.5ml TDS
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('WgrU4fLwW95fQQz2dEKi', this.value)">
+                  <option value="PW">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT" selected="">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('heyGEqFR4n5Hw2nS9tHC')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'name', this.innerText)">211403</span></strong> (ID:  )</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'bed', this.innerText)">331</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'age', this.innerText)">3Y</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'sex', this.innerText)">Female</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'diagnosis', this.innerText)">LRTI (Adenovirus positive)</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'medications', this.innerText)"> 
+Iv ceftriaxone(stopped) 
+Inj piptaz (100mg/kg/dose) D1 
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'issues', this.innerText)">Fever spikes + 
+CRP 5.1 —&gt; 6.5 
+Respiratory panel: adeno virus
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('heyGEqFR4n5Hw2nS9tHC', 'plan', this.innerText)">
+-stop IVF
+-send cbc,crp tomorrow (48hr from inj piptaz)
+- Trace blood cs
+-Give glycerine suppo if bowel not passed by tomorrow 
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('heyGEqFR4n5Hw2nS9tHC', this.value)">
+                  <option value="PW">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT" selected="">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option>
+                </select>
+              </p>
+            </div></div></div><div><h2 class="ward-header" id="header-ICU" style="background: var(--ICU);">ICU (0 patients)</h2><div class="card-grid" id="ward-ICU"></div></div><div><h2 class="ward-header" id="header-NICU" style="background: var(--NICU);">NICU (1 patient)</h2><div class="card-grid" id="ward-NICU"><div class="patient-card">
+              <button class="delete-btn" onclick="deletePatient('8vDYBaWLPMDxviOUljyp')">×</button>
+              <p><strong><span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'name', this.innerText)">BO Maimoona Hussain (303507)</span></strong> (ID: )</p>
+              <p>Bed: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'bed', this.innerText)">1</span></p>
+              <p>Age: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'age', this.innerText)">7DOL (CGA 37+5) DOB 10/7/25 11:05</span></p>
+              <p>Sex: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'sex', this.innerText)">Male</span></p>
+              <p>Diagnosis: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'diagnosis', this.innerText)">S/L/near term (36+6 wog)/SGA/M/ EL LSCS/ (MODIFIED BALLAD SCORING 35 WOG)/ EONNS (congenital pneumonia)/RDS (surfactant received x1) /NNJ (Non ABO/Rh, G6PD:N)
+
+</span></p>
+              <p>Medications: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'medications', this.innerText)">
+IV metronidazole 7.5mg/kg BD D6C
+Inj Piptaz (90mg/kg) BD D6
+Inj Vancomycin 15mg/kg BD D6
+Inj Caffeine 5mg/Kg OD
+maintenance
+Syp relcer 1ml PO BD -&gt; not available
+
+</span></p>
+              <p>Issues: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'issues', this.innerText)">
+-On 0.5L/min NPO2 ; RR: 58-64
+
+ABG 
+Ph. 7.337--&gt; 7.30 —&gt; 7.317—&gt;7.39
+PCO2. 37.9--&gt;36.2 —&gt; 39.8 —&gt;36.2
+PO2.&nbsp; 81--&gt; 110 —&gt; 132–&gt;257
+BE.&nbsp;&nbsp; -6--&gt; -9 —&gt; -6
+HCO3 20.2--&gt; 17.8 —&gt; 20.4–&gt;22.5
+Lac&nbsp; 0.7 --&gt; 3.11 —&gt; 1.55–&gt;1.5
+CRT &lt;3sec 
+
+Intubated on 11/07/2025~3:40 pm
+Received surfactant once 
+11/07/2025 
+UAC and UVC inserted on
+11/07/2025, removed 17/7/25
+Cranial USG: Unremarkable
+CXR repeated (improved compared to yesterday) 
+*Extubated 14/07/25, 14:45
+
+Feed: Oral/breast feeding + 20+25ml 3rd hrly and on demand.
+TF: 150ml/kg/day
+
+</span></p>
+              <p>Plan: <span contenteditable="" class="editable" onblur="updateField('8vDYBaWLPMDxviOUljyp', 'plan', this.innerText)">
+- O2 keep 2 hrs on and 1 hr off 
+- remove UVC,UAC
+- change inj caffeine to oral 
+- Trace ETT c/s
+- contunue inj piptaz for 7-10 days, and inj metron for total 7 days 
+- after 7 days completion change inj piptaz and inj vanco to TDS 
+stop inj vit K
+- contunue TF at 150 ml/kg/day
+- Routine ECHO 
+- stop Inj hydrocortisone 
+- stop IVF 
+
+Evening:
+-Off O2 maintaining
+-Planned for Echo on sat (got appointment from care trust) 
+</span></p>
+              <p>
+                Ward:
+                <select onchange="changeWard('8vDYBaWLPMDxviOUljyp', this.value)">
+                  <option value="PW">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU" selected="">NICU</option>
+                </select>
+              </p>
+            </div></div></div></div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -127,6 +756,19 @@
     function toggleForm() {
       const form = document.getElementById('formSection');
       form.style.display = (form.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
     }
 
     function addPatient() {
@@ -150,7 +792,6 @@
     }
 
     function deletePatient(id) {
-      // Add confirmation before deleting
       if (confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
         db.collection('patients').doc(id).delete().then(loadPatients);
       }
@@ -164,108 +805,153 @@
       db.collection('patients').doc(id).update({ ward: newWard }).then(loadPatients);
     }
 
-    function printHandover() {
-      // Get header information
+    function generateReportHeader(type, date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, totalCount) {
+      if (type === 'NICU') {
+        return `NICU HANDOVER\n` +
+               `Date: ${date}\n` +
+               `Shift: _\n` +
+               `# Total number of neonates: ${totalCount}\n` +
+               `# Number of admissions: _\n` +
+               `# Number of shift outs: _\n` +
+               `# Number of discharges: _\n\n` +
+               `=================================\n\n`;
+      } else if (type === 'Ward') {
+        return `WARD HANDOVER\n` +
+               `Date: ${date}\n` +
+               `Shift: _\n` +
+               `# Total number of patients: ${totalCount}\n` +
+               `# Number of admissions: ${totalAd}\n` +
+               `# Number of discharges: ${totalDis}\n\n` +
+               `=================================\n\n`;
+      } else {
+        let text = `PEDIATRIC HANDOVER REPORT\n`;
+        text += `Date: ${date}\n\n`;
+        text += `ADMISSIONS/DISCHARGES SUMMARY\n`;
+        text += `Admissions (Morning): ${adM}\n`;
+        text += `Admissions (Evening): ${adE}\n`;
+        text += `Admissions (Night): ${adN}\n`;
+        text += `Total Admissions: ${totalAd}\n\n`;
+        text += `Discharges (Morning): ${disM}\n`;
+        text += `Discharges (Evening): ${disE}\n`;
+        text += `Discharges (Night): ${disN}\n`;
+        text += `Total Discharges: ${totalDis}\n\n`;
+        text += `Total Patients: ${totalCount}\n\n`;
+        text += `=================================\n\n`;
+        return text;
+      }
+    }
+
+    function generatePatientSection(patientsByWard, wards) {
+      let text = '';
+      wards.forEach(ward => {
+        const patients = patientsByWard[ward];
+        if (patients.length > 0) {
+          text += `${ward.toUpperCase()} WARD (${patients.length} patients)\n`;
+          text += '---------------------------------\n';
+          patients.forEach(patient => {
+            const sexAbbr = patient.sex.charAt(0).toUpperCase();
+            text += `BED ${patient.bed} - ${patient.age}/${sexAbbr}, ${patient.diagnosis || 'N/A'}\n`;
+            if (patient.medications) text += `Medications: ${patient.medications}\n`;
+            if (patient.issues) text += `Issues: ${patient.issues}\n`;
+            if (patient.plan) text += `Plan: ${patient.plan}\n`;
+            text += '---------------------------------\n';
+          });
+          text += '\n\n';
+        }
+      });
+      return text;
+    }
+
+    function printReport(type, wardsToInclude, totalPatients) {
       const date = document.getElementById('handoverDate').innerText;
-      const adM = document.getElementById('adM').value;
-      const adE = document.getElementById('adE').value;
-      const adN = document.getElementById('adN').value;
-      const disM = document.getElementById('disM').value;
-      const disE = document.getElementById('disE').value;
-      const disN = document.getElementById('disN').value;
+      const adM = +document.getElementById('adM').value || 0;
+      const adE = +document.getElementById('adE').value || 0;
+      const adN = +document.getElementById('adN').value || 0;
+      const disM = +document.getElementById('disM').value || 0;
+      const disE = +document.getElementById('disE').value || 0;
+      const disN = +document.getElementById('disN').value || 0;
       const totalAd = document.getElementById('totalAd').innerText;
       const totalDis = document.getElementById('totalDis').innerText;
-      const totalCount = document.getElementById('totalCount').innerText;
-      
-      // Start building text output
-      let text = `PEDIATRIC HANDOVER REPORT\n`;
-      text += `Date: ${date}\n\n`;
-      
-      text += `ADMISSIONS/DISCHARGES SUMMARY\n`;
-      text += `Admissions (Morning): ${adM}\n`;
-      text += `Admissions (Evening): ${adE}\n`;
-      text += `Admissions (Night): ${adN}\n`;
-      text += `Total Admissions: ${totalAd}\n\n`;
-      
-      text += `Discharges (Morning): ${disM}\n`;
-      text += `Discharges (Evening): ${disE}\n`;
-      text += `Discharges (Night): ${disN}\n`;
-      text += `Total Discharges: ${totalDis}\n\n`;
-      
-      text += `Total Patients: ${totalCount}\n\n`;
-      text += `========================================\n\n`;
-      
-      // Fetch patient data
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+
       db.collection('patients').get().then(snap => {
         const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
         const patientsByWard = {};
-        
-        // Initialize ward arrays
-        wards.forEach(ward => {
-          patientsByWard[ward] = [];
-        });
-        
-        // Group patients by ward
+        wards.forEach(ward => patientsByWard[ward] = []);
+
         snap.forEach(doc => {
           const patient = doc.data();
           const ward = patient.ward;
-          if (wards.includes(ward)) {
+          if (wards.includes(ward) && wardsToInclude.includes(ward)) {
             patientsByWard[ward].push({
               id: doc.id,
               ...patient
             });
           }
         });
-        
-        // Sort patients by bed number within each ward
+
         wards.forEach(ward => {
           patientsByWard[ward].sort((a, b) => {
             return (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0);
           });
         });
-        
-        // Add patient data to text output
-        wards.forEach(ward => {
-          const patients = patientsByWard[ward];
-          if (patients.length > 0) {
-            text += `${ward.toUpperCase()} WARD (${patients.length} patients)\n`;
-            text += '----------------------------------------\n';
-            
-            patients.forEach(patient => {
-              // Format first line: BED 22 - 3Y/M, LRTI
-              const sexAbbr = patient.sex.charAt(0).toUpperCase();
-              text += `BED ${patient.bed} - ${patient.age}/${sexAbbr}, ${patient.diagnosis || 'N/A'}\n`;
-              
-              // Add medications if present
-              if (patient.medications) {
-                text += `Medications: ${patient.medications}\n`;
-              }
-              
-              // Add issues if present
-              if (patient.issues) {
-                text += `Issues: ${patient.issues}\n`;
-              }
-              
-              // Add plan if present
-              if (patient.plan) {
-                text += `Plan: ${patient.plan}\n`;
-              }
-              
-              text += '----------------------------------------\n';
-            });
-            
-            text += '\n\n';
-          }
-        });
-        
-        // Create new window with text output
+
+        const reportText = generateReportHeader(type, date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, totalPatients) +
+                          generatePatientSection(patientsByWard, wardsToInclude);
+
         const textWindow = window.open('', '_blank');
-        textWindow.document.write(`<pre>${text}</pre>`);
-        textWindow.document.title = `Handover Report - ${date}`;
+        textWindow.document.write(`
+          <html data-theme="${currentTheme}">
+          <head>
+            <title>Handover Report - ${type} - ${date}</title>
+            <style>
+              :root {
+                --bg: ${currentTheme === 'dark' ? '#1a202c' : '#f4f7fb'};
+                --text: ${currentTheme === 'dark' ? '#e2e8f0' : '#1d3557'};
+                --card-bg: ${currentTheme === 'dark' ? '#2d3748' : '#ffffff'};
+              }
+              body { font-family: 'Inter', sans-serif; padding: 20px; background: var(--bg); color: var(--text); }
+              .copy-btn {
+                padding: 10px 20px;
+                font-weight: 600;
+                background: #6b7280;
+                color: #fff;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                margin-bottom: 10px;
+              }
+              .copy-btn:hover { background: #4b5563; }
+              pre { white-space: pre-wrap; font-family: 'Inter', monospace; }
+            </style>
+          </head>
+          <body>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(() => alert('Report copied to clipboard!')).catch(() => alert('Failed to copy report'))">Copy</button>
+            <pre>${reportText}</pre>
+          </body>
+          </html>
+        `);
         textWindow.document.close();
       }).catch(error => {
-        console.error("Error generating report:", error);
-        alert("Error generating handover report");
+        console.error(`Error generating ${type} report:`, error);
+        alert(`Error generating ${type} report`);
+      });
+    }
+
+    function printAll() {
+      const totalCount = document.getElementById('totalCount').innerText;
+      printReport('All', ["PW", "GW", "SW", "PVT", "ICU", "NICU"], totalCount);
+    }
+
+    function printNICU() {
+      db.collection('patients').where('ward', '==', 'NICU').get().then(snap => {
+        printReport('NICU', ['NICU'], snap.size);
+      });
+    }
+
+    function printWard() {
+      db.collection('patients').where('ward', '!=', 'NICU').get().then(snap => {
+        printReport('Ward', ["PW", "GW", "SW", "PVT", "ICU"], snap.size);
       });
     }
 
@@ -386,8 +1072,9 @@
       });
     }
 
+    loadTheme();
     restoreSummary();
     loadPatients();
   </script>
-</body>
-</html>
+
+</body></html>
