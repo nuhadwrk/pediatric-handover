@@ -1,7 +1,7 @@
 {
   "name": "Pediatric Dosage Calculator",
-  "short_name": "DosageCalc",
-  "description": "A Progressive Web App for calculating pediatric medication dosages",
+  "short_name": "PaedWard",
+  "description": "A Progressive Web App for pediatric ward management",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f0f4f8",
