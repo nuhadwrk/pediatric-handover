@@ -443,14 +443,14 @@
         const validShifts = ['Morning', 'Evening', 'Night'];
         if (!validShifts.includes(value)) {
           alert('Shift must be Morning, Evening, or Night.');
-          loadPatients(); // Revert to previous state
+          loadPatients();
           return;
         }
       }
       db.collection('patients').doc(id).update({ [field]: value }).catch(error => {
         console.error(`Error updating ${field}:`, error);
         alert(`Failed to update ${field}.`);
-        loadPatients(); // Revert to previous state
+        loadPatients();
       });
     }
     function changeWard(id, newWard) {
@@ -519,7 +519,7 @@
           text += '---------------------------------\n';
           patients.forEach(patient => {
             const sexAbbr = patient.sex.charAt(0).toUpperCase();
-            text += `BED ${patient.bed} - DOA: ${patient.doa}, ${patient.shift} Shift - ${patient.age}/${sexAbbr}, ${patient.diagnosis || 'N/A'}${patient.isNew ? ' (NEW)' : ''}\n`;
+            text += `BED ${patient.bed} - ${patient.age}/${sexAbbr}, ${patient.diagnosis || 'N/A'}${patient.isNew ? ' (NEW)' : ''}\n`;
             if (patient.medications) text += `Medications: ${patient.medications}\n`;
             if (patient.issues) text += `Issues: ${patient.issues}\n`;
             if (patient.plan) text += `Plan: ${patient.plan}\n`;
