@@ -39,38 +39,6 @@
         }
         </script><html lang="en" data-theme="dark">
 <head>
-  <script type="text/javascript">
-    var gk_isXlsx = false;
-    var gk_xlsxFileLookup = {};
-    var gk_fileData = {};
-    function filledCell(cell) {
-      return cell !== '' && cell != null;
-    }
-    function loadFileData(filename) {
-      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-        try {
-          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-          var firstSheetName = workbook.SheetNames[0];
-          var worksheet = workbook.Sheets[firstSheetName];
-          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-          var filteredData = jsonData.filter(row => row.some(filledCell));
-          var headerRowIndex = filteredData.findIndex((row, index) =>
-            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-          );
-          if (headerRowIndex === -1 || headerRowIndex > 25) {
-            headerRowIndex = 0;
-          }
-          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-          return csv;
-        } catch (e) {
-          console.error(e);
-          return "";
-        }
-      }
-      return gk_fileData[filename] || "";
-    }
-  </script>
   <meta charset="UTF-8">
   <title>Pediatric Handover System</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -232,9 +200,11 @@
       box-shadow: var(--shadow);
       position: relative;
       transition: transform 0.18s;
+      padding-top: 40px; /* Added space for buttons */
     }
     .patient-card:hover { transform: scale(1.015); }
     .patient-card p { margin: 4px 0; }
+    .patient-card p strong { font-weight: 700; } /* Bold field names */
     .delete-btn {
       position: absolute;
       top: 10px;
@@ -246,6 +216,7 @@
       padding: 4px 8px;
       cursor: pointer;
       font-size: 12px;
+      opacity: 0.7; /* Semi-transparent */
     }
     .delete-btn:hover { opacity: 0.85; }
     .new-badge {
@@ -258,13 +229,10 @@
       padding: 4px 8px;
       font-size: 12px;
       display: none;
+      opacity: 0.7; /* Semi-transparent */
     }
-    .new-badge.new-active {
-      display: block;
-    }
-    .new-checkbox {
-      margin-top: 8px;
-    }
+    .new-badge.new-active { display: block; }
+    .new-checkbox { margin-top: 8px; }
     .editable {
       border: none;
       background: transparent;
@@ -278,6 +246,19 @@
       border-bottom: 1px solid var(--editable-focus);
     }
     .card-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+    .hopi-toggle {
+      cursor: pointer;
+      color: var(--text); /* Matches other field labels */
+      font-weight: 600;
+      margin: 4px 0;
+    }
+    .hopi-content {
+      display: none;
+      color: var(--text); /* Matches other field values */
+    }
+    .hopi-content.expanded {
+      display: block;
+    }
     @media (max-width: 768px) {
       .card-grid { flex-direction: column; align-items: center; }
       .patient-card { width: 90%; }
@@ -309,30 +290,32 @@
     <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
   <div id="handoverHeader">
-    <strong>Date:</strong> <span id="handoverDate">2025-08-03</span>
+    <strong>Date:</strong> <span id="handoverDate">2025-08-05</span>
     <table>
-      <tbody><tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
-      <tr>
-        <td>Admissions</td>
-        <td><input type="number" id="adM" value="0" min="0" oninput="recalcSummary()"></td>
-        <td><input type="number" id="adE" value="0" min="0" oninput="recalcSummary()"></td>
-        <td><input type="number" id="adN" value="0" min="0" oninput="recalcSummary()"></td>
-      </tr>
-      <tr>
-        <td>Discharges</td>
-        <td><input type="number" id="disM" value="0" min="0" oninput="recalcSummary()"></td>
-        <td><input type="number" id="disE" value="0" min="0" oninput="recalcSummary()"></td>
-        <td><input type="number" id="disN" value="0" min="0" oninput="recalcSummary()"></td>
-      </tr>
-      <tr><td>Total Admissions</td><td colspan="3" id="totalAd">2</td></tr>
-      <tr><td>Total Discharges</td><td colspan="3" id="totalDis">1</td></tr>
-      <tr><td>Total Patients</td><td colspan="3" id="totalCount">12</td></tr>
-    </tbody></table>
+      <tbody>
+        <tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
+        <tr>
+          <td>Admissions</td>
+          <td><input type="number" id="adM" value="0" min="0" oninput="recalcSummary()"></td>
+          <td><input type="number" id="adE" value="0" min="0" oninput="recalcSummary()"></td>
+          <td><input type="number" id="adN" value="0" min="0" oninput="recalcSummary()"></td>
+        </tr>
+        <tr>
+          <td>Discharges</td>
+          <td><input type="number" id="disM" value="0" min="0" oninput="recalcSummary()"></td>
+          <td><input type="number" id="disE" value="0" min="0" oninput="recalcSummary()"></td>
+          <td><input type="number" id="disN" value="0" min="0" oninput="recalcSummary()"></td>
+        </tr>
+        <tr><td>Total Admissions</td><td colspan="3" id="totalAd">2</td></tr>
+        <tr><td>Total Discharges</td><td colspan="3" id="totalDis">1</td></tr>
+        <tr><td>Total Patients</td><td colspan="3" id="totalCount">12</td></tr>
+      </tbody>
+    </table>
   </div>
   <div class="form-section" id="formSection">
     <input type="text" id="name" placeholder="Name" required>
     <input type="text" id="id" placeholder="ID" required>
-    <input type="date" id="doa" placeholder="Date of Admission (dd-mm-yy)" required>
+    <input type="date" id="doa" placeholder="Date of Admission" required>
     <select id="shift" required>
       <option value="Morning">Morning Shift</option>
       <option value="Evening">Evening Shift</option>
@@ -345,8 +328,8 @@
       <option value="Female">Female</option>
     </select>
     <input type="text" id="diagnosis" placeholder="Diagnosis">
-    <input type="text" id="medications" placeholder="Medications">
     <input type="text" id="issues" placeholder="Issues">
+    <textarea id="hopi" placeholder="HOPI"></textarea>
     <select id="ward">
       <option value="PW">PW</option>
       <option value="GW">GW</option>
@@ -374,6 +357,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     document.getElementById("handoverDate").innerText = new Date().toISOString().split("T")[0];
+    document.getElementById("doa").value = new Date().toISOString().split("T")[0];
     function toggleForm() {
       const form = document.getElementById('formSection');
       form.style.display = (form.style.display === 'block') ? 'none' : 'block';
@@ -389,29 +373,18 @@
       const savedTheme = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
-    function formatDateForInput(dateStr) {
-      if (!dateStr) return '';
-      const [day, month, year] = dateStr.split('-');
-      return `20${year}-${month}-${day}`;
-    }
-    function formatDateForDisplay(dateStr) {
-      if (!dateStr) return '';
-      const [year, month, day] = dateStr.split('-');
-      return `${day}-${month}-${year.slice(2)}`;
-    }
     function addPatient() {
-      const doaInput = document.getElementById('doa').value;
       const patient = {
         name: document.getElementById('name').value,
         id: document.getElementById('id').value,
-        doa: doaInput ? formatDateForDisplay(doaInput) : '',
+        doa: document.getElementById('doa').value,
         shift: document.getElementById('shift').value,
         bed: document.getElementById('bed').value,
         age: document.getElementById('age').value,
         sex: document.getElementById('sex').value,
         diagnosis: document.getElementById('diagnosis').value,
-        medications: document.getElementById('medications').value,
         issues: document.getElementById('issues').value,
+        hopi: document.getElementById('hopi').value,
         ward: document.getElementById('ward').value,
         plan: document.getElementById('plan').value,
         isNew: document.getElementById('isNew').checked,
@@ -436,17 +409,6 @@
       }
     }
     function updateField(id, field, value) {
-      if (field === 'doa') {
-        const [year, month, day] = value.split('-');
-        value = `${day}-${month}-${year ? year.slice(2) : ''}`;
-      } else if (field === 'shift') {
-        const validShifts = ['Morning', 'Evening', 'Night'];
-        if (!validShifts.includes(value)) {
-          alert('Shift must be Morning, Evening, or Night.');
-          loadPatients();
-          return;
-        }
-      }
       db.collection('patients').doc(id).update({ [field]: value }).catch(error => {
         console.error(`Error updating ${field}:`, error);
         alert(`Failed to update ${field}.`);
@@ -468,12 +430,20 @@
             if (badge) {
               badge.classList.toggle('new-active', isNew);
             }
+            loadPatients();
           }).catch(error => {
             console.error("Error toggling new tag:", error);
             alert("Failed to toggle new tag.");
           });
         }
       });
+    }
+    function toggleHopi(id) {
+      const content = document.getElementById(`hopi-content-${id}`);
+      const toggle = document.getElementById(`hopi-toggle-${id}`);
+      const isExpanded = content.classList.contains('expanded');
+      content.classList.toggle('expanded', !isExpanded);
+      toggle.innerText = isExpanded ? 'HOPI: ▼' : 'HOPI: ►';
     }
     function generateReportHeader(type, date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, totalCount) {
       if (type === 'NICU') {
@@ -522,6 +492,7 @@
             text += `BED ${patient.bed} - ${patient.age}/${sexAbbr}, ${patient.diagnosis || 'N/A'}${patient.isNew ? ' (NEW)' : ''}\n`;
             if (patient.medications) text += `Medications: ${patient.medications}\n`;
             if (patient.issues) text += `Issues: ${patient.issues}\n`;
+            if (patient.hopi && patient.isNew) text += `HOPI: ${patient.hopi}\n`;
             if (patient.plan) text += `Plan: ${patient.plan}\n`;
             text += '---------------------------------\n';
           });
@@ -692,23 +663,25 @@
           });
           patientsByWard[w].forEach(({ id, data: d }) => {
             const makeEditable = (field, label = '') =>
-              `<p>${label}<span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field] || ''}</span></p>`;
+              `<p><strong>${label}</strong><span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field] || ''}</span></p>`;
             const card = document.createElement('div');
             card.className = 'patient-card';
             card.innerHTML = `
               <button class="delete-btn" onclick="deletePatient('${id}')">×</button>
               <span class="new-badge${d.isNew ? ' new-active' : ''}" data-id="${id}">NEW</span>
-              <p><strong><span contenteditable class="editable" onblur="updateField('${id}', 'name', this.innerText)">${d.name}</span></strong> (ID: ${d.id})</p>
-              <p>DOA: <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span>, <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span> Shift</p>
+              <p><strong>Name:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'name', this.innerText)">${d.name}</span> (ID: ${d.id})</p>
+              <p><strong>DOA:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span>, <strong>Shift:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span></p>
               ${makeEditable('bed', 'Bed: ')}
               ${makeEditable('age', 'Age: ')}
               ${makeEditable('sex', 'Sex: ')}
               ${makeEditable('diagnosis', 'Diagnosis: ')}
-              ${makeEditable('medications', 'Medications: ')}
               ${makeEditable('issues', 'Issues: ')}
+              <p><strong class="hopi-toggle" id="hopi-toggle-${id}" onclick="toggleHopi('${id}')">HOPI: ►</strong></p>
+              <div class="hopi-content" id="hopi-content-${id}">
+                <span contenteditable class="editable" onblur="updateField('${id}', 'hopi', this.innerText)">${d.hopi || ''}</span>
+              </div>
               ${makeEditable('plan', 'Plan: ')}
-              <p>
-                Ward:
+              <p><strong>Ward:</strong>
                 <select onchange="changeWard('${id}', this.value)">
                   ${wards.map(wr => `<option value="${wr}" ${wr === d.ward ? 'selected' : ''}>${wr}</option>`).join('')}
                 </select>
