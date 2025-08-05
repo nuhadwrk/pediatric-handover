@@ -457,7 +457,7 @@
                `# Number of admissions: _\n` +
                `# Number of shift outs: _\n` +
                `# Number of discharges: _\n\n` +
-               `=================================\n\n`;
+               `=======================\n\n`;
       } else if (type === 'Ward') {
         return `WARD HANDOVER\n` +
                `Date: ${date}\n` +
@@ -465,7 +465,7 @@
                `# Total number of patients: ${totalCount}\n` +
                `# Number of admissions: ${totalAd}\n` +
                `# Number of discharges: ${totalDis}\n\n` +
-               `=================================\n\n`;
+               `=======================\n\n`;
       } else {
         let text = `PEDIATRIC HANDOVER REPORT\n`;
         text += `Date: ${date}\n\n`;
@@ -479,7 +479,7 @@
         text += `Discharges (Night): ${disN}\n`;
         text += `Total Discharges: ${totalDis}\n\n`;
         text += `Total Patients: ${totalCount}\n\n`;
-        text += `=================================\n\n`;
+        text += `=======================\n\n`;
         return text;
       }
     }
