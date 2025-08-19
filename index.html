@@ -68,10 +68,10 @@
       --PVT: #fff3cd;
       --ICU: #d4edda;
       --NICU: #f8d7da;
+      --ER: #f5f5f5; /* New ER ward color */
       --new-btn: #f6a623;
-      /* Panel sizing */
       --panel-width: 460px;
-      --panel-height: 360px; /* Increased from 320px to fit summary card content */
+      --panel-height: 360px;
     }
     [data-theme="dark"] {
       --bg: #1a202c;
@@ -90,6 +90,7 @@
       --PVT: #b7791f;
       --ICU: #276749;
       --NICU: #9b2c2c;
+      --ER: #4a5568; /* New ER ward color (dark theme) */
       --new-btn: #f6a623;
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -129,8 +130,6 @@
     .theme-toggle:hover { background: #4b5563; }
     .theme-toggle::before { content: '☀'; }
     [data-theme="dark"] .theme-toggle::before { content: '🌙'; }
-
-    /* Panels row: always side-by-side (scroll on mobile if needed) */
     .top-panel {
       display: flex;
       gap: 16px;
@@ -138,10 +137,10 @@
       justify-content: center;
       margin: 0 auto 24px;
       max-width: 100%;
-      flex-wrap: nowrap;         /* keep in a row */
-      overflow-x: auto;          /* allow horizontal scroll on small screens */
+      flex-wrap: nowrap;
+      overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 4px;       /* room for scrollbar */
+      padding-bottom: 4px;
     }
     .panel-card {
       background: var(--card-bg);
@@ -150,16 +149,10 @@
       box-shadow: var(--shadow);
       width: var(--panel-width);
       height: var(--panel-height);
-      flex: 0 0 var(--panel-width); /* fixed width in the horizontal row */
+      flex: 0 0 var(--panel-width);
     }
-    #handoverHeader {
-      overflow: hidden; /* Remove scrolling for summary card */
-    }
-    #notesCard {
-      overflow: auto; /* Keep scrolling for notes if needed */
-    }
-
-    /* Summary card visuals */
+    #handoverHeader { overflow: hidden; }
+    #notesCard { overflow: auto; }
     #handoverHeader table {
       margin: 16px 0 0 0;
       border-collapse: collapse;
@@ -181,8 +174,6 @@
       background: var(--card-bg);
       color: var(--text);
     }
-
-    /* Notes card */
     #notesCard strong { display: block; margin-bottom: 8px; }
     #notesText {
       width: 100%;
@@ -194,7 +185,6 @@
       color: var(--text);
       resize: vertical;
     }
-
     .form-section {
       display: none;
       background: var(--card-bg);
@@ -261,7 +251,7 @@
     .new-badge {
       position: absolute;
       top: 10px;
-      right: 40px; /* Adjusted for spacing with delete button */
+      right: 40px;
       background: var(--new-btn);
       color: #fff;
       border-radius: 4px;
@@ -293,10 +283,6 @@
     }
     .hopi-content { display: none; color: var(--text); }
     .hopi-content.expanded { display: block; }
-
-    /* Keep side-by-side on all sizes; no column fallback */
-    /* (No media query altering .top-panel layout) */
-
     .print-window { padding: 20px; }
     .copy-btn {
       padding: 10px 20px;
@@ -315,7 +301,6 @@
 </head>
 <body>
   <h1>Pediatric Handover</h1>
-
   <div class="top-buttons">
     <button class="add" onclick="toggleForm()">Add Patient</button>
     <button class="print" onclick="printAll()">Print All</button>
@@ -324,8 +309,6 @@
     <button class="print" onclick="printNew()">Print New</button>
     <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
-
-  <!-- Centered, equal-size panels (always side-by-side; scroll on mobile) -->
   <div class="top-panel">
     <div id="handoverHeader" class="panel-card">
       <strong>Date:</strong> <span id="handoverDate">2025-08-05</span>
@@ -347,21 +330,18 @@
           <tr><td>Total Admissions</td><td colspan="3" id="totalAd">2</td></tr>
           <tr><td>Total Discharges</td><td colspan="3" id="totalDis">1</td></tr>
           <tr><td>Total Patients</td><td colspan="3" id="totalCount">12</td></tr>
-          <!-- NEW: ward breakdown row -->
           <tr>
             <td>By ward</td>
-            <td colspan="3" id="wardBreakdown">PW (0), GW (0), SW (0), PVT (0), ICU (0), NICU (0)</td>
+            <td colspan="3" id="wardBreakdown">PW (0), GW (0), SW (0), PVT (0), ICU (0), NICU (0), ER (0)</td>
           </tr>
         </tbody>
       </table>
     </div>
-
     <div id="notesCard" class="panel-card">
       <strong>Notes/Pending work</strong>
       <textarea id="notesText" placeholder="Type pending tasks, callbacks, follow-ups..."></textarea>
     </div>
   </div>
-
   <div class="form-section" id="formSection">
     <input type="text" id="name" placeholder="Name" required>
     <input type="text" id="id" placeholder="ID" required>
@@ -388,14 +368,13 @@
       <option value="PVT">PVT</option>
       <option value="ICU">ICU</option>
       <option value="NICU">NICU</option>
+      <option value="ER">ER</option>
     </select>
     <textarea id="plan" placeholder="Plan"></textarea>
     <label><input type="checkbox" id="isNew" checked> New</label>
     <button onclick="addPatient()">Submit</button>
   </div>
-
   <div id="wardsContainer"></div>
-
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script>
@@ -409,17 +388,12 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
     document.getElementById("handoverDate").innerText = new Date().toISOString().split("T")[0];
     document.getElementById("doa").value = new Date().toISOString().split("T")[0];
-
-    // ===== Notes: Firestore-sync across devices =====
     const notesEl = document.getElementById('notesText');
     const NOTES_DOC = db.collection('meta').doc('notes');
     let notesTyping = false;
     let notesDebounce;
-
-    // Save on input (debounced)
     notesEl.addEventListener('input', () => {
       notesTyping = true;
       if (notesDebounce) clearTimeout(notesDebounce);
@@ -432,18 +406,14 @@
         });
       }, 400);
     });
-
-    // Load + live sync
     NOTES_DOC.onSnapshot(snap => {
       const data = snap.data();
       if (data && typeof data.text === 'string') {
-        // Avoid cursor jump while user is actively typing
         if (!notesTyping && document.activeElement !== notesEl && notesEl.value !== data.text) {
           notesEl.value = data.text;
         }
       }
     });
-
     function toggleForm() {
       const form = document.getElementById('formSection');
       form.style.display = (form.style.display === 'block') ? 'none' : 'block';
@@ -525,7 +495,6 @@
         }
       });
     }
-    // HOPI toggle (fixed earlier)
     function toggleHopi(id) {
       const content = document.getElementById(`hopi-content-${id}`);
       const toggle = document.getElementById(`hopi-toggle-${id}`);
@@ -534,7 +503,6 @@
       toggle.setAttribute('aria-expanded', newExpanded);
       toggle.innerText = newExpanded ? 'HOPI: ▼' : 'HOPI: ►';
     }
-
     function generateReportHeader(type, date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, totalCount) {
       if (type === 'NICU') {
         return `NICU HANDOVER\n` +
@@ -603,7 +571,7 @@
       const totalDis = document.getElementById('totalDis').innerText;
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
       db.collection('patients').get().then(snap => {
-        const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
+        const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
         const patientsByWard = {};
         wards.forEach(ward => patientsByWard[ward] = []);
         snap.forEach(doc => {
@@ -663,7 +631,7 @@
     }
     function printAll() {
       const totalCount = document.getElementById('totalCount').innerText;
-      printReport('All', ["PW", "GW", "SW", "PVT", "ICU", "NICU"], totalCount);
+      printReport('All', ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"], totalCount);
     }
     function printNICU() {
       db.collection('patients').where('ward', '==', 'NICU').get().then(snap => {
@@ -671,14 +639,13 @@
       });
     }
     function printWard() {
-      db.collection('patients').where('ward', '!=', 'NICU').get().then(snap => {
-        printReport('Ward', ["PW", "GW", "SW", "PVT", "ICU"], snap.size);
+      db.collection('patients').where('ward', 'in', ["PW", "GW", "SW", "PVT", "ICU", "ER"]).get().then(snap => {
+        printReport('Ward', ["PW", "GW", "SW", "PVT", "ICU", "ER"], snap.size);
       });
     }
-    // Updated: Print only NEW cases, now INCLUDING NICU
     function printNew() {
       const date = document.getElementById('handoverDate').innerText;
-      const adM = +document.getElementById('adM').value || 0;
+      const adR = +document.getElementById('adM').value || 0;
       const adE = +document.getElementById('adE').value || 0;
       const adN = +document.getElementById('adN').value || 0;
       const disM = +document.getElementById('disM').value || 0;
@@ -687,10 +654,8 @@
       const totalAd = document.getElementById('totalAd').innerText;
       const totalDis = document.getElementById('totalDis').innerText;
       const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-
       const wardsAll = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
-      const wardsToInclude = ["PW", "GW", "SW", "PVT", "ICU", "NICU"]; // now includes NICU
-
+      const wardsToInclude = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
       db.collection('patients').where('isNew', '==', true).get().then(snap => {
         const patientsByWard = {};
         wardsAll.forEach(w => patientsByWard[w] = []);
@@ -700,16 +665,13 @@
             patientsByWard[p.ward].push({ id: doc.id, ...p });
           }
         });
-        // sort by bed
         wardsToInclude.forEach(w => {
           patientsByWard[w].sort((a, b) => (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0));
         });
-
         const includedCount = wardsToInclude.reduce((sum, w) => sum + patientsByWard[w].length, 0);
         const header = generateReportHeader('Ward', date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, includedCount);
         const body = generatePatientSection(patientsByWard, wardsToInclude);
         const reportText = header + body;
-
         const textWindow = window.open('', '_blank');
         textWindow.document.write(`
           <html data-theme="${currentTheme}">
@@ -748,7 +710,6 @@
         alert('Error generating NEW cases report');
       });
     }
-
     function recalcSummary() {
       const adM = +document.getElementById('adM').value || 0;
       const adE = +document.getElementById('adE').value || 0;
@@ -789,7 +750,7 @@
     function loadPatients() {
       const container = document.getElementById('wardsContainer');
       container.innerHTML = '';
-      const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
+      const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
       const wardGrids = {};
       const wardCounts = {};
       const patientsByWard = {};
@@ -863,9 +824,7 @@
             header.innerText = `${w} (${wardCounts[w]} patient${wardCounts[w] !== 1 ? 's' : ''})`;
           }
         });
-
-        // NEW: update the ward breakdown line in the summary card
-        const breakdownOrder = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
+        const breakdownOrder = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
         const breakdownText = breakdownOrder.map(w => `${w} (${wardCounts[w] || 0})`).join(', ');
         const breakdownEl = document.getElementById('wardBreakdown');
         if (breakdownEl) breakdownEl.innerText = breakdownText;
