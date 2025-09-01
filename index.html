@@ -989,8 +989,8 @@
             if (d.ward === 'Discharge') {
               const timestamp = d.dischargeTimestamp || d.timestamp || Date.now();
               const formatted = formatTimestamp(timestamp);
-              dischargeTag = `<span class="discharge-badge discharge-active" data-id="${id}">Discharged at ${formatted}</span>`;
-              console.log(`Adding discharge badge for patient ${id}: Discharged at ${formatted}`);
+              dischargeTag = `<span class="discharge-badge discharge-active" data-id="${id}">Discharged on ${formatted}</span>`;
+              console.log(`Adding discharge badge for patient ${id}: Discharged on ${formatted}`);
             }
             const card = document.createElement('div');
             card.className = 'patient-card';
