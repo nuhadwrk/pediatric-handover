@@ -328,6 +328,18 @@
       min-height: 20px;
     }
     .plan-history.expanded + p { display: none; }
+    .inline-fields {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .inline-fields strong {
+      flex-shrink: 0;
+    }
+    .inline-fields span.editable {
+      display: inline-block;
+      min-width: 50px;
+    }
   </style>
 </head>
 <body>
@@ -388,6 +400,7 @@
       <option value="Male">Male</option>
       <option value="Female">Female</option>
     </select>
+    <input type="text" id="weight" placeholder="Weight" required>
     <input type="text" id="diagnosis" placeholder="Diagnosis">
     <input type="text" id="medications" placeholder="Medications">
     <input type="text" id="issues" placeholder="Issues">
@@ -460,6 +473,23 @@
       const savedTheme = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
+    function calculateDaysAdmitted(doa) {
+      try {
+        const doaDate = new Date(doa);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        doaDate.setHours(0, 0, 0, 0);
+        const diffTime = today - doaDate;
+        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include day of admission
+        if (days <= 0) return '1st DOA';
+        const suffixes = { 1: 'st', 2: 'nd', 3: 'rd' };
+        const suffix = suffixes[days] || 'th';
+        return `${days}${suffix} DOA`;
+      } catch (e) {
+        console.error('Error calculating days admitted:', e);
+        return '1st DOA';
+      }
+    }
     function addPatient() {
       const patient = {
         name: document.getElementById('name').value,
@@ -469,6 +499,7 @@
         bed: document.getElementById('bed').value,
         age: document.getElementById('age').value,
         sex: document.getElementById('sex').value,
+        weight: document.getElementById('weight').value,
         diagnosis: document.getElementById('diagnosis').value,
         medications: document.getElementById('medications').value,
         issues: document.getElementById('issues').value,
@@ -508,6 +539,15 @@
         if (field === 'plan') {
           refreshButtonState(id);
         }
+        if (field === 'doa') {
+          const card = document.querySelector(`.patient-card [data-id="${id}"]`)?.closest('.patient-card');
+          if (card) {
+            const doaSpan = card.querySelector(`#doa-days-${id}`);
+            if (doaSpan) {
+              doaSpan.innerText = `(${calculateDaysAdmitted(value)})`;
+            }
+          }
+        }
       }).catch(error => {
         console.error(`Error updating ${field}:`, error);
         refreshButtonState(id);
@@ -532,7 +572,6 @@
           }
           db.collection('patients').doc(id).update(updates).then(() => {
             console.log(`Ward changed to ${newWard} for patient ${id}`);
-            // Immediately update UI to reflect ward change
             const card = document.querySelector(`.patient-card [data-id="${id}"]`)?.closest('.patient-card');
             if (card) {
               const oldWardGrid = document.getElementById(`ward-${oldWard}`);
@@ -540,10 +579,8 @@
               if (oldWardGrid && newWardGrid) {
                 oldWardGrid.removeChild(card);
                 newWardGrid.appendChild(card);
-                // Update ward select in the card
                 const select = card.querySelector('select');
                 if (select) select.value = newWard;
-                // Update discharge badge if moving to Discharge
                 if (newWard === 'Discharge') {
                   const timestamp = updates.dischargeTimestamp || Date.now();
                   const formatted = formatTimestamp(timestamp);
@@ -607,17 +644,18 @@
         console.log('Plan is empty, not logging');
         return;
       }
-      const timestamp = Date.now();
-      const formattedTimestamp = formatTimestamp(timestamp);
-      const fullLogEntry = `• ${formattedTimestamp}\n  ${currentPlan}\n\n`;
-
       db.collection('patients').doc(id).get().then(doc => {
         if (doc.exists) {
+          const doa = doc.data().doa;
+          const daysAdmitted = calculateDaysAdmitted(doa);
+          const timestamp = Date.now();
+          const formattedTimestamp = formatTimestamp(timestamp);
+          const fullLogEntry = `• ${formattedTimestamp} (${daysAdmitted})\n  ${currentPlan}\n\n`;
+
           const lastLoggedPlan = doc.data().lastLoggedPlan || '';
           const currentLines = currentPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
           const lastLines = lastLoggedPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
           
-          // Find common prefix for appended lines
           let commonPrefixLength = 0;
           while (commonPrefixLength < lastLines.length && 
                  commonPrefixLength < currentLines.length && 
@@ -625,11 +663,10 @@
             commonPrefixLength++;
           }
           
-          // Log new lines if any, else log full plan
           let newLogEntry = fullLogEntry;
           const newLines = currentLines.slice(commonPrefixLength).join('\n  ');
           if (newLines) {
-            newLogEntry = `• ${formattedTimestamp}\n  ${newLines}\n\n`;
+            newLogEntry = `• ${formattedTimestamp} (${daysAdmitted})\n  ${newLines}\n\n`;
           }
           
           if (!newLines && currentPlan === lastLoggedPlan) {
@@ -943,7 +980,7 @@
       const wardGrids = {};
       const wardCounts = {};
       const patientsByWard = {};
-      let patientCards = {}; // Track cards by patient ID
+      let patientCards = {};
 
       wards.forEach(w => {
         const sec = document.createElement('div');
@@ -1034,7 +1071,6 @@
           if (!wards.includes(ward)) return;
 
           if (change.type === 'added' || change.type === 'modified') {
-            // Remove from old ward if modified
             if (change.type === 'modified') {
               const oldWard = Object.keys(patientsByWard).find(w => patientsByWard[w].some(p => p.id === id));
               if (oldWard && oldWard !== ward) {
@@ -1047,7 +1083,6 @@
               }
             }
 
-            // Add or update patient
             patientsByWard[ward] = patientsByWard[ward].filter(p => p.id !== id);
             patientsByWard[ward].push({ id, data: d });
             wardCounts[ward] = (wardCounts[ward] || 0) + 1;
@@ -1057,7 +1092,6 @@
 
         document.getElementById('totalCount').innerText = totalActive;
 
-        // Render only affected wards
         wards.forEach(w => {
           if (w === 'Discharge') {
             patientsByWard[w].sort((a, b) => {
@@ -1080,6 +1114,7 @@
               delete patientCards[id];
             }
             console.log(`Rendering patient ${id}: ward=${d.ward}, dischargeTimestamp=${d.dischargeTimestamp}`);
+            const daysAdmitted = calculateDaysAdmitted(d.doa);
             const makeEditable = (field, label = '') =>
               `<p><strong>${label}</strong><span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field] || ''}</span></p>`;
             const logs = d.logs || 'No logs yet';
@@ -1096,15 +1131,19 @@
               <button class="delete-btn" onclick="deletePatient('${id}')">×</button>
               <span class="new-badge${d.isNew ? ' new-active' : ''}" data-id="${id}">NEW</span>
               ${dischargeTag}
-              <p><strong>Name:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'name', this.innerText)">${d.name}</span>
-                 (ID: <span contenteditable class="editable" onblur="updateField('${id}', 'id', this.innerText)">${d.id || ''}</span>)</p>
-              <p><strong>DOA:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span>, <strong>Shift:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span></p>
-              ${makeEditable('bed', d.ward === 'NICU' ? `Bed: ${d.name ? d.name : ''}` : 'Bed: ')}
-              ${makeEditable('age', 'Age: ')}
-              ${makeEditable('sex', 'Sex: ')}
-              ${makeEditable('diagnosis', 'Diagnosis: ')}
-              ${makeEditable('medications', 'Medications: ')}
-              ${makeEditable('issues', 'Issues: ')}
+              <p><strong>Name:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'name', this.innerText)">${d.name}</span></p>
+              <p><strong>ID:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'id', this.innerText)">${d.id || ''}</span></p>
+              <p><strong>DOA:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span> <span id="doa-days-${id}">(${daysAdmitted})</span></p>
+              <p><strong>Shift:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span></p>
+              <p class="inline-fields">
+                <strong>Age:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'age', this.innerText)">${d.age || ''}</span>,
+                <strong>Sex:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'sex', this.innerText)">${d.sex || ''}</span>
+              </p>
+              <p><strong>Weight:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'weight', this.innerText)">${d.weight || ''}</span></p>
+              <p><strong>${d.ward === 'NICU' ? `Bed: ${d.name ? d.name : ''}` : 'Bed:'}</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'bed', this.innerText)">${d.bed || ''}</span></p>
+              <p><strong>Diagnosis:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'diagnosis', this.innerText)">${d.diagnosis || ''}</span></p>
+              <p><strong>Medications:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'medications', this.innerText)">${d.medications || ''}</span></p>
+              <p><strong>Issues:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'issues', this.innerText)">${d.issues || ''}</span></p>
               <p><strong class="hopi-toggle" id="hopi-toggle-${id}" onclick="toggleHopi('${id}')" aria-expanded="false">HOPI: ►</strong></p>
               <div class="hopi-content" id="hopi-content-${id}">
                 <span contenteditable class="editable" onblur="updateField('${id}', 'hopi', this.innerText)">${d.hopi || ''}</span>
