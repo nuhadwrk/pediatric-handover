@@ -1,4 +1,43 @@
-<html lang="en" data-theme="dark">
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <title>Pediatric Handover System</title>
@@ -483,7 +522,6 @@
       db.collection('patients').add(patient).then(() => {
         console.log('Patient added successfully:', patient);
         document.getElementById('formSection').style.display = 'none';
-        loadPatients();
       }).catch(error => {
         console.error("Error adding patient:", error);
       });
@@ -496,7 +534,6 @@
         if (confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
           db.collection('patients').doc(id).delete().then(() => {
             console.log('Patient deleted:', id);
-            loadPatients();
           }).catch(error => {
             console.error("Error deleting patient:", error);
           });
@@ -519,7 +556,6 @@
       console.log(`Updating logs for patient ${id} with newText:`, newText);
       db.collection('patients').doc(id).update({ logs: newText }).then(() => {
         console.log(`Logs updated successfully for patient ${id}`);
-        loadPatients();
       }).catch(error => {
         console.error('Error updating logs:', error);
       });
@@ -528,13 +564,42 @@
       console.log(`Changing ward for patient ${id} to ${newWard}`);
       db.collection('patients').doc(id).get().then(doc => {
         if (doc.exists) {
+          const oldWard = doc.data().ward;
           const updates = { ward: newWard };
           if (newWard === 'Discharge' && !doc.data().dischargeTimestamp) {
             updates.dischargeTimestamp = Date.now();
           }
           db.collection('patients').doc(id).update(updates).then(() => {
             console.log(`Ward changed to ${newWard} for patient ${id}`);
-            loadPatients();
+            // Immediately update UI to reflect ward change
+            const card = document.querySelector(`.patient-card [data-id="${id}"]`)?.closest('.patient-card');
+            if (card) {
+              const oldWardGrid = document.getElementById(`ward-${oldWard}`);
+              const newWardGrid = document.getElementById(`ward-${newWard}`);
+              if (oldWardGrid && newWardGrid) {
+                oldWardGrid.removeChild(card);
+                newWardGrid.appendChild(card);
+                // Update ward select in the card
+                const select = card.querySelector('select');
+                if (select) select.value = newWard;
+                // Update discharge badge if moving to Discharge
+                if (newWard === 'Discharge') {
+                  const timestamp = updates.dischargeTimestamp || Date.now();
+                  const formatted = formatTimestamp(timestamp);
+                  let badge = card.querySelector('.discharge-badge');
+                  if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'discharge-badge discharge-active';
+                    badge.setAttribute('data-id', id);
+                    card.insertBefore(badge, card.firstChild);
+                  }
+                  badge.innerText = `Discharged on ${formatted}`;
+                } else {
+                  const badge = card.querySelector('.discharge-badge');
+                  if (badge) badge.remove();
+                }
+              }
+            }
           }).catch(error => {
             console.error("Error changing ward:", error);
           });
@@ -551,7 +616,6 @@
             if (badge) {
               badge.classList.toggle('new-active', isNew);
             }
-            loadPatients();
           }).catch(error => {
             console.error("Error toggling new tag:", error);
           });
@@ -577,25 +641,50 @@
     function logPlan(id) {
       console.log(`Attempting to log plan for patient ${id}`);
       const planEl = document.querySelector(`#plan-content-${id}`);
-      const text = planEl ? planEl.innerText.trim() : '';
-      if (text === '') {
+      const currentPlan = planEl ? planEl.innerText.trim() : '';
+      if (currentPlan === '') {
         console.log('Plan is empty, not logging');
         return;
       }
       const timestamp = Date.now();
       const formattedTimestamp = formatTimestamp(timestamp);
-      const newLogEntry = `• ${formattedTimestamp}\n  ${text}\n\n`;
+      const fullLogEntry = `• ${formattedTimestamp}\n  ${currentPlan}\n\n`;
+
       db.collection('patients').doc(id).get().then(doc => {
         if (doc.exists) {
+          const lastLoggedPlan = doc.data().lastLoggedPlan || '';
+          const currentLines = currentPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
+          const lastLines = lastLoggedPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
+          
+          // Find common prefix for appended lines
+          let commonPrefixLength = 0;
+          while (commonPrefixLength < lastLines.length && 
+                 commonPrefixLength < currentLines.length && 
+                 lastLines[commonPrefixLength] === currentLines[commonPrefixLength]) {
+            commonPrefixLength++;
+          }
+          
+          // Log new lines if any, else log full plan
+          let newLogEntry = fullLogEntry;
+          const newLines = currentLines.slice(commonPrefixLength).join('\n  ');
+          if (newLines) {
+            newLogEntry = `• ${formattedTimestamp}\n  ${newLines}\n\n`;
+          }
+          
+          if (!newLines && currentPlan === lastLoggedPlan) {
+            console.log('No new content to log');
+            return;
+          }
+          
           const currentLogs = doc.data().logs || '';
           const updatedLogs = currentLogs + newLogEntry;
+          
           db.collection('patients').doc(id).update({
             logs: updatedLogs,
-            lastLoggedPlan: text
+            lastLoggedPlan: currentPlan
           }).then(() => {
             console.log('Plan logged successfully for patient', id);
             refreshButtonState(id);
-            loadPatients();
           }).catch(error => {
             console.error('Error logging plan:', error);
             refreshButtonState(id);
@@ -889,11 +978,12 @@
     }
     function loadPatients() {
       const container = document.getElementById('wardsContainer');
-      container.innerHTML = '';
       const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER", "Discharge"];
       const wardGrids = {};
       const wardCounts = {};
       const patientsByWard = {};
+      let patientCards = {}; // Track cards by patient ID
+
       wards.forEach(w => {
         const sec = document.createElement('div');
         const header = document.createElement('h2');
@@ -918,32 +1008,95 @@
         wardCounts[w] = 0;
         patientsByWard[w] = [];
       });
-      db.collection('patients').get().then(snap => {
+
+      let initialLoad = true;
+      db.collection('patients').onSnapshot(snap => {
+        if (initialLoad) {
+          container.innerHTML = '';
+          wards.forEach(w => {
+            const sec = document.createElement('div');
+            const header = document.createElement('h2');
+            header.className = 'ward-header';
+            header.style.background = `var(--${w})`;
+            header.id = `header-${w}`;
+            header.innerText = w === 'Discharge' ? `Discharges` : w;
+            if (w === 'Discharge') {
+              header.classList.add('discharge-header');
+              header.onclick = toggleDischargeWard;
+            }
+            sec.appendChild(header);
+            const grid = document.createElement('div');
+            grid.className = 'card-grid';
+            grid.id = `ward-${w}`;
+            if (w !== 'Discharge') {
+              grid.classList.add('expanded');
+            }
+            sec.appendChild(grid);
+            container.appendChild(sec);
+            wardGrids[w] = grid;
+            wardCounts[w] = 0;
+            patientsByWard[w] = [];
+          });
+          patientCards = {};
+          initialLoad = false;
+        }
+
         let totalActive = 0;
         const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
         const now = Date.now();
-        snap.forEach(doc => {
+
+        snap.docChanges().forEach(change => {
+          const doc = change.doc;
           const d = doc.data();
+          const id = doc.id;
           let ward = d.ward;
-          if (ward === 'Discharge') {
-            const dischargeTime = d.dischargeTimestamp || d.timestamp || now;
-            if (dischargeTime < now - oneWeekMs) {
-              console.log(`Deleting patient ${doc.id} from Discharges: dischargeTimestamp=${dischargeTime} is over a week old`);
-              db.collection('patients').doc(doc.id).delete().catch(error => {
-                console.error(`Error deleting patient ${doc.id}:`, error);
+
+          if (change.type === 'removed' || (ward === 'Discharge' && (d.dischargeTimestamp || d.timestamp || now) < now - oneWeekMs)) {
+            if (change.type !== 'removed') {
+              console.log(`Deleting patient ${id} from Discharges: dischargeTimestamp=${d.dischargeTimestamp} is over a week old`);
+              db.collection('patients').doc(id).delete().catch(error => {
+                console.error(`Error deleting patient ${id}:`, error);
               });
-              return;
             }
+            if (patientCards[id]) {
+              patientCards[id].remove();
+              delete patientCards[id];
+            }
+            const oldWard = Object.keys(patientsByWard).find(w => patientsByWard[w].some(p => p.id === id));
+            if (oldWard) {
+              patientsByWard[oldWard] = patientsByWard[oldWard].filter(p => p.id !== id);
+              wardCounts[oldWard] = Math.max(0, (wardCounts[oldWard] || 0) - 1);
+            }
+            return;
           }
-          if (wards.includes(ward)) {
-            patientsByWard[ward].push({ id: doc.id, data: d });
-            wardCounts[ward]++;
-            if (ward !== 'Discharge') {
-              totalActive++;
+
+          if (!wards.includes(ward)) return;
+
+          if (change.type === 'added' || change.type === 'modified') {
+            // Remove from old ward if modified
+            if (change.type === 'modified') {
+              const oldWard = Object.keys(patientsByWard).find(w => patientsByWard[w].some(p => p.id === id));
+              if (oldWard && oldWard !== ward) {
+                patientsByWard[oldWard] = patientsByWard[oldWard].filter(p => p.id !== id);
+                wardCounts[oldWard] = Math.max(0, (wardCounts[oldWard] || 0) - 1);
+              }
+              if (patientCards[id]) {
+                patientCards[id].remove();
+                delete patientCards[id];
+              }
             }
+
+            // Add or update patient
+            patientsByWard[ward] = patientsByWard[ward].filter(p => p.id !== id);
+            patientsByWard[ward].push({ id, data: d });
+            wardCounts[ward] = (wardCounts[ward] || 0) + 1;
+            if (ward !== 'Discharge') totalActive++;
           }
         });
+
         document.getElementById('totalCount').innerText = totalActive;
+
+        // Render only affected wards
         wards.forEach(w => {
           if (w === 'Discharge') {
             patientsByWard[w].sort((a, b) => {
@@ -958,7 +1111,13 @@
               return bedA - bedB;
             });
           }
+
+          wardGrids[w].innerHTML = '';
           patientsByWard[w].forEach(({ id, data: d }) => {
+            if (patientCards[id]) {
+              patientCards[id].remove();
+              delete patientCards[id];
+            }
             console.log(`Rendering patient ${id}: ward=${d.ward}, dischargeTimestamp=${d.dischargeTimestamp}`);
             const makeEditable = (field, label = '') =>
               `<p><strong>${label}</strong><span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field] || ''}</span></p>`;
@@ -1012,6 +1171,7 @@
             logBtn.innerText = needsLog ? 'Log' : 'Logged';
             console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
             wardGrids[w].appendChild(card);
+            patientCards[id] = card;
             refreshButtonState(id);
             if (d.ward === 'Discharge') {
               const badge = card.querySelector('.discharge-badge');
@@ -1022,16 +1182,18 @@
               }
             }
           });
+
           const header = document.getElementById(`header-${w}`);
           if (header) {
             header.innerText = `${w === 'Discharge' ? 'Discharges' : w} (${wardCounts[w]} patient${wardCounts[w] !== 1 ? 's' : ''})`;
           }
         });
+
         const breakdownOrder = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
         const breakdownText = breakdownOrder.map(w => `${w} (${wardCounts[w] || 0})`).join(', ');
         const breakdownEl = document.getElementById('wardBreakdown');
         if (breakdownEl) breakdownEl.innerText = breakdownText;
-      }).catch(error => {
+      }, error => {
         console.error('Error loading patients:', error);
       });
     }
@@ -1041,5 +1203,3 @@
   </script>
 </body>
 </html>
-
-```
