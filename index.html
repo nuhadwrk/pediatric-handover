@@ -213,6 +213,7 @@
     .patient-card:hover { transform: scale(1.015); }
     .patient-card p { margin: 4px 0; }
     .patient-card p strong { font-weight: 700; }
+    .patient-card strong[onclick] { cursor: pointer; }
     .delete-btn {
       position: absolute;
       top: 10px;
@@ -257,7 +258,8 @@
     .discharge-badge.discharge-active {
       display: block !important;
     }
-    .new-checkbox { margin-top: 8px; }
+    .new-checkbox { margin-top: 8px; text-align: left; }
+    .new-checkbox label { display: inline-flex; align-items: center; }
     .editable {
       border: none;
       background: transparent;
@@ -340,6 +342,62 @@
       display: inline-block;
       min-width: 50px;
     }
+    .age-toggle {
+      background: var(--card-bg);
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      border: 1px solid var(--border);
+      display: none; /* Hidden for patient cards */
+      text-align: left;
+    }
+    #form-age-toggle {
+      display: block; /* Always visible in the form */
+      background: transparent; /* No background */
+      padding: 4px 0; /* Minimal padding */
+      margin: 4px 0; /* Minimal margin */
+      border: none; /* No border */
+    }
+    .age-toggle label {
+      display: inline-flex;
+      align-items: center;
+      margin: 4px 0;
+    }
+    #form-age-toggle label {
+      font-size: 12px; /* Smaller text */
+      margin: 0 8px 0 0; /* Minimal margin, right-only for spacing */
+      gap: 4px; /* Minimal gap between radio button and text */
+    }
+    #form-age-toggle input[type="radio"] {
+      appearance: none;
+      width: 8px; /* Smallest practical size */
+      height: 8px;
+      border: none; /* No border */
+      border-radius: 50%;
+      background: var(--bg); /* Matches form input background */
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    #form-age-toggle input[type="radio"]:checked {
+      background: var(--primary); /* Blue when checked */
+      transform: scale(1.1); /* Subtle expansion */
+    }
+    #form-age-toggle input[type="radio"]:focus {
+      outline: none; /* No outline on focus */
+    }
+    .auto-age-inputs {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .auto-age-inputs input {
+      padding: 6px;
+      border: 1px solid var(--editable-border);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -354,7 +412,7 @@
   </div>
   <div class="top-panel">
     <div id="handoverHeader" class="panel-card">
-      <strong>Date:</strong> <span id="handoverDate">2025-09-01</span>
+      <strong>Date:</strong> <span id="handoverDate">2025-09-07</span>
       <table>
         <tbody>
           <tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
@@ -389,13 +447,21 @@
     <input type="text" id="name" placeholder="Name" required>
     <input type="text" id="id" placeholder="ID" required>
     <input type="text" id="doa" placeholder="Date of Admission (YYYY-MM-DD)" required>
+    <input type="text" id="age" placeholder="Age" required>
+    <div class="age-toggle" id="form-age-toggle">
+      <label><input type="radio" name="formAgeMode" value="manual" checked onchange="toggleAutoInputsForm()"> Manual</label>
+      <label><input type="radio" name="formAgeMode" value="auto" onchange="toggleAutoInputsForm()"> Auto (HOL/DOL)</label>
+      <div class="auto-age-inputs" id="form-auto-age-inputs" style="display: none">
+        <input type="date" id="dob" placeholder="Date of Birth (YYYY-MM-DD)">
+        <input type="time" id="dot" placeholder="Time of Birth (HH:MM)">
+      </div>
+    </div>
     <select id="shift" required>
       <option value="Morning">Morning Shift</option>
       <option value="Evening">Evening Shift</option>
       <option value="Night">Night Shift</option>
     </select>
     <input type="text" id="bed" placeholder="Bed" required>
-    <input type="text" id="age" placeholder="Age" required>
     <select id="sex">
       <option value="Male">Male</option>
       <option value="Female">Female</option>
@@ -415,7 +481,9 @@
       <option value="ER">ER</option>
     </select>
     <textarea id="plan" placeholder="Plan"></textarea>
-    <label><input type="checkbox" id="isNew" checked> New</label>
+    <div class="new-checkbox">
+      <label><input type="checkbox" id="isNew" checked> New</label>
+    </div>
     <button onclick="addPatient()">Submit</button>
   </div>
   <div id="wardsContainer"></div>
@@ -473,6 +541,12 @@
       const savedTheme = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
+    function getOrdinalSuffix(n) {
+      const lastDigit = n % 10;
+      const lastTwoDigits = n % 100;
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return 'th';
+      return lastDigit === 1 ? 'st' : lastDigit === 2 ? 'nd' : lastDigit === 3 ? 'rd' : 'th';
+    }
     function calculateDaysAdmitted(doa) {
       try {
         const doaDate = new Date(doa);
@@ -480,24 +554,55 @@
         today.setHours(0, 0, 0, 0);
         doaDate.setHours(0, 0, 0, 0);
         const diffTime = today - doaDate;
-        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // Include day of admission
+        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
         if (days <= 0) return '1st DOA';
-        const suffixes = { 1: 'st', 2: 'nd', 3: 'rd' };
-        const suffix = suffixes[days] || 'th';
+        const suffix = getOrdinalSuffix(days);
         return `${days}${suffix} DOA`;
       } catch (e) {
         console.error('Error calculating days admitted:', e);
         return '1st DOA';
       }
     }
+    function calculateNeonatalAge(dob, dot) {
+      try {
+        const birthDateTime = new Date(`${dob}T${dot}:00`);
+        const now = new Date();
+        const diffMs = now - birthDateTime;
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const days = Math.floor(hours / 24) + 1;
+        const suffix = getOrdinalSuffix(days);
+        const display = hours <= 96 ? `${days}${suffix} DOL (${hours} HOL)` : `${days}${suffix} DOL`;
+        return { days, hours, display };
+      } catch (e) {
+        console.error('Error calculating neonatal age:', e);
+        return { days: 1, hours: 24, display: '1st DOL (24 HOL)' };
+      }
+    }
+    function toggleAutoInputsForm() {
+      const autoInputs = document.getElementById('form-auto-age-inputs');
+      const isAuto = document.querySelector('#form-age-toggle input[value="auto"]:checked');
+      autoInputs.style.display = isAuto ? 'flex' : 'none';
+    }
     function addPatient() {
+      const isAutoAge = document.querySelector('#form-age-toggle input[value="auto"]:checked');
+      const dob = document.getElementById('dob').value;
+      const dot = document.getElementById('dot').value;
+      let age = document.getElementById('age').value;
+      if (isAutoAge && dob && dot) {
+        age = calculateNeonatalAge(dob, dot).display;
+      } else if (isAutoAge && (!dob || !dot)) {
+        age = calculateNeonatalAge('', '').display; // Default to 1st DOL (24 HOL)
+      }
       const patient = {
         name: document.getElementById('name').value,
         id: document.getElementById('id').value,
         doa: document.getElementById('doa').value,
+        dob: dob || '',
+        dot: dot || '',
+        isAutoAge: !!isAutoAge,
         shift: document.getElementById('shift').value,
         bed: document.getElementById('bed').value,
-        age: document.getElementById('age').value,
+        age: age,
         sex: document.getElementById('sex').value,
         weight: document.getElementById('weight').value,
         diagnosis: document.getElementById('diagnosis').value,
@@ -533,6 +638,10 @@
       }
     }
     function updateField(id, field, value) {
+      if (field === 'age' && document.querySelector(`#age-toggle-${id} input[value='auto']:checked`)) {
+        alert('Cannot edit age in Auto mode. Switch to Manual mode.');
+        return;
+      }
       console.log(`Updating field ${field} for patient ${id} with value:`, value);
       db.collection('patients').doc(id).update({ [field]: value }).then(() => {
         console.log(`Field ${field} updated successfully for patient ${id}`);
@@ -548,6 +657,19 @@
             }
           }
         }
+        if (field === 'dob' || field === 'dot') {
+          db.collection('patients').doc(id).get().then(doc => {
+            if (doc.exists && doc.data().isAutoAge) {
+              const d = doc.data();
+              const computed = calculateNeonatalAge(d.dob, d.dot);
+              const ageSpan = document.querySelector(`#age-display-${id}`);
+              if (ageSpan) {
+                ageSpan.innerText = computed.display;
+                db.collection('patients').doc(id).update({ age: computed.display });
+              }
+            }
+          });
+        }
       }).catch(error => {
         console.error(`Error updating ${field}:`, error);
         refreshButtonState(id);
@@ -559,6 +681,41 @@
         console.log(`Logs updated successfully for patient ${id}`);
       }).catch(error => {
         console.error('Error updating logs:', error);
+      });
+    }
+    function toggleAgeMode(id) {
+      const toggleDiv = document.getElementById(`age-toggle-${id}`);
+      toggleDiv.style.display = toggleDiv.style.display === 'block' ? 'none' : 'block';
+    }
+    function toggleAutoInputs(id) {
+      const autoInputs = document.getElementById(`auto-age-inputs-${id}`);
+      const isAuto = document.querySelector(`#age-toggle-${id} input[value='auto']:checked`);
+      autoInputs.style.display = isAuto ? 'flex' : 'none';
+      const ageSpan = document.querySelector(`#age-display-${id}`);
+      ageSpan.contentEditable = !isAuto;
+    }
+    function saveAgeMode(id) {
+      const isAuto = document.querySelector(`#age-toggle-${id} input[value='auto']:checked`);
+      const dob = document.getElementById(`dob-${id}`).value;
+      const dot = document.getElementById(`dot-${id}`).value;
+      const ageSpan = document.querySelector(`#age-display-${id}`);
+      let updates = { isAutoAge: !!isAuto };
+      if (isAuto && dob && dot) {
+        const computed = calculateNeonatalAge(dob, dot);
+        updates.age = computed.display;
+        updates.dob = dob;
+        updates.dot = dot;
+        ageSpan.innerText = computed.display;
+        ageSpan.contentEditable = 'false';
+      } else if (!isAuto) {
+        updates.age = ageSpan.innerText || 'Unknown';
+        ageSpan.contentEditable = 'true';
+      }
+      db.collection('patients').doc(id).update(updates).then(() => {
+        console.log(`Age mode updated for patient ${id}:`, updates);
+        document.getElementById(`age-toggle-${id}`).style.display = 'none';
+      }).catch(error => {
+        console.error('Error updating age mode:', error);
       });
     }
     function changeWard(id, newWard) {
@@ -1115,6 +1272,13 @@
             }
             console.log(`Rendering patient ${id}: ward=${d.ward}, dischargeTimestamp=${d.dischargeTimestamp}`);
             const daysAdmitted = calculateDaysAdmitted(d.doa);
+            let computedAge = d.age;
+            if (d.isAutoAge && d.dob && d.dot) {
+              computedAge = calculateNeonatalAge(d.dob, d.dot).display;
+              if (computedAge !== d.age) {
+                db.collection('patients').doc(id).update({ age: computedAge });
+              }
+            }
             const makeEditable = (field, label = '') =>
               `<p><strong>${label}</strong><span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field] || ''}</span></p>`;
             const logs = d.logs || 'No logs yet';
@@ -1135,8 +1299,16 @@
               <p><strong>ID:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'id', this.innerText)">${d.id || ''}</span></p>
               <p><strong>DOA:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span> <span id="doa-days-${id}">(${daysAdmitted})</span></p>
               <p><strong>Shift:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span></p>
+              <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span id="age-display-${id}" contenteditable="${!d.isAutoAge}" onblur="updateField('${id}', 'age', this.innerText)">${computedAge}</span></p>
+              <div class="age-toggle" id="age-toggle-${id}">
+                <label><input type="radio" name="ageMode-${id}" value="manual" ${!d.isAutoAge ? 'checked' : ''} onchange="toggleAutoInputs('${id}')"> Manual</label>
+                <label><input type="radio" name="ageMode-${id}" value="auto" ${d.isAutoAge ? 'checked' : ''} onchange="toggleAutoInputs('${id}'); saveAgeMode('${id}')"> Auto (HOL/DOL)</label>
+                <div class="auto-age-inputs" id="auto-age-inputs-${id}" style="display: ${d.isAutoAge ? 'flex' : 'none'}">
+                  <input type="date" id="dob-${id}" value="${d.dob || ''}" onblur="saveAgeMode('${id}')">
+                  <input type="time" id="dot-${id}" value="${d.dot || ''}" onblur="saveAgeMode('${id}')">
+                </div>
+              </div>
               <p class="inline-fields">
-                <strong>Age:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'age', this.innerText)">${d.age || ''}</span>,
                 <strong>Sex:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'sex', this.innerText)">${d.sex || ''}</span>
               </p>
               <p><strong>Weight:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'weight', this.innerText)">${d.weight || ''}</span></p>
