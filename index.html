@@ -358,11 +358,6 @@
       margin: 4px 0; /* Minimal margin */
       border: none; /* No border */
     }
-    .age-toggle label {
-      display: inline-flex;
-      align-items: center;
-      margin: 4px 0;
-    }
     #form-age-toggle label {
       font-size: 12px; /* Smaller text */
       margin: 0 8px 0 0; /* Minimal margin, right-only for spacing */
@@ -1299,6 +1294,7 @@
               <p><strong>ID:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'id', this.innerText)">${d.id || ''}</span></p>
               <p><strong>DOA:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span> <span id="doa-days-${id}">(${daysAdmitted})</span></p>
               <p><strong>Shift:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span></p>
+              <p><strong>Bed:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'bed', this.innerText)">${d.bed || ''}</span></p>
               <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span id="age-display-${id}" contenteditable="${!d.isAutoAge}" onblur="updateField('${id}', 'age', this.innerText)">${computedAge}</span></p>
               <div class="age-toggle" id="age-toggle-${id}">
                 <label><input type="radio" name="ageMode-${id}" value="manual" ${!d.isAutoAge ? 'checked' : ''} onchange="toggleAutoInputs('${id}')"> Manual</label>
@@ -1312,7 +1308,6 @@
                 <strong>Sex:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'sex', this.innerText)">${d.sex || ''}</span>
               </p>
               <p><strong>Weight:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'weight', this.innerText)">${d.weight || ''}</span></p>
-              <p><strong>${d.ward === 'NICU' ? `Bed: ${d.name ? d.name : ''}` : 'Bed:'}</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'bed', this.innerText)">${d.bed || ''}</span></p>
               <p><strong>Diagnosis:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'diagnosis', this.innerText)">${d.diagnosis || ''}</span></p>
               <p><strong>Medications:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'medications', this.innerText)">${d.medications || ''}</span></p>
               <p><strong>Issues:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'issues', this.innerText)">${d.issues || ''}</span></p>
