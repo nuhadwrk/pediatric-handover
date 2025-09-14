@@ -59,7 +59,7 @@
       --discharge-btn: #28a745;
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { margin: 0; padding: 22.8px; background: var(--bg); color: var(--text); }
+    body { margin: 0; padding: 22.8px; background: var(--bg); color: var(--text); zoom: 0.95; }
     h1 { margin: 0 0 22.8px; text-align: center; font-weight: 700; font-size: 28.5px; }
     .top-buttons {
       display: flex;
@@ -424,7 +424,7 @@
   </div>
   <div class="top-panel">
     <div id="handoverHeader" class="panel-card">
-      <strong>Date:</strong> <span id="handoverDate">2025-09-07</span>
+      <strong>Date:</strong> <span id="handoverDate">2025-09-14</span>
       <table>
         <tbody>
           <tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
@@ -654,18 +654,38 @@
         alert('Cannot edit age in Auto mode. Switch to Manual mode.');
         return;
       }
-      console.log(`Updating field ${field} for patient ${id} with value:`, value);
-      db.collection('patients').doc(id).update({ [field]: value }).then(() => {
+      // Normalize value by trimming whitespace
+      const normalizedValue = value.trim();
+      console.log(`Updating field ${field} for patient ${id} with value: "${normalizedValue}"`);
+      db.collection('patients').doc(id).update({ [field]: normalizedValue }).then(() => {
         console.log(`Field ${field} updated successfully for patient ${id}`);
         if (field === 'plan') {
-          refreshButtonState(id);
+          // Update button state immediately
+          const planEl = document.querySelector(`#plan-content-${id}`);
+          const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
+          if (planEl && logBtn) {
+            const currentPlan = planEl.innerText.trim();
+            db.collection('patients').doc(id).get().then(doc => {
+              if (doc.exists) {
+                const lastLoggedPlan = (doc.data().lastLoggedPlan || '').trim();
+                const needsLog = currentPlan !== '' && currentPlan !== lastLoggedPlan;
+                logBtn.disabled = !needsLog;
+                logBtn.innerText = needsLog ? 'Log' : 'Logged';
+                console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
+              }
+            }).catch(error => {
+              console.error(`Error checking plan state for patient ${id}:`, error);
+              logBtn.disabled = true;
+              logBtn.innerText = 'Logged';
+            });
+          }
         }
         if (field === 'doa') {
           const card = document.querySelector(`.patient-card [data-id="${id}"]`)?.closest('.patient-card');
           if (card) {
             const doaSpan = card.querySelector(`#doa-days-${id}`);
             if (doaSpan) {
-              doaSpan.innerText = `(${calculateDaysAdmitted(value)})`;
+              doaSpan.innerText = `(${calculateDaysAdmitted(normalizedValue)})`;
             }
           }
         }
@@ -684,7 +704,13 @@
         }
       }).catch(error => {
         console.error(`Error updating ${field}:`, error);
-        refreshButtonState(id);
+        if (field === 'plan') {
+          const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
+          if (logBtn) {
+            logBtn.disabled = true;
+            logBtn.innerText = 'Logged';
+          }
+        }
       });
     }
     function updateLog(id, newText) {
@@ -795,7 +821,7 @@
           const formattedTimestamp = formatTimestamp(timestamp);
           const fullLogEntry = `• ${formattedTimestamp} (${daysAdmitted})\n  ${currentPlan}\n\n`;
 
-          const lastLoggedPlan = doc.data().lastLoggedPlan || '';
+          const lastLoggedPlan = (doc.data().lastLoggedPlan || '').trim();
           const currentLines = currentPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
           const lastLines = lastLoggedPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
           
@@ -820,37 +846,48 @@
           const currentLogs = doc.data().logs || '';
           const updatedLogs = currentLogs + newLogEntry;
           
+          // Update both logs and lastLoggedPlan
           db.collection('patients').doc(id).update({
             logs: updatedLogs,
             lastLoggedPlan: currentPlan
           }).then(() => {
             console.log('Plan logged successfully for patient', id);
-            refreshButtonState(id);
+            console.log(`Updated lastLoggedPlan to: "${currentPlan}"`);
+            const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
+            if (logBtn) {
+              logBtn.disabled = true;
+              logBtn.innerText = 'Logged';
+            }
           }).catch(error => {
             console.error('Error logging plan:', error);
-            refreshButtonState(id);
+            const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
+            if (logBtn) {
+              logBtn.disabled = true;
+              logBtn.innerText = 'Logged';
+            }
           });
         }
       });
     }
-    function refreshButtonState(id) {
-      const planEl = document.querySelector(`#plan-content-${id}`);
+    function refreshButtonState(id, currentPlan) {
       const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
-      if (!planEl || !logBtn) {
-        console.error(`Cannot find plan or log button for patient ${id}`);
+      if (!logBtn) {
+        console.error(`Cannot find log button for patient ${id}`);
         return;
       }
-      const currentPlan = planEl.innerText.trim();
       db.collection('patients').doc(id).get().then(doc => {
         if (doc.exists) {
-          const lastLoggedPlan = doc.data().lastLoggedPlan || '';
-          const needsLog = currentPlan === '' || currentPlan !== lastLoggedPlan;
+          const lastLoggedPlan = (doc.data().lastLoggedPlan || '').trim();
+          const normalizedCurrentPlan = currentPlan.trim();
+          const needsLog = normalizedCurrentPlan !== '' && normalizedCurrentPlan !== lastLoggedPlan;
           logBtn.disabled = !needsLog;
           logBtn.innerText = needsLog ? 'Log' : 'Logged';
-          console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
+          console.log(`refreshButtonState for patient ${id}: needsLog=${needsLog}, currentPlan="${normalizedCurrentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
         }
       }).catch(error => {
         console.error(`Error refreshing button state for patient ${id}:`, error);
+        logBtn.disabled = true;
+        logBtn.innerText = 'Logged';
       });
     }
     function formatTimestamp(timestamp) {
@@ -1237,6 +1274,10 @@
               dischargeTag = `<span class="discharge-badge discharge-active" data-id="${id}">Discharged on ${formatted}</span>`;
               console.log(`Adding discharge badge for patient ${id}: Discharged on ${formatted}`);
             }
+            const currentPlan = (d.plan || '').trim();
+            const lastLoggedPlan = (d.lastLoggedPlan || '').trim();
+            const needsLog = currentPlan !== '' && currentPlan !== lastLoggedPlan;
+            console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
             const card = document.createElement('div');
             card.className = 'patient-card';
             card.innerHTML = `
@@ -1273,7 +1314,7 @@
                 <div contenteditable class="editable" onblur="updateLog('${id}', this.innerText)">${logs}</div>
               </div>
               <p><span contenteditable class="editable" id="plan-content-${id}" onblur="updateField('${id}', 'plan', this.innerText)">${d.plan || ''}</span></p>
-              <button class="log-btn" onclick="logPlan('${id}')">Log</button>
+              <button class="log-btn" onclick="logPlan('${id}')" ${needsLog ? '' : 'disabled'}>${needsLog ? 'Log' : 'Logged'}</button>
               <p><strong>Ward:</strong>
                 <select onchange="changeWard('${id}', this.value)">
                   ${wards.map(wr => `<option value="${wr}" ${wr === d.ward ? 'selected' : ''}>${wr}</option>`).join('')}
@@ -1283,16 +1324,8 @@
                 <label><input type="checkbox" ${d.isNew ? 'checked' : ''} onchange="toggleNewTag('${id}')"> New</label>
               </p>
             `;
-            const logBtn = card.querySelector('.log-btn');
-            const currentPlan = d.plan || '';
-            const lastLoggedPlan = d.lastLoggedPlan || '';
-            const needsLog = currentPlan === '' || currentPlan !== lastLoggedPlan;
-            logBtn.disabled = !needsLog;
-            logBtn.innerText = needsLog ? 'Log' : 'Logged';
-            console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
             wardGrids[w].appendChild(card);
             patientCards[id] = card;
-            refreshButtonState(id);
             if (d.ward === 'Discharge') {
               const badge = card.querySelector('.discharge-badge');
               if (badge) {
