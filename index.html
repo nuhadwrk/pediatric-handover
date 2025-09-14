@@ -59,7 +59,43 @@
       --discharge-btn: #28a745;
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { margin: 0; padding: 22.8px; background: var(--bg); color: var(--text); zoom: 0.95; }
+    body { 
+      margin: 0; 
+      padding: 22.8px; 
+      background: var(--bg); 
+      color: var(--text); 
+      zoom: 0.95; 
+    }
+    /* Mobile view adjustments (≤768px) */
+    @media screen and (max-width: 768px) {
+      body {
+        zoom: 1; /* Remove zoom for mobile */
+        padding: 15px; /* Slightly reduce padding for more space */
+      }
+      .patient-card {
+        width: 100% !important; /* Full-width patient cards */
+        margin: 0 auto; /* Center cards */
+      }
+      .panel-card {
+        width: 100%; /* Full-width panels */
+        flex: 0 0 100%; /* Ensure panels take full width */
+        height: auto; /* Allow height to adjust */
+        min-height: 342px; /* Minimum height to prevent shrinking */
+      }
+      .top-panel {
+        flex-direction: column; /* Stack panels vertically */
+        align-items: stretch;
+      }
+      #handoverHeader table {
+        font-size: 14.3px; /* Ensure font size is consistent */
+      }
+    }
+    /* Desktop view adjustments (>768px) */
+    @media screen and (min-width: 769px) {
+      .patient-card {
+        width: 295px; /* Fixed width for desktop */
+      }
+    }
     h1 { margin: 0 0 22.8px; text-align: center; font-weight: 700; font-size: 28.5px; }
     .top-buttons {
       display: flex;
@@ -210,7 +246,6 @@
     }
     .patient-card {
       background: var(--card-bg);
-      width: 295px;
       padding: 17.1px;
       border-radius: 11.4px;
       box-shadow: var(--shadow);
@@ -654,13 +689,11 @@
         alert('Cannot edit age in Auto mode. Switch to Manual mode.');
         return;
       }
-      // Normalize value by trimming whitespace
       const normalizedValue = value.trim();
       console.log(`Updating field ${field} for patient ${id} with value: "${normalizedValue}"`);
       db.collection('patients').doc(id).update({ [field]: normalizedValue }).then(() => {
         console.log(`Field ${field} updated successfully for patient ${id}`);
         if (field === 'plan') {
-          // Update button state immediately
           const planEl = document.querySelector(`#plan-content-${id}`);
           const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
           if (planEl && logBtn) {
@@ -846,7 +879,6 @@
           const currentLogs = doc.data().logs || '';
           const updatedLogs = currentLogs + newLogEntry;
           
-          // Update both logs and lastLoggedPlan
           db.collection('patients').doc(id).update({
             logs: updatedLogs,
             lastLoggedPlan: currentPlan
@@ -1162,7 +1194,6 @@
       const wardGrids = {};
       let patientCards = {};
 
-      // Initialize ward sections and grids
       wards.forEach(w => {
         const sec = document.createElement('div');
         const header = document.createElement('h2');
@@ -1197,7 +1228,6 @@
         const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
         const now = Date.now();
 
-        // Step 1: Clear all existing patient cards
         Object.keys(patientCards).forEach(id => {
           if (patientCards[id]) {
             patientCards[id].remove();
@@ -1205,7 +1235,6 @@
         });
         patientCards = {};
 
-        // Step 2: Collect all valid patients and group by ward
         snap.forEach(doc => {
           const d = doc.data();
           const id = doc.id;
@@ -1216,7 +1245,6 @@
             return;
           }
 
-          // Handle automatic deletion of old discharge records
           if (ward === 'Discharge' && (d.dischargeTimestamp || d.timestamp || now) < now - oneWeekMs) {
             console.log(`Deleting patient ${id} from Discharges: dischargeTimestamp=${d.dischargeTimestamp} is over a week old`);
             db.collection('patients').doc(id).delete().catch(error => {
@@ -1230,12 +1258,9 @@
           if (ward !== 'Discharge') totalActive++;
         });
 
-        // Step 3: Update total active patients
         document.getElementById('totalCount').innerText = totalActive;
 
-        // Step 4: Sort patients and render cards
         wards.forEach(w => {
-          // Sort patients
           if (w === 'Discharge') {
             patientsByWard[w].sort((a, b) => {
               const timeA = a.data.dischargeTimestamp || a.data.timestamp || 0;
@@ -1250,10 +1275,8 @@
             });
           }
 
-          // Clear ward grid
           wardGrids[w].innerHTML = '';
 
-          // Render patient cards
           patientsByWard[w].forEach(({ id, data: d }) => {
             console.log(`Rendering patient ${id}: ward=${d.ward}, dischargeTimestamp=${d.dischargeTimestamp}`);
             const daysAdmitted = calculateDaysAdmitted(d.doa);
@@ -1336,14 +1359,12 @@
             }
           });
 
-          // Update ward header
           const header = document.getElementById(`header-${w}`);
           if (header) {
             header.innerText = `${w === 'Discharge' ? 'Discharges' : w} (${wardCounts[w]} patient${wardCounts[w] !== 1 ? 's' : ''})`;
           }
         });
 
-        // Update ward breakdown
         const breakdownOrder = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
         const breakdownText = breakdownOrder.map(w => `${w} (${wardCounts[w] || 0})`).join(', ');
         const breakdownEl = document.getElementById('wardBreakdown');
