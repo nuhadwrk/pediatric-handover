@@ -741,32 +741,6 @@
           }
           db.collection('patients').doc(id).update(updates).then(() => {
             console.log(`Ward changed to ${newWard} for patient ${id}`);
-            const card = document.querySelector(`.patient-card [data-id="${id}"]`)?.closest('.patient-card');
-            if (card) {
-              const oldWardGrid = document.getElementById(`ward-${oldWard}`);
-              const newWardGrid = document.getElementById(`ward-${newWard}`);
-              if (oldWardGrid && newWardGrid) {
-                oldWardGrid.removeChild(card);
-                newWardGrid.appendChild(card);
-                const select = card.querySelector('select');
-                if (select) select.value = newWard;
-                if (newWard === 'Discharge') {
-                  const timestamp = updates.dischargeTimestamp || Date.now();
-                  const formatted = formatTimestamp(timestamp);
-                  let badge = card.querySelector('.discharge-badge');
-                  if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'discharge-badge discharge-active';
-                    badge.setAttribute('data-id', id);
-                    card.insertBefore(badge, card.firstChild);
-                  }
-                  badge.innerText = `Discharged on ${formatted}`;
-                } else {
-                  const badge = card.querySelector('.discharge-badge');
-                  if (badge) badge.remove();
-                }
-              }
-            }
           }).catch(error => {
             console.error("Error changing ward:", error);
           });
@@ -1149,17 +1123,16 @@
       const container = document.getElementById('wardsContainer');
       const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER", "Discharge"];
       const wardGrids = {};
-      const wardCounts = {};
-      const patientsByWard = {};
       let patientCards = {};
 
+      // Initialize ward sections and grids
       wards.forEach(w => {
         const sec = document.createElement('div');
         const header = document.createElement('h2');
         header.className = 'ward-header';
         header.style.background = `var(--${w})`;
         header.id = `header-${w}`;
-        header.innerText = w === 'Discharge' ? `Discharges` : w;
+        header.innerText = w === 'Discharge' ? `Discharges (0)` : `${w} (0)`;
         if (w === 'Discharge') {
           header.classList.add('discharge-header');
           header.onclick = toggleDischargeWard;
@@ -1174,96 +1147,58 @@
         sec.appendChild(grid);
         container.appendChild(sec);
         wardGrids[w] = grid;
-        wardCounts[w] = 0;
-        patientsByWard[w] = [];
       });
 
-      let initialLoad = true;
       db.collection('patients').onSnapshot(snap => {
-        if (initialLoad) {
-          container.innerHTML = '';
-          wards.forEach(w => {
-            const sec = document.createElement('div');
-            const header = document.createElement('h2');
-            header.className = 'ward-header';
-            header.style.background = `var(--${w})`;
-            header.id = `header-${w}`;
-            header.innerText = w === 'Discharge' ? `Discharges` : w;
-            if (w === 'Discharge') {
-              header.classList.add('discharge-header');
-              header.onclick = toggleDischargeWard;
-            }
-            sec.appendChild(header);
-            const grid = document.createElement('div');
-            grid.className = 'card-grid';
-            grid.id = `ward-${w}`;
-            if (w !== 'Discharge') {
-              grid.classList.add('expanded');
-            }
-            sec.appendChild(grid);
-            container.appendChild(sec);
-            wardGrids[w] = grid;
-            wardCounts[w] = 0;
-            patientsByWard[w] = [];
-          });
-          patientCards = {};
-          initialLoad = false;
-        }
-
+        const wardCounts = {};
+        const patientsByWard = {};
+        wards.forEach(w => {
+          wardCounts[w] = 0;
+          patientsByWard[w] = [];
+        });
         let totalActive = 0;
         const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
         const now = Date.now();
 
-        snap.docChanges().forEach(change => {
-          const doc = change.doc;
+        // Step 1: Clear all existing patient cards
+        Object.keys(patientCards).forEach(id => {
+          if (patientCards[id]) {
+            patientCards[id].remove();
+          }
+        });
+        patientCards = {};
+
+        // Step 2: Collect all valid patients and group by ward
+        snap.forEach(doc => {
           const d = doc.data();
           const id = doc.id;
-          let ward = d.ward;
+          const ward = d.ward;
 
-          if (change.type === 'removed' || (ward === 'Discharge' && (d.dischargeTimestamp || d.timestamp || now) < now - oneWeekMs)) {
-            if (change.type !== 'removed') {
-              console.log(`Deleting patient ${id} from Discharges: dischargeTimestamp=${d.dischargeTimestamp} is over a week old`);
-              db.collection('patients').doc(id).delete().catch(error => {
-                console.error(`Error deleting patient ${id}:`, error);
-              });
-            }
-            if (patientCards[id]) {
-              patientCards[id].remove();
-              delete patientCards[id];
-            }
-            const oldWard = Object.keys(patientsByWard).find(w => patientsByWard[w].some(p => p.id === id));
-            if (oldWard) {
-              patientsByWard[oldWard] = patientsByWard[oldWard].filter(p => p.id !== id);
-              wardCounts[oldWard] = Math.max(0, (wardCounts[oldWard] || 0) - 1);
-            }
+          if (!wards.includes(ward)) {
+            console.warn(`Invalid ward for patient ${id}: ${ward}`);
             return;
           }
 
-          if (!wards.includes(ward)) return;
-
-          if (change.type === 'added' || change.type === 'modified') {
-            if (change.type === 'modified') {
-              const oldWard = Object.keys(patientsByWard).find(w => patientsByWard[w].some(p => p.id === id));
-              if (oldWard && oldWard !== ward) {
-                patientsByWard[oldWard] = patientsByWard[oldWard].filter(p => p.id !== id);
-                wardCounts[oldWard] = Math.max(0, (wardCounts[oldWard] || 0) - 1);
-              }
-              if (patientCards[id]) {
-                patientCards[id].remove();
-                delete patientCards[id];
-              }
-            }
-
-            patientsByWard[ward] = patientsByWard[ward].filter(p => p.id !== id);
-            patientsByWard[ward].push({ id, data: d });
-            wardCounts[ward] = (wardCounts[ward] || 0) + 1;
-            if (ward !== 'Discharge') totalActive++;
+          // Handle automatic deletion of old discharge records
+          if (ward === 'Discharge' && (d.dischargeTimestamp || d.timestamp || now) < now - oneWeekMs) {
+            console.log(`Deleting patient ${id} from Discharges: dischargeTimestamp=${d.dischargeTimestamp} is over a week old`);
+            db.collection('patients').doc(id).delete().catch(error => {
+              console.error(`Error deleting patient ${id}:`, error);
+            });
+            return;
           }
+
+          patientsByWard[ward].push({ id, data: d });
+          wardCounts[ward]++;
+          if (ward !== 'Discharge') totalActive++;
         });
 
+        // Step 3: Update total active patients
         document.getElementById('totalCount').innerText = totalActive;
 
+        // Step 4: Sort patients and render cards
         wards.forEach(w => {
+          // Sort patients
           if (w === 'Discharge') {
             patientsByWard[w].sort((a, b) => {
               const timeA = a.data.dischargeTimestamp || a.data.timestamp || 0;
@@ -1278,12 +1213,11 @@
             });
           }
 
+          // Clear ward grid
           wardGrids[w].innerHTML = '';
+
+          // Render patient cards
           patientsByWard[w].forEach(({ id, data: d }) => {
-            if (patientCards[id]) {
-              patientCards[id].remove();
-              delete patientCards[id];
-            }
             console.log(`Rendering patient ${id}: ward=${d.ward}, dischargeTimestamp=${d.dischargeTimestamp}`);
             const daysAdmitted = calculateDaysAdmitted(d.doa);
             let computedAge = d.age;
@@ -1369,12 +1303,14 @@
             }
           });
 
+          // Update ward header
           const header = document.getElementById(`header-${w}`);
           if (header) {
             header.innerText = `${w === 'Discharge' ? 'Discharges' : w} (${wardCounts[w]} patient${wardCounts[w] !== 1 ? 's' : ''})`;
           }
         });
 
+        // Update ward breakdown
         const breakdownOrder = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
         const breakdownText = breakdownOrder.map(w => `${w} (${wardCounts[w] || 0})`).join(', ');
         const breakdownEl = document.getElementById('wardBreakdown');
