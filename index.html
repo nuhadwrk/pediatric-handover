@@ -19,7 +19,7 @@
       --accent: #2a9d8f;
       --text: #1d3557;
       --card-bg: #ffffff;
-      --shadow: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow: 0 3.8px 11.4px rgba(0,0,0,0.08);
       --border: #aaa;
       --editable-border: #ccc;
       --editable-focus: #888;
@@ -33,8 +33,8 @@
       --Discharge: #e2e3e5;
       --new-btn: #f6a623;
       --discharge-btn: #28a745;
-      --panel-width: 460px;
-      --panel-height: 360px;
+      --panel-width: 437px;
+      --panel-height: 342px;
     }
     [data-theme="dark"] {
       --bg: #1a202c;
@@ -43,7 +43,7 @@
       --accent: #38b2ac;
       --text: #e2e8f0;
       --card-bg: #2d3748;
-      --shadow: 0 4px 12px rgba(0,0,0,0.3);
+      --shadow: 0 3.8px 11.4px rgba(0,0,0,0.3);
       --border: #4a5568;
       --editable-border: #718096;
       --editable-focus: #a0aec0;
@@ -59,24 +59,25 @@
       --discharge-btn: #28a745;
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { margin: 0; padding: 24px; background: var(--bg); color: var(--text); }
-    h1 { margin: 0 0 24px; text-align: center; font-weight: 700; }
+    body { margin: 0; padding: 22.8px; background: var(--bg); color: var(--text); }
+    h1 { margin: 0 0 22.8px; text-align: center; font-weight: 700; font-size: 28.5px; }
     .top-buttons {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 16px;
+      gap: 7.6px;
+      margin-bottom: 15.2px;
     }
     .top-buttons button {
-      padding: 10px 20px;
+      padding: 9.5px 19px;
       font-weight: 600;
       border: none;
-      border-radius: 8px;
+      border-radius: 7.6px;
       cursor: pointer;
       transition: background 0.2s, transform 0.2s;
+      font-size: 15.2px;
     }
-    .top-buttons button:hover { transform: translateY(-2px); }
+    .top-buttons button:hover { transform: translateY(-1.9px); }
     .add { background: var(--primary); color: #fff; }
     .add:hover { background: var(--primary-dark); }
     .print { background: var(--accent); color: #fff; }
@@ -84,9 +85,9 @@
     .theme-toggle {
       background: #6b7280;
       color: #fff;
-      font-size: 18px;
-      width: 44px;
-      height: 44px;
+      font-size: 17.1px;
+      width: 41.8px;
+      height: 41.8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -97,20 +98,20 @@
     [data-theme="dark"] .theme-toggle::before { content: '🌙'; }
     .top-panel {
       display: flex;
-      gap: 16px;
+      gap: 15.2px;
       align-items: stretch;
       justify-content: center;
-      margin: 0 auto 24px;
+      margin: 0 auto 22.8px;
       max-width: 100%;
       flex-wrap: nowrap;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 4px;
+      padding-bottom: 3.8px;
     }
     .panel-card {
       background: var(--card-bg);
-      padding: 18px;
-      border-radius: 12px;
+      padding: 17.1px;
+      border-radius: 11.4px;
       box-shadow: var(--shadow);
       width: var(--panel-width);
       height: var(--panel-height);
@@ -119,72 +120,79 @@
     #handoverHeader { overflow: hidden; }
     #notesCard { overflow: auto; }
     #handoverHeader table {
-      margin: 16px 0 0 0;
+      margin: 15.2px 0 0 0;
       border-collapse: collapse;
       width: 100%;
     }
     #handoverHeader th, #handoverHeader td {
       border: none;
-      padding: 6px;
-      font-size: 14px;
+      padding: 5.7px;
+      font-size: 14.3px;
       vertical-align: top;
     }
     #handoverHeader th { background: var(--bg); }
     #handoverHeader input {
-      width: 60px;
-      padding: 4px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      width: 57px;
+      padding: 3.8px;
+      border: 0.95px solid var(--border);
+      border-radius: 3.8px;
       text-align: center;
       background: var(--card-bg);
       color: var(--text);
+      font-size: 14.3px;
     }
-    #notesCard strong { display: block; margin-bottom: 8px; }
+    #notesCard strong { display: block; margin-bottom: 7.6px; font-size: 15.2px; }
     #notesText {
       width: 100%;
-      min-height: 180px;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+      min-height: 171px;
+      padding: 9.5px;
+      border-radius: 7.6px;
+      border: 0.95px solid var(--border);
       background: var(--bg);
       color: var(--text);
       resize: vertical;
+      font-size: 14.3px;
     }
     .form-section {
       display: none;
       background: var(--card-bg);
-      padding: 24px;
-      border-radius: 12px;
-      max-width: 520px;
-      margin: 0 auto 32px;
+      padding: 22.8px;
+      border-radius: 11.4px;
+      max-width: 494px;
+      margin: 0 auto 30.4px;
       box-shadow: var(--shadow);
     }
     .form-section input, .form-section select, .form-section textarea {
       width: 100%;
-      margin: 6px 0 12px;
-      padding: 10px;
+      margin: 5.7px 0 11.4px;
+      padding: 9.5px;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 7.6px;
+      font-size: 14.3px;
       background: var(--bg);
       color: var(--text);
     }
+    .form-section textarea {
+      min-height: 95px;
+      resize: vertical;
+    }
     .form-section button {
       width: 100%;
-      padding: 12px;
+      padding: 11.4px;
       background: var(--primary);
       color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: 7.6px;
       font-weight: 600;
+      font-size: 14.3px;
     }
     .ward-header {
       text-align: center;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 600;
-      margin: 32px 0 8px;
-      padding: 8px;
-      border-radius: 8px;
+      margin: 30.4px 0 7.6px;
+      padding: 7.6px;
+      border-radius: 7.6px;
     }
     .ward-header.discharge-header {
       cursor: pointer;
@@ -194,35 +202,35 @@
     }
     .ward-header.discharge-header::before {
       content: '►';
-      margin-right: 8px;
-      font-size: 16px;
+      margin-right: 7.6px;
+      font-size: 15.2px;
     }
     .ward-header.discharge-header.expanded::before {
       content: '▼';
     }
     .patient-card {
       background: var(--card-bg);
-      width: 300px;
-      padding: 18px;
-      border-radius: 12px;
+      width: 295px;
+      padding: 17.1px;
+      border-radius: 11.4px;
       box-shadow: var(--shadow);
       position: relative;
       transition: transform 0.18s;
-      padding-top: 48px;
+      padding-top: 45.6px;
     }
     .patient-card:hover { transform: scale(1.015); }
-    .patient-card p { margin: 4px 0; }
-    .patient-card p strong { font-weight: 700; }
+    .patient-card p { margin: 3.8px 0; font-size: 14.3px; }
+    .patient-card p strong { font-weight: 700; font-size: 14.3px; }
     .patient-card strong[onclick] { cursor: pointer; }
     .delete-btn {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 9.5px;
+      right: 9.5px;
       border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
+      border-radius: 3.8px;
+      padding: 3.8px 7.6px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 12.4px;
       opacity: 0.7;
       background: #e63946;
       color: #fff;
@@ -230,13 +238,13 @@
     .delete-btn:hover { opacity: 0.85; }
     .new-badge {
       position: absolute;
-      top: 10px;
-      right: 40px;
+      top: 9.5px;
+      right: 38px;
       background: var(--new-btn);
       color: #fff;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 12px;
+      border-radius: 3.8px;
+      padding: 3.8px 7.6px;
+      font-size: 12.4px;
       display: none;
       opacity: 0.7;
       z-index: 10;
@@ -244,13 +252,13 @@
     .new-badge.new-active { display: block; }
     .discharge-badge {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 9.5px;
+      left: 9.5px;
       background: var(--discharge-btn);
       color: #fff;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 12px;
+      border-radius: 3.8px;
+      padding: 3.8px 7.6px;
+      font-size: 12.4px;
       display: none;
       opacity: 0.9;
       z-index: 10;
@@ -258,24 +266,25 @@
     .discharge-badge.discharge-active {
       display: block !important;
     }
-    .new-checkbox { margin-top: 8px; text-align: left; }
-    .new-checkbox label { display: inline-flex; align-items: center; }
+    .new-checkbox { margin-top: 7.6px; text-align: left; }
+    .new-checkbox label { display: inline-flex; align-items: center; font-size: 14.3px; }
     .editable {
       border: none;
       background: transparent;
-      border-bottom: 1px dashed var(--editable-border);
-      padding: 0 4px;
-      min-width: 20px;
+      border-bottom: 0.95px dashed var(--editable-border);
+      padding: 0 3.8px;
+      min-width: 19px;
       white-space: pre-wrap;
+      font-size: 14.3px;
     }
     .editable:focus {
       outline: none;
-      border-bottom: 1px solid var(--editable-focus);
+      border-bottom: 0.95px solid var(--editable-focus);
     }
     .card-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 15.2px;
     }
     #ward-Discharge.card-grid {
       display: none;
@@ -287,31 +296,34 @@
       cursor: pointer;
       color: var(--text);
       font-weight: 600;
-      margin: 4px 0;
+      margin: 3.8px 0;
+      font-size: 14.3px;
     }
-    .hopi-content { display: none; color: var(--text); }
+    .hopi-content { display: none; color: var(--text); font-size: 14.3px; }
     .hopi-content.expanded { display: block; }
-    .print-window { padding: 20px; }
+    .print-window { padding: 19px; }
     .copy-btn {
-      padding: 10px 20px;
+      padding: 9.5px 19px;
       font-weight: 600;
       background: #6b7280;
       color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: 7.6px;
       cursor: pointer;
-      margin-bottom: 10px;
+      margin-bottom: 9.5px;
       transition: background 0.2s;
+      font-size: 14.3px;
     }
     .copy-btn:hover { background: #4b5563; }
-    pre { white-space: pre-wrap; font-family: 'Inter', monospace; }
+    pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
     .log-btn {
-      padding: 6px 12px;
+      padding: 5.7px 11.4px;
       border: none;
-      border-radius: 4px;
+      border-radius: 3.8px;
       cursor: pointer;
       color: #fff;
-      margin: 8px 0;
+      margin: 7.6px 0;
+      font-size: 14.3px;
     }
     .log-btn:disabled {
       cursor: not-allowed;
@@ -324,74 +336,79 @@
       list-style-type: disc;
       margin: 0;
       padding: 0;
-      padding-left: 12px;
-      text-indent: -12px;
+      padding-left: 11.4px;
+      text-indent: -11.4px;
       white-space: pre-wrap;
-      min-height: 20px;
+      min-height: 19px;
+      font-size: 14.3px;
     }
     .plan-history.expanded + p { display: none; }
     .inline-fields {
       display: flex;
-      gap: 8px;
+      gap: 7.6px;
       align-items: baseline;
     }
     .inline-fields strong {
       flex-shrink: 0;
+      font-size: 14.3px;
     }
     .inline-fields span.editable {
       display: inline-block;
-      min-width: 50px;
+      min-width: 47.5px;
+      font-size: 14.3px;
     }
     .age-toggle {
       background: var(--card-bg);
-      padding: 8px;
-      border-radius: 4px;
-      margin-top: 4px;
-      border: 1px solid var(--border);
-      display: none; /* Hidden for patient cards */
+      padding: 7.6px;
+      border-radius: 3.8px;
+      margin-top: 3.8px;
+      border: 0.95px solid var(--border);
+      display: none;
       text-align: left;
+      font-size: 14.3px;
     }
     #form-age-toggle {
-      display: block; /* Always visible in the form */
-      background: transparent; /* No background */
-      padding: 4px 0; /* Minimal padding */
-      margin: 4px 0; /* Minimal margin */
-      border: none; /* No border */
+      display: block;
+      background: transparent;
+      padding: 3.8px 0;
+      margin: 3.8px 0;
+      border: none;
     }
     #form-age-toggle label {
-      font-size: 12px; /* Smaller text */
-      margin: 0 8px 0 0; /* Minimal margin, right-only for spacing */
-      gap: 4px; /* Minimal gap between radio button and text */
+      font-size: 12.4px;
+      margin: 0 7.6px 0 0;
+      gap: 3.8px;
     }
     #form-age-toggle input[type="radio"] {
       appearance: none;
-      width: 8px; /* Smallest practical size */
-      height: 8px;
-      border: none; /* No border */
+      width: 7.6px;
+      height: 7.6px;
+      border: none;
       border-radius: 50%;
-      background: var(--bg); /* Matches form input background */
+      background: var(--bg);
       cursor: pointer;
       transition: transform 0.2s ease;
     }
     #form-age-toggle input[type="radio"]:checked {
-      background: var(--primary); /* Blue when checked */
-      transform: scale(1.1); /* Subtle expansion */
+      background: var(--primary);
+      transform: scale(1.1);
     }
     #form-age-toggle input[type="radio"]:focus {
-      outline: none; /* No outline on focus */
+      outline: none;
     }
     .auto-age-inputs {
       display: flex;
-      gap: 8px;
-      margin-top: 4px;
+      gap: 7.6px;
+      margin-top: 3.8px;
     }
     .auto-age-inputs input {
-      padding: 6px;
-      border: 1px solid var(--editable-border);
-      border-radius: 4px;
+      padding: 5.7px;
+      border: 0.95px solid var(--editable-border);
+      border-radius: 3.8px;
       background: var(--bg);
       color: var(--text);
       width: 100%;
+      font-size: 14.3px;
     }
   </style>
 </head>
@@ -463,7 +480,7 @@
     </select>
     <input type="text" id="weight" placeholder="Weight" required>
     <input type="text" id="diagnosis" placeholder="Diagnosis">
-    <input type="text" id="medications" placeholder="Medications">
+    <textarea id="medications" placeholder="Medications"></textarea>
     <input type="text" id="issues" placeholder="Issues">
     <textarea id="hopi" placeholder="HOPI"></textarea>
     <select id="ward">
@@ -586,7 +603,7 @@
       if (isAutoAge && dob && dot) {
         age = calculateNeonatalAge(dob, dot).display;
       } else if (isAutoAge && (!dob || !dot)) {
-        age = calculateNeonatalAge('', '').display; // Default to 1st DOL (24 HOL)
+        age = calculateNeonatalAge('', '').display;
       }
       const patient = {
         name: document.getElementById('name').value,
@@ -983,19 +1000,20 @@
                 --text: ${currentTheme === 'dark' ? '#e2e8f0' : '#1d3557'};
                 --card-bg: ${currentTheme === 'dark' ? '#2d3748' : '#ffffff'};
               }
-              body { font-family: 'Inter', sans-serif; padding: 20px; background: var(--bg); color: var(--text); }
+              body { font-family: 'Inter', sans-serif; padding: 19px; background: var(--bg); color: var(--text); }
               .copy-btn {
-                padding: 10px 20px;
+                padding: 9.5px 19px;
                 font-weight: 600;
                 background: #6b7280;
                 color: #fff;
                 border: none;
-                border-radius: 8px;
+                border-radius: 7.6px;
                 cursor: pointer;
-                margin-bottom: 10px;
+                margin-bottom: 9.5px;
+                font-size: 14.3px;
               }
               .copy-btn:hover { background: #4b5563; }
-              pre { white-space: pre-wrap; font-family: 'Inter', monospace; }
+              pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
             </style>
           </head>
           <body>
@@ -1063,19 +1081,20 @@
                 --text: ${currentTheme === 'dark' ? '#e2e8f0' : '#1d3557'};
                 --card-bg: ${currentTheme === 'dark' ? '#2d3748' : '#ffffff'};
               }
-              body { font-family: 'Inter', sans-serif; padding: 20px; background: var(--bg); color: var(--text); }
+              body { font-family: 'Inter', sans-serif; padding: 19px; background: var(--bg); color: var(--text); }
               .copy-btn {
-                padding: 10px 20px;
+                padding: 9.5px 19px;
                 font-weight: 600;
                 background: #6b7280;
                 color: #fff;
                 border: none;
-                border-radius: 8px;
+                border-radius: 7.6px;
                 cursor: pointer;
-                margin-bottom: 10px;
+                margin-bottom: 9.5px;
+                font-size: 14.3px;
               }
               .copy-btn:hover { background: #4b5563; }
-              pre { white-space: pre-wrap; font-family: 'Inter', monospace; }
+              pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
             </style>
           </head>
           <body>
