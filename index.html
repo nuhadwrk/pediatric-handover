@@ -64,36 +64,49 @@
       padding: 22.8px; 
       background: var(--bg); 
       color: var(--text); 
-      zoom: 0.95; 
     }
     /* Mobile view adjustments (≤768px) */
     @media screen and (max-width: 768px) {
       body {
-        zoom: 1; /* Remove zoom for mobile */
-        padding: 15px; /* Slightly reduce padding for more space */
+        padding: 16px;
       }
       .patient-card {
-        width: 100% !important; /* Full-width patient cards */
-        margin: 0 auto; /* Center cards */
+        width: 100% !important;
+        margin: 0 auto;
+        padding: 20px;
+        transform: none !important;
       }
       .panel-card {
-        width: 100%; /* Full-width panels */
-        flex: 0 0 100%; /* Ensure panels take full width */
-        height: auto; /* Allow height to adjust */
-        min-height: 342px; /* Minimum height to prevent shrinking */
+        width: 100%;
+        flex: 0 0 100%;
+        height: auto;
+        min-height: 360px;
+        padding: 20px;
       }
       .top-panel {
-        flex-direction: column; /* Stack panels vertically */
+        flex-direction: column;
         align-items: stretch;
       }
       #handoverHeader table {
-        font-size: 14.3px; /* Ensure font size is consistent */
+        font-size: 15px;
+      }
+      .top-buttons button {
+        padding: 10px 20px;
+        font-size: 16px;
+      }
+      .form-section {
+        padding: 20px;
+        max-width: 100%;
+      }
+      .ward-header {
+        font-size: 20px;
+        padding: 10px;
       }
     }
     /* Desktop view adjustments (>768px) */
     @media screen and (min-width: 769px) {
       .patient-card {
-        width: 295px; /* Fixed width for desktop */
+        width: 295px;
       }
     }
     h1 { margin: 0 0 22.8px; text-align: center; font-weight: 700; font-size: 28.5px; }
@@ -252,10 +265,11 @@
       position: relative;
       transition: transform 0.18s;
       padding-top: 45.6px;
+      font-size: 15px; /* Updated patient card font size */
     }
     .patient-card:hover { transform: scale(1.015); }
-    .patient-card p { margin: 3.8px 0; font-size: 14.3px; }
-    .patient-card p strong { font-weight: 700; font-size: 14.3px; }
+    .patient-card p { margin: 3.8px 0; font-size: 15px; }
+    .patient-card p strong { font-weight: 700; font-size: 15px; }
     .patient-card strong[onclick] { cursor: pointer; }
     .delete-btn {
       position: absolute;
@@ -302,7 +316,7 @@
       display: block !important;
     }
     .new-checkbox { margin-top: 7.6px; text-align: left; }
-    .new-checkbox label { display: inline-flex; align-items: center; font-size: 14.3px; }
+    .new-checkbox label { display: inline-flex; align-items: center; font-size: 15px; }
     .editable {
       border: none;
       background: transparent;
@@ -310,7 +324,7 @@
       padding: 0 3.8px;
       min-width: 19px;
       white-space: pre-wrap;
-      font-size: 14.3px;
+      font-size: 15px;
     }
     .editable:focus {
       outline: none;
@@ -332,9 +346,9 @@
       color: var(--text);
       font-weight: 600;
       margin: 3.8px 0;
-      font-size: 14.3px;
+      font-size: 15px;
     }
-    .hopi-content { display: none; color: var(--text); font-size: 14.3px; }
+    .hopi-content { display: none; color: var(--text); font-size: 15px; }
     .hopi-content.expanded { display: block; }
     .print-window { padding: 19px; }
     .copy-btn {
@@ -350,7 +364,7 @@
       font-size: 14.3px;
     }
     .copy-btn:hover { background: #4b5563; }
-    pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
+    .pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
     .log-btn {
       padding: 5.7px 11.4px;
       border: none;
@@ -358,7 +372,7 @@
       cursor: pointer;
       color: #fff;
       margin: 7.6px 0;
-      font-size: 14.3px;
+      font-size: 15px;
     }
     .log-btn:disabled {
       cursor: not-allowed;
@@ -375,7 +389,7 @@
       text-indent: -11.4px;
       white-space: pre-wrap;
       min-height: 19px;
-      font-size: 14.3px;
+      font-size: 15px;
     }
     .plan-history.expanded + p { display: none; }
     .inline-fields {
@@ -385,12 +399,12 @@
     }
     .inline-fields strong {
       flex-shrink: 0;
-      font-size: 14.3px;
+      font-size: 15px;
     }
     .inline-fields span.editable {
       display: inline-block;
       min-width: 47.5px;
-      font-size: 14.3px;
+      font-size: 15px;
     }
     .age-toggle {
       background: var(--card-bg);
@@ -400,7 +414,7 @@
       border: 0.95px solid var(--border);
       display: none;
       text-align: left;
-      font-size: 14.3px;
+      font-size: 15px;
     }
     #form-age-toggle {
       display: block;
@@ -459,7 +473,7 @@
   </div>
   <div class="top-panel">
     <div id="handoverHeader" class="panel-card">
-      <strong>Date:</strong> <span id="handoverDate">2025-09-14</span>
+      <strong>Date:</strong> <span id="handoverDate">2025-09-15</span>
       <table>
         <tbody>
           <tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
