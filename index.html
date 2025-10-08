@@ -65,7 +65,6 @@
       background: var(--bg); 
       color: var(--text); 
     }
-    /* Mobile view adjustments (≤768px) */
     @media screen and (max-width: 768px) {
       body {
         padding: 16px;
@@ -103,7 +102,6 @@
         padding: 10px;
       }
     }
-    /* Desktop view adjustments (>768px) */
     @media screen and (min-width: 769px) {
       .patient-card {
         width: 295px;
@@ -265,7 +263,7 @@
       position: relative;
       transition: transform 0.18s;
       padding-top: 45.6px;
-      font-size: 15px; /* Updated patient card font size */
+      font-size: 15px;
     }
     .patient-card:hover { transform: scale(1.015); }
     .patient-card p { margin: 3.8px 0; font-size: 15px; }
@@ -391,7 +389,7 @@
       min-height: 19px;
       font-size: 15px;
     }
-    .plan-history.expanded + p { display: none; }
+    .plan-history { margin-bottom: 3.8px; }
     .inline-fields {
       display: flex;
       gap: 7.6px;
@@ -458,6 +456,12 @@
       color: var(--text);
       width: 100%;
       font-size: 14.3px;
+    }
+    .current-plan-label {
+      font-weight: 600;
+      margin-top: 7.6px;
+      display: block;
+      font-size: 15px;
     }
   </style>
 </head>
@@ -850,7 +854,7 @@
       const newExpanded = !content.classList.contains('expanded');
       content.classList.toggle('expanded', newExpanded);
       toggle.setAttribute('aria-expanded', newExpanded);
-      toggle.innerText = newExpanded ? 'Plan: ▼' : 'Plan: ►';
+      toggle.innerText = newExpanded ? 'Plan history: ▼' : 'Plan history: ►';
     }
     function logPlan(id) {
       console.log(`Attempting to log plan for patient ${id}`);
@@ -1232,6 +1236,7 @@
       });
 
       db.collection('patients').onSnapshot(snap => {
+        const scrollY = window.scrollY; // Capture scroll position before re-render
         const wardCounts = {};
         const patientsByWard = {};
         wards.forEach(w => {
@@ -1340,16 +1345,18 @@
               </p>
               <p><strong>Weight:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'weight', this.innerText)">${d.weight || ''}</span></p>
               <p><strong>Diagnosis:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'diagnosis', this.innerText)">${d.diagnosis || ''}</span></p>
-              <p><strong>Medications:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'medications', this.innerText)">${d.medications || ''}</span></p>
+              <p><strong>Medications:</strong></p>
+              <p><span contenteditable class="editable" onblur="updateField('${id}', 'medications', this.innerText)">${d.medications || ''}</span></p>
               <p><strong>Issues:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'issues', this.innerText)">${d.issues || ''}</span></p>
               <p><strong class="hopi-toggle" id="hopi-toggle-${id}" onclick="toggleHopi('${id}')" aria-expanded="false">HOPI: ►</strong></p>
               <div class="hopi-content" id="hopi-content-${id}">
                 <span contenteditable class="editable" onblur="updateField('${id}', 'hopi', this.innerText)">${d.hopi || ''}</span>
               </div>
-              <p><strong class="hopi-toggle" id="plan-toggle-${id}" onclick="togglePlan('${id}')" aria-expanded="false">Plan: ►</strong></p>
+              <p><strong class="hopi-toggle" id="plan-toggle-${id}" onclick="togglePlan('${id}')" aria-expanded="false">Plan history: ►</strong></p>
               <div class="hopi-content plan-history" id="plan-history-${id}">
                 <div contenteditable class="editable" onblur="updateLog('${id}', this.innerText)">${logs}</div>
               </div>
+              <p><strong class="current-plan-label">Current plan:</strong></p>
               <p><span contenteditable class="editable" id="plan-content-${id}" onblur="updateField('${id}', 'plan', this.innerText)">${d.plan || ''}</span></p>
               <button class="log-btn" onclick="logPlan('${id}')" ${needsLog ? '' : 'disabled'}>${needsLog ? 'Log' : 'Logged'}</button>
               <p><strong>Ward:</strong>
@@ -1383,6 +1390,11 @@
         const breakdownText = breakdownOrder.map(w => `${w} (${wardCounts[w] || 0})`).join(', ');
         const breakdownEl = document.getElementById('wardBreakdown');
         if (breakdownEl) breakdownEl.innerText = breakdownText;
+
+        // Restore scroll position after re-render
+        setTimeout(() => {
+          window.scrollTo({ top: scrollY, behavior: 'instant' });
+        }, 0);
       }, error => {
         console.error('Error loading patients:', error);
       });
