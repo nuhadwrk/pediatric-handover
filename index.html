@@ -1,505 +1,279 @@
-<html lang="en" data-theme="dark">
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <title>Pediatric Handover System</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PaedWard">
-  <meta name="theme-color" content="#2a9d8f">
-  <link rel="manifest" href="/pediatric-handover/manifest.json">
-  <link rel="apple-touch-icon" sizes="180x180" href="/pediatric-handover/icon-180.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/pediatric-handover/icon-192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/pediatric-handover/icon-512.png">
+  <meta name="viewport" content="width=960, user-scalable=yes">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     :root {
-      --bg: #f4f7fb;
-      --primary: #0066cc;
-      --primary-dark: #004a99;
-      --accent: #2a9d8f;
-      --text: #1d3557;
-      --card-bg: #ffffff;
-      --shadow: 0 3.8px 11.4px rgba(0,0,0,0.08);
-      --border: #aaa;
-      --editable-border: #ccc;
-      --editable-focus: #888;
-      --PW: #d1e7ff;
-      --GW: #fde2e4;
-      --SW: #e2f0cb;
-      --PVT: #fff3cd;
-      --ICU: #d4edda;
-      --NICU: #f8d7da;
-      --ER: #f5f5f5;
-      --Discharge: #e2e3e5;
-      --new-btn: #f6a623;
-      --discharge-btn: #28a745;
-      --panel-width: 437px;
-      --panel-height: 342px;
+      --bg: #f4f7fb; --primary: #0066cc; --primary-dark: #004a99; --accent: #2a9d8f; --text: #1d3557;
+      --card-bg: #ffffff; --shadow: 0 3.8px 11.4px rgba(0,0,0,0.08); --border: #aaa;
+      --editable-border: #ccc; --editable-focus: #888;
+      --PW: #d1e7ff; --GW: #fde2e4; --SW: #e2f0cb; --PVT: #fff3cd; --ICU: #d4edda; --NICU: #f8d7da; --ER: #f5f5f5; --Discharge: #e2e3e5;
+      --new-btn: #f6a623; --discharge-btn: #28a745;
+      --panel-width: 437px; --panel-height: 342px;
     }
     [data-theme="dark"] {
-      --bg: #1a202c;
-      --primary: #4299e1;
-      --primary-dark: #2b6cb0;
-      --accent: #38b2ac;
-      --text: #e2e8f0;
-      --card-bg: #2d3748;
-      --shadow: 0 3.8px 11.4px rgba(0,0,0,0.3);
-      --border: #4a5568;
-      --editable-border: #718096;
-      --editable-focus: #a0aec0;
-      --PW: #2c5282;
-      --GW: #9b2c2c;
-      --SW: #5a7f3f;
-      --PVT: #b7791f;
-      --ICU: #276749;
-      --NICU: #9b2c2c;
-      --ER: #4a5568;
-      --Discharge: #3f3f46;
-      --new-btn: #f6a623;
-      --discharge-btn: #28a745;
+      --bg: #1a202c; --primary: #4299e1; --primary-dark: #2b6cb0; --accent: #38b2ac; --text: #e2e8f0;
+      --card-bg: #2d3748; --shadow: 0 3.8px 11.4px rgba(0,0,0,0.3); --border: #4a5568;
+      --editable-border: #718096; --editable-focus: #a0aec0;
+      --PW: #2c5282; --GW: #9b2c2c; --SW: #5a7f3f; --PVT: #b7791f; --ICU: #276749; --NICU: #9b2c2c; --ER: #4a5568; --Discharge: #3f3f46;
+      --new-btn: #f6a623; --discharge-btn: #28a745;
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
-    body { 
-      margin: 0; 
-      padding: 22.8px; 
-      background: var(--bg); 
-      color: var(--text); 
-    }
-    @media screen and (max-width: 768px) {
-      body {
-        padding: 16px;
-      }
-      .patient-card {
-        width: 100% !important;
-        margin: 0 auto;
-        padding: 20px;
-        transform: none !important;
-      }
-      .panel-card {
-        width: 100%;
-        flex: 0 0 100%;
-        height: auto;
-        min-height: 360px;
-        padding: 20px;
-      }
-      .top-panel {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      #handoverHeader table {
-        font-size: 15px;
-      }
-      .top-buttons button {
-        padding: 10px 20px;
-        font-size: 16px;
-      }
-      .form-section {
-        padding: 20px;
-        max-width: 100%;
-      }
-      .ward-header {
-        font-size: 20px;
-        padding: 10px;
-      }
-    }
-    @media screen and (min-width: 769px) {
-      .patient-card {
-        width: 295px;
-      }
-    }
+    body { margin: 0; padding: 22.8px; background: var(--bg); color: var(--text); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     h1 { margin: 0 0 22.8px; text-align: center; font-weight: 700; font-size: 28.5px; }
-    .top-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 7.6px;
-      margin-bottom: 15.2px;
+    
+    .top-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 7.6px; margin-bottom: 15.2px; align-items: stretch; }
+    .top-buttons button, .dropdown-btn, .theme-toggle { 
+        padding: 9.5px 19px; font-weight: 600; border: none; border-radius: 7.6px; 
+        cursor: pointer; transition: background 0.2s, transform 0.2s; font-size: 15.2px; 
+        display: inline-flex; align-items: center; justify-content: center; 
+        height: 42px; box-sizing: border-box; vertical-align: middle;
     }
-    .top-buttons button {
-      padding: 9.5px 19px;
-      font-weight: 600;
-      border: none;
-      border-radius: 7.6px;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.2s;
-      font-size: 15.2px;
-    }
-    .top-buttons button:hover { transform: translateY(-1.9px); }
+    .top-buttons button:hover, .dropdown:hover .dropdown-btn { transform: translateY(-1.9px); }
     .add { background: var(--primary); color: #fff; }
-    .add:hover { background: var(--primary-dark); }
-    .print { background: var(--accent); color: #fff; }
-    .print:hover { background: #2c7a7b; }
-    .theme-toggle {
-      background: #6b7280;
-      color: #fff;
-      font-size: 17.1px;
-      width: 41.8px;
-      height: 41.8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
-    .theme-toggle:hover { background: #4b5563; }
+    .btn-green { background: #28a745; color: #fff; }
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-btn { background: var(--accent); color: #fff; }
+    .dropdown-content { display: none; position: absolute; background-color: var(--card-bg); min-width: 160px; box-shadow: var(--shadow); z-index: 100; border-radius: 7.6px; overflow: hidden; border: 1px solid var(--border); }
+    .dropdown-content a { color: var(--text); padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; cursor: pointer; }
+    .dropdown-content a:hover { background-color: var(--bg); }
+    .dropdown:hover .dropdown-content { display: block; }
+    .theme-toggle { background: #6b7280; color: #fff; font-size: 17.1px; width: 42px; padding: 0; }
     .theme-toggle::before { content: '☀'; }
     [data-theme="dark"] .theme-toggle::before { content: '🌙'; }
-    .top-panel {
-      display: flex;
-      gap: 15.2px;
-      align-items: stretch;
-      justify-content: center;
-      margin: 0 auto 22.8px;
-      max-width: 100%;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding-bottom: 3.8px;
-    }
-    .panel-card {
-      background: var(--card-bg);
-      padding: 17.1px;
-      border-radius: 11.4px;
-      box-shadow: var(--shadow);
-      width: var(--panel-width);
-      height: var(--panel-height);
-      flex: 0 0 var(--panel-width);
-    }
-    #handoverHeader { overflow: hidden; }
-    #notesCard { overflow: auto; }
-    #handoverHeader table {
-      margin: 15.2px 0 0 0;
-      border-collapse: collapse;
-      width: 100%;
-    }
-    #handoverHeader th, #handoverHeader td {
-      border: none;
-      padding: 5.7px;
-      font-size: 14.3px;
-      vertical-align: top;
-    }
+    
+    .top-panel { display: flex; gap: 15.2px; align-items: stretch; justify-content: center; margin: 0 auto 22.8px; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3.8px; }
+    .panel-card { background: var(--card-bg); padding: 17.1px; border-radius: 11.4px; box-shadow: var(--shadow); width: var(--panel-width); height: var(--panel-height); flex: 0 0 var(--panel-width); }
+    #handoverHeader table { margin: 15.2px 0 0 0; border-collapse: collapse; width: 100%; }
+    #handoverHeader th, #handoverHeader td { border: none; padding: 5.7px; font-size: 14.3px; vertical-align: top; }
     #handoverHeader th { background: var(--bg); }
-    #handoverHeader input {
-      width: 57px;
-      padding: 3.8px;
-      border: 0.95px solid var(--border);
-      border-radius: 3.8px;
-      text-align: center;
-      background: var(--card-bg);
-      color: var(--text);
-      font-size: 14.3px;
-    }
-    #notesCard strong { display: block; margin-bottom: 7.6px; font-size: 15.2px; }
-    #notesText {
-      width: 100%;
-      min-height: 171px;
-      padding: 9.5px;
-      border-radius: 7.6px;
-      border: 0.95px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      resize: vertical;
-      font-size: 14.3px;
-    }
-    .form-section {
-      display: none;
-      background: var(--card-bg);
-      padding: 22.8px;
-      border-radius: 11.4px;
-      max-width: 494px;
-      margin: 0 auto 30.4px;
-      box-shadow: var(--shadow);
-    }
-    .form-section input, .form-section select, .form-section textarea {
-      width: 100%;
-      margin: 5.7px 0 11.4px;
-      padding: 9.5px;
-      border: none;
-      border-radius: 7.6px;
-      font-size: 14.3px;
-      background: var(--bg);
-      color: var(--text);
-    }
-    .form-section textarea {
-      min-height: 95px;
-      resize: vertical;
-    }
-    .form-section button {
-      width: 100%;
-      padding: 11.4px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: 7.6px;
-      font-weight: 600;
-      font-size: 14.3px;
-    }
-    .ward-header {
-      text-align: center;
-      font-size: 19px;
-      font-weight: 600;
-      margin: 30.4px 0 7.6px;
-      padding: 7.6px;
-      border-radius: 7.6px;
-    }
-    .ward-header.discharge-header {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .ward-header.discharge-header::before {
-      content: '►';
-      margin-right: 7.6px;
-      font-size: 15.2px;
-    }
-    .ward-header.discharge-header.expanded::before {
-      content: '▼';
-    }
-    .patient-card {
-      background: var(--card-bg);
-      padding: 17.1px;
-      border-radius: 11.4px;
-      box-shadow: var(--shadow);
-      position: relative;
-      transition: transform 0.18s;
-      padding-top: 45.6px;
-      font-size: 15px;
-    }
+    #handoverHeader input { width: 57px; padding: 3.8px; border: 0.95px solid var(--border); border-radius: 3.8px; text-align: center; background: var(--card-bg); color: var(--text); font-size: 14.3px; }
+    #notesText { width: 100%; min-height: 171px; padding: 9.5px; border-radius: 7.6px; border: 0.95px solid var(--border); background: var(--bg); color: var(--text); resize: vertical; font-size: 14.3px; }
+    
+    .form-section { display: none; background: var(--card-bg); padding: 22.8px; border-radius: 11.4px; max-width: 494px; margin: 0 auto 30.4px; box-shadow: var(--shadow); }
+    .form-section input, .form-section select, .form-section textarea { width: 100%; margin: 5.7px 0 11.4px; padding: 9.5px; border: none; border-radius: 7.6px; font-size: 14.3px; background: var(--bg); color: var(--text); }
+    .form-section textarea { min-height: 95px; resize: vertical; }
+    .form-section button { width: 100%; padding: 11.4px; background: var(--primary); color: #fff; border: none; border-radius: 7.6px; font-weight: 600; font-size: 14.3px; }
+    
+    #form-age-toggle { display: block !important; margin-bottom: 10px; }
+    .age-toggle { background: var(--card-bg); padding: 7.6px; border-radius: 3.8px; margin-top: 3.8px; border: 0.95px solid var(--border); display: none; text-align: left; font-size: 15px; }
+    .age-toggle label { font-size: 12.4px; margin: 0 7.6px 0 0; gap: 3.8px; display: inline-flex; align-items: center; }
+    .age-toggle input[type="radio"] { width: auto; margin: 0 4px 0 0; }
+    .auto-age-inputs { display: flex; gap: 7.6px; margin-top: 3.8px; }
+    .auto-age-inputs input { padding: 5.7px; border: 0.95px solid var(--editable-border); border-radius: 3.8px; background: var(--bg); color: var(--text); width: 100%; font-size: 14.3px; margin: 0; }
+    .new-checkbox { margin-top: 7.6px; text-align: left; }
+    .new-checkbox label { display: inline-flex; align-items: center; font-size: 15px; }
+    .new-checkbox input { width: auto; margin-right: 5px; }
+    
+    .ward-header { text-align: center; font-size: 19px; font-weight: 600; margin: 30.4px 0 7.6px; padding: 7.6px; border-radius: 7.6px; }
+    .ward-header.discharge-header { cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .ward-header.discharge-header::before { content: '►'; margin-right: 7.6px; font-size: 15.2px; }
+    .ward-header.discharge-header.expanded::before { content: '▼'; }
+    
+    .card-grid { display: flex; flex-wrap: wrap; gap: 15.2px; justify-content: flex-start; }
+    #ward-Discharge.card-grid { display: none; }
+    #ward-Discharge.card-grid.expanded { display: flex; }
+    
+    .patient-card { background: var(--card-bg); padding: 17.1px; border-radius: 11.4px; box-shadow: var(--shadow); position: relative; transition: transform 0.18s; padding-top: 50px; font-size: 15px; width: 295px; }
     .patient-card:hover { transform: scale(1.015); }
     .patient-card p { margin: 3.8px 0; font-size: 15px; }
     .patient-card p strong { font-weight: 700; font-size: 15px; }
-    .patient-card strong[onclick] { cursor: pointer; }
-    .delete-btn {
-      position: absolute;
-      top: 9.5px;
-      right: 9.5px;
-      border: none;
-      border-radius: 3.8px;
-      padding: 3.8px 7.6px;
-      cursor: pointer;
-      font-size: 12.4px;
-      opacity: 0.7;
-      background: #e63946;
-      color: #fff;
-    }
-    .delete-btn:hover { opacity: 0.85; }
-    .new-badge {
-      position: absolute;
-      top: 9.5px;
-      right: 38px;
-      background: var(--new-btn);
-      color: #fff;
-      border-radius: 3.8px;
-      padding: 3.8px 7.6px;
-      font-size: 12.4px;
-      display: none;
-      opacity: 0.7;
-      z-index: 10;
-    }
-    .new-badge.new-active { display: block; }
-    .discharge-badge {
-      position: absolute;
-      top: 9.5px;
-      left: 9.5px;
-      background: var(--discharge-btn);
-      color: #fff;
-      border-radius: 3.8px;
-      padding: 3.8px 7.6px;
-      font-size: 12.4px;
-      display: none;
-      opacity: 0.9;
-      z-index: 10;
-    }
-    .discharge-badge.discharge-active {
-      display: block !important;
-    }
-    .new-checkbox { margin-top: 7.6px; text-align: left; }
-    .new-checkbox label { display: inline-flex; align-items: center; font-size: 15px; }
-    .editable {
-      border: none;
-      background: transparent;
-      border-bottom: 0.95px dashed var(--editable-border);
-      padding: 0 3.8px;
-      min-width: 19px;
-      white-space: pre-wrap;
-      font-size: 15px;
-    }
-    .editable:focus {
-      outline: none;
-      border-bottom: 0.95px solid var(--editable-focus);
-    }
-    .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15.2px;
-    }
-    #ward-Discharge.card-grid {
-      display: none;
-    }
-    #ward-Discharge.card-grid.expanded {
-      display: flex;
-    }
-    .hopi-toggle {
-      cursor: pointer;
-      color: var(--text);
-      font-weight: 600;
-      margin: 3.8px 0;
-      font-size: 15px;
-    }
+    
+    .card-ctrl { position: absolute; top: 10px; height: 26px; border-radius: 3.8px; display: flex; align-items: center; justify-content: center; font-size: 12.4px; z-index: 10; font-weight: 600; }
+    .delete-btn { right: 9.5px; border: none; cursor: pointer; opacity: 0.7; background: #e63946; color: #fff; padding: 0 8px; min-width: 26px; }
+    .new-badge { right: 42px; background: var(--new-btn); color: #fff; padding: 0 8px; display: none; opacity: 0.7; }
+    .new-badge.new-active { display: flex; }
+    .discharge-badge { left: 45px; background: var(--discharge-btn); color: #fff; padding: 0 8px; display: none; opacity: 0.9; }
+    .discharge-badge.discharge-active { display: flex !important; }
+    .expand-btn { left: 9.5px; background: var(--accent); color: #fff; border: none; width: 28px; cursor: pointer; font-size: 16px; opacity: 0.5; transition: opacity 0.2s; }
+    .expand-btn:hover { opacity: 1; }
+  
+    .editable { border: none; background: transparent; border-bottom: 0.95px dashed var(--editable-border); padding: 0 3.8px; min-width: 19px; white-space: pre-wrap; font-size: 15px; }
+    .editable:focus { outline: none; border-bottom: 0.95px solid var(--editable-focus); }
+    .hopi-toggle { cursor: pointer; color: var(--text); font-weight: 600; margin: 3.8px 0; font-size: 15px; }
     .hopi-content { display: none; color: var(--text); font-size: 15px; }
     .hopi-content.expanded { display: block; }
-    .print-window { padding: 19px; }
-    .copy-btn {
-      padding: 9.5px 19px;
-      font-weight: 600;
-      background: #6b7280;
-      color: #fff;
-      border: none;
-      border-radius: 7.6px;
-      cursor: pointer;
-      margin-bottom: 9.5px;
-      transition: background 0.2s;
-      font-size: 14.3px;
+    .current-plan-label { font-weight: 600; margin-top: 7.6px; display: block; font-size: 15px; }
+    .inline-fields { display: flex; gap: 7.6px; align-items: baseline; }
+    .inline-fields strong { flex-shrink: 0; font-size: 15px; }
+    .log-btn { padding: 5.7px 11.4px; border: none; border-radius: 3.8px; cursor: pointer; color: #fff; margin: 7.6px 0; font-size: 15px; }
+    .log-btn:disabled { cursor: not-allowed; background: #6c757d; color: #eee; }
+    .log-btn:not(:disabled) { background: #28a745; }
+    
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: var(--card-bg); width: 95%; max-width: 1000px; height: 85vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 12px 12px 0 0; flex-shrink: 0; flex-wrap: wrap; gap: 10px; }
+    .modal-header h2 { margin: 0; font-size: 20px; }
+    .close-modal { background: none; border: none; font-size: 24px; color: var(--text); cursor: pointer; }
+    .modal-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--card-bg); padding: 0 20px; overflow-x: auto; flex-shrink: 0; }
+    .tab-btn { padding: 12px 20px; background: none; border: none; font-weight: 600; color: var(--text); opacity: 0.6; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; font-size: 14px; }
+    .tab-btn.active { opacity: 1; border-bottom-color: var(--primary); color: var(--primary); }
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; animation: fadeIn 0.2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .sleek-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 10px; }
+    .sleek-row { margin-bottom: 15px; }
+    .sleek-label { font-size: 12px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sleek-input { font-size: 14px; color: var(--text); background: transparent; border-bottom: none; width: 100%; display: block; padding-bottom: 2px; min-height: 20px; outline: none; word-wrap: break-word; line-height: 1.5; }
+    .compact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .lab-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    .lab-table th, .lab-table td { border: 1px solid var(--border); padding: 8px; text-align: center; min-width: 80px; }
+    .lab-table th { background: var(--bg); font-weight: 600; }
+    .lab-table input { width: 100%; border: none; background: transparent; text-align: center; color: var(--text); font-family: 'Inter', sans-serif; }
+    .chart-container { height: 300px; margin-top: 20px; border: 1px solid var(--border); padding: 10px; border-radius: 8px; }
+    .img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+    .img-card { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; border: 1px solid var(--border); background: #000; }
+    .img-card img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.2s; }
+    .img-card img:hover { transform: scale(1.05); }
+    .img-caption { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 11px; text-align: center; }
+    .img-delete { position: absolute; top: 5px; right: 5px; background: #e63946; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .lightbox { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+    .lightbox-content { margin: auto; display: block; max-width: 90%; max-height: 90vh; }
+    .lightbox-close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; transition: 0.3s; cursor: pointer; }
+    .history-list { list-style: none; padding: 0; margin: 15px 0; }
+    .history-item { border-left: 2px solid var(--border); padding-left: 15px; margin-bottom: 20px; position: relative; }
+    .history-item::before { content: ''; position: absolute; left: -5px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+    .history-date { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .history-text { white-space: pre-wrap; font-size: 14px; }
+    .btn-sm { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; background: var(--primary); color: white; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .form-control { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  
+    /* ADMISSION SYSTEM STYLES */
+    #admission-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
+    #adm-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; height: 50px; }
+    #adm-body { flex: 1; display: flex; overflow: hidden; position: relative; }
+    .adm-sidebar { width: 250px; background: white; border-right: 1px solid #ccc; display: flex; flex-direction: column; padding: 15px; transition: transform 0.3s; z-index: 5500; }
+    .adm-sidebar-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
+    .mode-card { border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; background: #f8f9fa; }
+    .mode-card.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .adm-viewport { flex: 1; position: relative; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 80px; }
+    #adm-shared-details { width: 100%; max-width: 800px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
+    #adm-shared-details .form-group { margin-bottom: 8px; }
+    #adm-shared-details label { font-size: 10px; margin-bottom: 2px; }
+    #adm-shared-details input, #adm-shared-details select { padding: 4px; height: auto; font-size: 13px; }
+    #view-form { width: 100%; max-width: 800px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; margin-bottom: 50px; overflow: visible; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 3px; text-transform: uppercase; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .form-group textarea { min-height: 60px; resize: vertical; }
+    #view-pdf { width: 100%; display: none; flex-direction: column; align-items: center; }
+    #pdf-stage { margin-bottom: 80px; position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+    
+    .pdf-page { margin: 0 auto 20px auto; max-width: 850px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; background: white; line-height: 0; font-size: 0; }
+    .pdf-canvas { display: block; width: 100%; height: auto; }
+    .pdf-box { position: absolute; background: rgba(60, 130, 246, 0.05); border: 1px dashed rgba(60, 130, 246, 0.3); font-family: Helvetica, sans-serif; overflow: hidden; color: #000; line-height: 1.3; padding: 2px; }
+    .pdf-box:focus { background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary); outline: none; z-index: 10; }
+    
+    .warning-text { color: #d32f2f; font-size: 12px; margin-top: 4px; display: none; font-weight: bold; }
+
+    #adm-toolbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 8px 20px; border-radius: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; gap: 10px; align-items: center; z-index: 6000; border: 1px solid #ddd; }
+    .tool-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .tool-btn.primary { background: var(--primary); color: white; border: none; }
+    
+    body.is-mobile .adm-sidebar { position: absolute; top: 0; left: 0; bottom: 0; transform: translateX(-100%); box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
+    body.is-mobile .adm-sidebar.show { transform: translateX(0); }
+    body.is-mobile .adm-sidebar-toggle { display: block; }
+    
+    @media (max-width: 900px) {
+       .modal-header { display: flex; flex-wrap: wrap; }
+       .modal-header h2 { width: 100%; margin-bottom: 10px; }
+       .modal-header button.btn-sm { margin-left: 0 !important; }
     }
-    .copy-btn:hover { background: #4b5563; }
-    .pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
-    .log-btn {
-      padding: 5.7px 11.4px;
-      border: none;
-      border-radius: 3.8px;
-      cursor: pointer;
-      color: #fff;
-      margin: 7.6px 0;
-      font-size: 15px;
-    }
-    .log-btn:disabled {
-      cursor: not-allowed;
-      background: #6c757d;
-    }
-    .log-btn:not(:disabled) {
-      background: #28a745;
-    }
-    .plan-history.editable {
-      list-style-type: disc;
-      margin: 0;
-      padding: 0;
-      padding-left: 11.4px;
-      text-indent: -11.4px;
-      white-space: pre-wrap;
-      min-height: 19px;
-      font-size: 15px;
-    }
-    .plan-history { margin-bottom: 3.8px; }
-    .inline-fields {
-      display: flex;
-      gap: 7.6px;
-      align-items: baseline;
-    }
-    .inline-fields strong {
-      flex-shrink: 0;
-      font-size: 15px;
-    }
-    .inline-fields span.editable {
-      display: inline-block;
-      min-width: 47.5px;
-      font-size: 15px;
-    }
-    .age-toggle {
-      background: var(--card-bg);
-      padding: 7.6px;
-      border-radius: 3.8px;
-      margin-top: 3.8px;
-      border: 0.95px solid var(--border);
-      display: none;
-      text-align: left;
-      font-size: 15px;
-    }
-    #form-age-toggle {
-      display: block;
-      background: transparent;
-      padding: 3.8px 0;
-      margin: 3.8px 0;
-      border: none;
-    }
-    #form-age-toggle label {
-      font-size: 12.4px;
-      margin: 0 7.6px 0 0;
-      gap: 3.8px;
-    }
-    #form-age-toggle input[type="radio"] {
-      appearance: none;
-      width: 7.6px;
-      height: 7.6px;
-      border: none;
-      border-radius: 50%;
-      background: var(--bg);
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    #form-age-toggle input[type="radio"]:checked {
-      background: var(--primary);
-      transform: scale(1.1);
-    }
-    #form-age-toggle input[type="radio"]:focus {
-      outline: none;
-    }
-    .auto-age-inputs {
-      display: flex;
-      gap: 7.6px;
-      margin-top: 3.8px;
-    }
-    .auto-age-inputs input {
-      padding: 5.7px;
-      border: 0.95px solid var(--editable-border);
-      border-radius: 3.8px;
-      background: var(--bg);
-      color: var(--text);
-      width: 100%;
-      font-size: 14.3px;
-    }
-    .current-plan-label {
-      font-weight: 600;
-      margin-top: 7.6px;
-      display: block;
-      font-size: 15px;
+  
+    @media only screen and (max-device-width: 768px) {
+      body { padding: 5px !important; }
+      
+      .top-buttons button, .dropdown-btn, .theme-toggle { 
+          font-size: 28px !important; padding: 20px 30px !important; height: 60px !important; line-height: 1 !important; box-sizing: border-box !important;
+      }
+      .dropdown-content a { font-size: 24px !important; padding: 20px !important; }
+      
+      #detailModal .modal-content { max-width: 98% !important; }
+      #detailModal, #detailModal input, #detailModal textarea, #detailModal select, #detailModal div, #detailModal span, #detailModal .sleek-label, #detailModal .sleek-input {
+          font-size: 28px !important; line-height: 1.4 !important;
+      }
+      #detailModal .compact-grid { grid-template-columns: 1fr 1fr !important; }
+      #detailModal .log-btn { font-size: 24px !important; padding: 10px 20px !important; }
+      .modal-header h2 { font-size: 40px !important; }
+      .close-modal { font-size: 50px !important; }
+      .tab-btn { font-size: 28px !important; padding: 20px 30px !important; }
+      .btn-sm { font-size: 24px !important; padding: 15px 25px !important; }
+      
+      #admission-system { font-size: 28px !important; padding: 5px !important; }
+      .adm-viewport { padding: 5px !important; }
+      #adm-shared-details, #view-form { width: 100% !important; max-width: none !important; margin: 0 0 15px 0 !important; box-sizing: border-box !important; }
+
+      #adm-header h2 { font-size: 32px !important; }
+      #adm-header button { font-size: 40px !important; } 
+      .adm-sidebar-toggle { font-size: 40px !important; }
+      .adm-sidebar { width: 400px !important; } 
+      .mode-card { padding: 20px !important; margin-bottom: 15px !important; }
+      .mode-card div:first-child { font-size: 28px !important; } 
+      .mode-card div:last-child { font-size: 22px !important; } 
+      #template-list div { font-size: 24px !important; padding: 15px !important; }
+
+      #admission-system label { font-size: 24px !important; margin-bottom: 8px !important; color: #444 !important; }
+      #admission-system input, #admission-system select, #admission-system textarea { font-size: 28px !important; padding: 12px !important; height: auto !important; margin-bottom: 15px !important; }
+      
+      .warning-text { font-size: 24px !important; margin-top: 10px !important; }
+
+      #adm-toolbar {
+          position: fixed !important; bottom: 40px !important; left: auto !important; right: 20px !important;
+          transform: none !important; width: auto !important; padding: 8px 20px !important;
+          border-radius: 30px !important; box-shadow: 0 5px 20px rgba(0,0,0,0.3) !important;
+          z-index: 6000 !important; display: flex !important; gap: 10px !important;
+      }
+      #adm-toolbar .tool-btn { font-size: 24px !important; padding: 10px 20px !important; border-radius: 20px !important; }
+      #adm-toolbar select { font-size: 24px !important; padding: 5px !important; height: auto !important; margin: 0 !important; }
+      #adm-toolbar label { font-size: 20px !important; margin-right: 5px !important; }
     }
   </style>
 </head>
 <body>
   <h1>Pediatric Handover</h1>
+  
   <div class="top-buttons">
     <button class="add" onclick="toggleForm()">Add Patient</button>
-    <button class="print" onclick="printAll()">Print All</button>
-    <button class="print" onclick="printNICU()">Print NICU</button>
-    <button class="print" onclick="printWard()">Print Ward</button>
-    <button class="print" onclick="printNew()">Print New</button>
+    <button class="btn-green" onclick="launchAdmissionSystem()">Admission</button>
+    <div class="dropdown">
+      <button class="dropdown-btn">Print ▼</button>
+      <div class="dropdown-content">
+        <a onclick="printAll()">Print All</a>
+        <a onclick="printNICU()">Print NICU</a>
+        <a onclick="printWard()">Print Ward</a>
+        <a onclick="printNew()">Print New</a>
+      </div>
+    </div>
     <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
+
   <div class="top-panel">
     <div id="handoverHeader" class="panel-card">
       <strong>Date:</strong> <span id="handoverDate">2025-09-15</span>
       <table>
         <tbody>
           <tr><th></th><th>Morning</th><th>Evening</th><th>Night</th></tr>
-          <tr>
-            <td>Admissions</td>
-            <td><input type="number" id="adM" value="0" min="0" oninput="recalcSummary()"></td>
-            <td><input type="number" id="adE" value="0" min="0" oninput="recalcSummary()"></td>
-            <td><input type="number" id="adN" value="0" min="0" oninput="recalcSummary()"></td>
-          </tr>
-          <tr>
-            <td>Discharges</td>
-            <td><input type="number" id="disM" value="0" min="0" oninput="recalcSummary()"></td>
-            <td><input type="number" id="disE" value="0" min="0" oninput="recalcSummary()"></td>
-            <td><input type="number" id="disN" value="0" min="0" oninput="recalcSummary()"></td>
-          </tr>
+          <tr><td>Admissions</td><td><input type="number" id="adM" value="0" min="0" oninput="recalcSummary()"></td><td><input type="number" id="adE" value="0" min="0" oninput="recalcSummary()"></td><td><input type="number" id="adN" value="0" min="0" oninput="recalcSummary()"></td></tr>
+          <tr><td>Discharges</td><td><input type="number" id="disM" value="0" min="0" oninput="recalcSummary()"></td><td><input type="number" id="disE" value="0" min="0" oninput="recalcSummary()"></td><td><input type="number" id="disN" value="0" min="0" oninput="recalcSummary()"></td></tr>
           <tr><td>Total Admissions</td><td colspan="3" id="totalAd">0</td></tr>
           <tr><td>Total Discharges</td><td colspan="3" id="totalDis">0</td></tr>
           <tr><td>Total Patients</td><td colspan="3" id="totalCount">0</td></tr>
-          <tr>
-            <td>By ward</td>
-            <td colspan="3" id="wardBreakdown">PW (0), GW (0), SW (0), PVT (0), ICU (0), NICU (0), ER (0)</td>
-          </tr>
+          <tr><td>By ward</td><td colspan="3" id="wardBreakdown">PW (0), GW (0), SW (0), PVT (0), ICU (0), NICU (0), ER (0)</td></tr>
         </tbody>
       </table>
     </div>
@@ -508,900 +282,1106 @@
       <textarea id="notesText" placeholder="Type pending tasks, callbacks, follow-ups..."></textarea>
     </div>
   </div>
+
   <div class="form-section" id="formSection">
     <input type="text" id="name" placeholder="Name" required>
     <input type="text" id="id" placeholder="ID" required>
     <input type="text" id="doa" placeholder="Date of Admission (YYYY-MM-DD)" required>
     <input type="text" id="age" placeholder="Age" required>
     <div class="age-toggle" id="form-age-toggle">
-      <label><input type="radio" name="formAgeMode" value="manual" checked onchange="toggleAutoInputsForm()"> Manual</label>
-      <label><input type="radio" name="formAgeMode" value="auto" onchange="toggleAutoInputsForm()"> Auto (HOL/DOL)</label>
+      <label><input type="radio" id="form-radio-manual" name="formAgeMode" value="manual" checked onchange="toggleAutoInputsForm()"> Manual</label>
+      <label><input type="radio" id="form-radio-auto" name="formAgeMode" value="auto" onchange="toggleAutoInputsForm()"> Auto (HOL/DOL)</label>
       <div class="auto-age-inputs" id="form-auto-age-inputs" style="display: none">
         <input type="date" id="dob" placeholder="Date of Birth (YYYY-MM-DD)">
         <input type="time" id="dot" placeholder="Time of Birth (HH:MM)">
       </div>
     </div>
-    <select id="shift" required>
-      <option value="Morning">Morning Shift</option>
-      <option value="Evening">Evening Shift</option>
-      <option value="Night">Night Shift</option>
-    </select>
+    <select id="shift" required><option value="Morning">Morning Shift</option><option value="Evening">Evening Shift</option><option value="Night">Night Shift</option></select>
     <input type="text" id="bed" placeholder="Bed" required>
-    <select id="sex">
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-    </select>
+    <select id="sex"><option value="Male">Male</option><option value="Female">Female</option></select>
     <input type="text" id="weight" placeholder="Weight" required>
     <input type="text" id="diagnosis" placeholder="Diagnosis">
     <textarea id="medications" placeholder="Medications"></textarea>
     <input type="text" id="issues" placeholder="Issues">
     <textarea id="hopi" placeholder="HOPI"></textarea>
-    <select id="ward">
-      <option value="PW">PW</option>
-      <option value="GW">GW</option>
-      <option value="SW">SW</option>
-      <option value="PVT">PVT</option>
-      <option value="ICU">ICU</option>
-      <option value="NICU">NICU</option>
-      <option value="ER">ER</option>
-    </select>
+    <select id="ward"><option value="PW">PW</option><option value="GW">GW</option><option value="SW">SW</option><option value="PVT">PVT</option><option value="ICU">ICU</option><option value="NICU">NICU</option><option value="ER">ER</option></select>
     <textarea id="plan" placeholder="Plan"></textarea>
-    <div class="new-checkbox">
-      <label><input type="checkbox" id="isNew" checked> New</label>
-    </div>
+    <div class="new-checkbox"><label><input type="checkbox" id="isNew" checked> New</label></div>
     <button onclick="addPatient()">Submit</button>
   </div>
+
   <div id="wardsContainer"></div>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <div id="detailModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Patient Details</h2>
+        <button class="btn-sm" onclick="openAdmissionForPatient()" style="margin-left:auto; margin-right:15px; background:var(--accent);">Reprint/Edit Admission folder</button>
+        <button class="close-modal" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-tabs">
+        <button class="tab-btn active" onclick="switchTab('details')">Details</button>
+        <button class="tab-btn" onclick="switchTab('labs')">Labs</button>
+        <button class="tab-btn" onclick="switchTab('imaging')">X-Rays</button>
+        <button class="tab-btn" onclick="switchTab('history')">Plan History</button>
+      </div>
+      <div class="modal-body">
+        <div id="tab-details" class="tab-pane active">
+          <div class="sleek-grid">
+             <div>
+                <div class="sleek-row"><span class="sleek-label">Name</span><div contenteditable="true" id="det-name" class="sleek-input" data-field="name" onblur="updateFromDetail('name', this.innerText)"></div></div>
+                <div class="sleek-grid" style="grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                   <div><span class="sleek-label">Hosp. No.</span><div contenteditable="true" id="det-hosp" class="sleek-input" onblur="updateIdFromDetail()"></div></div>
+                   <div><span class="sleek-label">NID No.</span><div contenteditable="true" id="det-nid" class="sleek-input" onblur="updateIdFromDetail()"></div></div>
+                </div>
+             </div>
+             <div>
+                <div class="compact-grid">
+                   <div><span class="sleek-label">Ward</span><div contenteditable="true" id="det-ward" class="sleek-input" data-field="ward" onblur="updateFromDetail('ward', this.innerText)"></div></div>
+                   <div><span class="sleek-label">Bed</span><div contenteditable="true" id="det-bed" class="sleek-input" data-field="bed" onblur="updateFromDetail('bed', this.innerText)"></div></div>
+                   <div><span class="sleek-label">Age</span><div contenteditable="true" id="det-age" class="sleek-input" data-field="age" onblur="updateFromDetail('age', this.innerText)"></div></div>
+                   <div><span class="sleek-label">Sex</span><div contenteditable="true" id="det-sex" class="sleek-input" data-field="sex" onblur="updateFromDetail('sex', this.innerText)"></div></div>
+                   <div><span class="sleek-label">Wt</span><div contenteditable="true" id="det-weight" class="sleek-input" data-field="weight" onblur="updateFromDetail('weight', this.innerText)"></div></div>
+                </div>
+             </div>
+          </div>
+          <div class="sleek-row"><span class="sleek-label">Diagnosis</span><div contenteditable="true" id="det-diagnosis" class="sleek-input" data-field="diagnosis" onblur="updateFromDetail('diagnosis', this.innerText)"></div></div>
+          <div class="sleek-grid" style="grid-template-columns: 1fr 1fr;">
+             <div class="sleek-row"><span class="sleek-label">Medications</span><div contenteditable="true" id="det-medications" class="sleek-input" data-field="medications" style="min-height: 60px;" onblur="updateFromDetail('medications', this.innerText)"></div></div>
+             <div class="sleek-row"><span class="sleek-label">Issues</span><div contenteditable="true" id="det-issues" class="sleek-input" data-field="issues" style="min-height: 60px;" onblur="updateFromDetail('issues', this.innerText)"></div></div>
+          </div>
+          <div class="sleek-row"><span class="sleek-label">HOPI</span><div contenteditable="true" id="det-hopi" class="sleek-input" data-field="hopi" style="min-height: 100px; white-space: pre-wrap;" onblur="updateFromDetail('hopi', this.innerText)"></div></div>
+          <div class="sleek-row"><span class="sleek-label" style="color: var(--primary);">Current Plan</span><div contenteditable="true" id="det-plan" class="sleek-input" data-field="plan" style="min-height: 100px; white-space: pre-wrap; border-bottom: 2px solid var(--primary);" oninput="checkPlanChange()" onblur="updateFromDetail('plan', this.innerText)"></div><button id="modalLogBtn" class="log-btn" disabled onclick="logPlanFromModal()">Logged</button></div>
+        </div>
+        <div id="tab-labs" class="tab-pane">
+          <div style="overflow-x: auto;"><table class="lab-table" id="labMatrix"></table></div>
+          <div class="chart-container"><canvas id="labsChart"></canvas></div>
+        </div>
+        <div id="tab-imaging" class="tab-pane">
+          <div style="background: var(--card-bg); padding: 15px; border: 1px solid var(--border); border-radius: 8px;">
+            <h3 style="margin: 0 0 10px 0; font-size: 16px;">Add Image</h3>
+            <div style="display: flex; gap: 10px;">
+              <input type="file" id="img-file" accept="image/*" class="form-control">
+              <input type="text" id="img-cap" class="form-control" placeholder="Caption" style="width: 150px;">
+              <button class="btn-sm" id="upload-btn" onclick="addImage()">Upload</button>
+            </div>
+          </div>
+          <div class="img-grid" id="img-grid"></div>
+        </div>
+        <div id="tab-history" class="tab-pane">
+           <h3>Plan Log</h3>
+           <ul class="history-list" id="history-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox"><span class="lightbox-close" onclick="closeLightbox()">&times;</span><img class="lightbox-content" id="lightbox-img"></div>
+  
+  <div id="admission-system">
+    <div id="adm-header">
+      <div style="display:flex; align-items:center;">
+          <button class="adm-sidebar-toggle" onclick="toggleAdmSidebar()">☰</button>
+          <h2 style="margin:0; font-size:18px;">Admission Center</h2>
+      </div>
+      <button onclick="closeAdmissionSystem()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+    </div>
+    <div id="adm-body">
+      <div class="adm-sidebar" id="admSidebar">
+        <div class="mode-card active" id="btn-mode-form" onclick="setMode('form')">
+          <div style="font-weight:bold;">📝 Form Mode</div>
+          <div style="font-size:11px; opacity:0.8;">Fill form. Auto-prints & saves.</div>
+        </div>
+        <div class="mode-card" id="btn-mode-pdf" onclick="setMode('pdf')">
+          <div style="font-weight:bold;">📄 Visual Mode</div>
+          <div style="font-size:11px; opacity:0.8;">Edit directly on PDF.</div>
+        </div>
+        <div style="margin-top:auto;">
+          <small>Templates (PDF)</small>
+          <div id="template-list" style="max-height:150px; overflow-y:auto; border-top:1px solid #eee; margin-top:5px;"></div>
+          <button onclick="saveTemplate()" style="width:100%; margin-top:5px; padding:5px; font-size:11px;">Save Template</button>
+        </div>
+      </div>
+
+      <div class="adm-viewport" onclick="if(document.body.classList.contains('is-mobile') && document.getElementById('admSidebar').classList.contains('show')) toggleAdmSidebar()">
+        <div id="adm-shared-details">
+           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; margin-bottom:10px; padding-bottom:5px;">
+              <h3 style="margin:0; color:var(--primary);">1. Patient Details</h3>
+              <button onclick="printRequestOnly()" class="btn-sm" style="background:#6c757d;">Print Admission Request</button>
+           </div>
+           <div class="form-grid">
+              <div class="form-group"><label>Name</label><input type="text" id="f-name" oninput="updateVisualField('name', this.value)"></div>
+              
+              <div class="form-group"><label>Hosp. No.</label><input type="text" id="f-hosp-no" oninput="updateVisualField('hid', this.value)"></div>
+              <div class="form-group"><label>NID No.</label><input type="text" id="f-nid-no"></div>
+              
+              <div class="form-group"><label>DOA</label><input type="text" id="f-doa" oninput="updateVisualField('doa', this.value)"></div>
+              <div class="form-group"><label>Shift</label><select id="f-shift"><option>Morning</option><option>Evening</option><option>Night</option></select></div>
+              <div class="form-group"><label>Ward</label><select id="f-ward" onchange="updateVisualField('ward', this.value)"><option>PW</option><option>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>NICU</option><option>ER</option></select></div>
+              <div class="form-group"><label>Bed</label><input type="text" id="f-bed" oninput="updateVisualField('bed', this.value)"></div>
+              <div class="form-group"><label>Age</label>
+                 <input type="text" id="f-age" placeholder="Enter age or select Auto" oninput="updateVisualField('age', this.value)">
+                 <div class="age-toggle" id="adm-age-toggle" style="display:flex; gap:10px; align-items:center; margin-top:5px; border:none; padding:0; background:transparent;">
+                    <label style="margin:0; font-weight:normal; text-transform:none;"><input type="radio" id="adm-radio-manual" name="admAgeMode" value="manual" checked onchange="toggleAdmAutoInputs()"> Manual</label>
+                    <label style="margin:0; font-weight:normal; text-transform:none;"><input type="radio" id="adm-radio-auto" name="admAgeMode" value="auto" onchange="toggleAdmAutoInputs()"> Auto</label>
+                    <div class="auto-age-inputs" id="adm-auto-age-inputs" style="display: none; margin-left:10px;">
+                      <input type="date" id="f-dob" placeholder="DOB" style="padding:4px; font-size:12px;">
+                      <input type="time" id="f-dot" placeholder="Time" style="padding:4px; font-size:12px;">
+                    </div>
+                 </div>
+              </div>
+              <div class="form-group"><label>Sex</label><select id="f-sex" onchange="updateVisualField('sex', this.value)"><option>Male</option><option>Female</option></select></div>
+              <div class="form-group"><label>Weight</label><input type="text" id="f-weight"></div>
+              
+              <div class="form-group"><label>Diagnosis</label><input type="text" id="f-adm-dx" oninput="syncDx(this.value)"></div>
+           </div>
+        </div>
+
+        <div id="view-form">
+          <h3 style="margin-top:0; color:var(--primary); border-bottom:1px solid #eee; padding-bottom:5px;">2. History</h3>
+          <div class="form-group"><label>Presenting Complaints</label><textarea id="f-complaints" oninput="checkOverflow('f-complaints')"></textarea></div>
+          <div class="form-group"><label>History of Present Illness (HOPI)</label><textarea id="f-hopi" style="min-height:150px;" oninput="checkOverflow('f-hopi')"></textarea><div id="warn-f-hopi" class="warning-text">⚠️ Text Limit Exceeded</div></div>
+          <div class="form-group"><label>Past History</label><textarea id="f-past" oninput="checkOverflow('f-past')"></textarea></div>
+          <div class="form-group"><label>Personal History</label><textarea id="f-personal" oninput="checkOverflow('f-personal')"></textarea></div>
+          <div class="form-group"><label>Family History</label><textarea id="f-family" oninput="checkOverflow('f-family')"></textarea></div>
+          <div class="form-grid">
+            <div class="form-group"><label>Treatment History</label><textarea id="f-treatment" oninput="checkOverflow('f-treatment')"></textarea></div>
+            <div class="form-group"><label>Obstetric/Gynae History</label><textarea id="f-obs" oninput="checkOverflow('f-obs')"></textarea></div>
+          </div>
+          <h3 style="margin-top:15px; color:var(--primary); border-bottom:1px solid #eee; padding-bottom:5px;">3. Examination</h3>
+          <div class="form-group"><label>General Examination</label><textarea id="f-ge" oninput="checkOverflow('f-ge')"></textarea></div>
+          <div class="form-grid">
+             <div class="form-group"><label>CVS</label><textarea id="f-cvs" oninput="checkOverflow('f-cvs')"></textarea></div>
+             <div class="form-group"><label>RS</label><textarea id="f-rs" oninput="checkOverflow('f-rs')"></textarea></div>
+             <div class="form-group"><label>Abdomen</label><textarea id="f-abd" oninput="checkOverflow('f-abd')"></textarea></div>
+             <div class="form-group"><label>Pelvis</label><textarea id="f-pelvis" oninput="checkOverflow('f-pelvis')"></textarea></div>
+          </div>
+          <div class="form-grid">
+             <div class="form-group"><label>CNS</label><textarea id="f-cns" oninput="checkOverflow('f-cns')"></textarea></div>
+             <div class="form-group"><label>Local Exam</label><textarea id="f-le" oninput="checkOverflow('f-le')"></textarea></div>
+          </div>
+          <h3 style="margin-top:15px; color:var(--primary); border-bottom:1px solid #eee; padding-bottom:5px;">4. Assessment & Plan</h3>
+          <div class="form-group"><label>Diagnosis</label><input type="text" id="f-finaldx" oninput="syncDx(this.value, true)"></div>
+          <div class="form-group"><label>Plan</label><textarea id="f-plan" style="min-height:100px;" oninput="checkOverflow('f-plan')"></textarea></div>
+        </div>
+
+        <div id="view-pdf">
+           <div id="pdf-loading" style="margin-top:50px;">Loading PDF Engine...</div>
+           <div id="pdf-stage"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adm-toolbar">
+       <span id="pdf-controls" style="display:none; gap:10px; align-items:center; border-right:1px solid #ddd; padding-right:10px; margin-right:10px;">
+         <label style="font-size:12px;">Size:</label>
+         <select onchange="changePdfFont(this.value)">
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13" selected>13</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+          </select>
+          <label style="font-size:12px;">Ln:</label>
+          <select onchange="changePdfLineHeight(this.value)"><option value="1.0">1.0</option><option value="1.3" selected>1.3</option><option value="1.6">1.6</option></select>
+       </span>
+       <button class="tool-btn" onclick="printOnly()">Print Only</button>
+       <button class="tool-btn primary" onclick="saveAndAdd()">Print & Add</button>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyC3_DD-ezlWahQeCdPLcFh_lohLn63Q7eY",
       authDomain: "pediatric-handover.firebaseapp.com",
       projectId: "pediatric-handover",
-      storageBucket: "pediatric-handover.appspot.com",
+      storageBucket: "pediatric-handover.firebasestorage.app",
       messagingSenderId: "104007714087",
       appId: "1:104007714087:web:77811513530b0ee9859502"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    document.getElementById("handoverDate").innerText = new Date().toISOString().split("T")[0];
-    document.getElementById("doa").value = new Date().toISOString().split("T")[0];
-    const notesEl = document.getElementById('notesText');
-    const NOTES_DOC = db.collection('meta').doc('notes');
-    let notesTyping = false;
-    let notesDebounce;
-    notesEl.addEventListener('input', () => {
-      notesTyping = true;
-      if (notesDebounce) clearTimeout(notesDebounce);
-      notesDebounce = setTimeout(() => {
-        NOTES_DOC.set({
-          text: notesEl.value,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).finally(() => {
-          notesTyping = false;
-        });
-      }, 400);
-    });
-    NOTES_DOC.onSnapshot(snap => {
-      const data = snap.data();
-      if (data && typeof data.text === 'string') {
-        if (!notesTyping && document.activeElement !== notesEl && notesEl.value !== data.text) {
-          notesEl.value = data.text;
-        }
-      }
-    });
-    function toggleForm() {
-      const form = document.getElementById('formSection');
-      form.style.display = (form.style.display === 'block') ? 'none' : 'block';
+    const storage = firebase.storage();
+
+    // --- CONFIGURATION ---
+    const PDF_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admission.pdf';
+    const REQUEST_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/AdmissionRequest.pdf';
+    const ANCHORS_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/anchors.json';
+
+    // --- UTILS ---
+    function getOrdinalSuffix(n) { const l=n%10, t=n%100; if(t>=11&&t<=13)return'th'; return l===1?'st':l===2?'nd':l===3?'rd':'th'; }
+    function calculateDaysAdmitted(doa) { try{ const d=new Date(doa), t=new Date(); t.setHours(0,0,0,0); d.setHours(0,0,0,0); const diff=Math.floor((t-d)/86400000)+1; return diff<=0?'1st DOA':`${diff}${getOrdinalSuffix(diff)} DOA`; }catch(e){return'1st DOA';} }
+    function calculateNeonatalAge(dob, dot) { try{ if(!dob||!dot)return{display:'?'}; const b=new Date(`${dob}T${dot}:00`); if(isNaN(b.getTime()))return{display:'?'}; const n=new Date(), h=Math.floor((n-b)/3600000), d=Math.floor(h/24)+1; return {days:d,hours:h,display:h<=96?`${d}${getOrdinalSuffix(d)} DOL (${h} HOL)`:`${d}${getOrdinalSuffix(d)} DOL`}; }catch(e){return{days:1,hours:24,display:'?'};} }
+    function formatTimestamp(ts) { const d=new Date(ts); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+    function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
+    function getCurrentShift() { const h = new Date().getHours(); if (h>=8 && h<16) return "Morning"; if (h>=16) return "Evening"; return "Night"; }
+
+    // --- JS MOBILE DETECTION & INITIALIZATION ---
+    function checkMobile() {
+       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+       if(isMobile) {
+           document.body.classList.add('is-mobile');
+           document.getElementById('admSidebar').classList.remove('show');
+       }
     }
-    function toggleDarkMode() {
-      const html = document.documentElement;
-      const currentTheme = html.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      html.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
+    window.onload = function() {
+        checkMobile();
+        loadPatients();
+        document.getElementById("handoverDate").innerText = getLocalISODate();
+        fetch(ANCHORS_URL).then(r=>r.json()).then(d=> anchors = d.anchorsByPage || d);
     }
-    function loadTheme() {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-    function getOrdinalSuffix(n) {
-      const lastDigit = n % 10;
-      const lastTwoDigits = n % 100;
-      if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return 'th';
-      return lastDigit === 1 ? 'st' : lastDigit === 2 ? 'nd' : lastDigit === 3 ? 'rd' : 'th';
-    }
-    function calculateDaysAdmitted(doa) {
-      try {
-        const doaDate = new Date(doa);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        doaDate.setHours(0, 0, 0, 0);
-        const diffTime = today - doaDate;
-        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        if (days <= 0) return '1st DOA';
-        const suffix = getOrdinalSuffix(days);
-        return `${days}${suffix} DOA`;
-      } catch (e) {
-        console.error('Error calculating days admitted:', e);
-        return '1st DOA';
-      }
-    }
-    function calculateNeonatalAge(dob, dot) {
-      try {
-        const birthDateTime = new Date(`${dob}T${dot}:00`);
-        const now = new Date();
-        const diffMs = now - birthDateTime;
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const days = Math.floor(hours / 24) + 1;
-        const suffix = getOrdinalSuffix(days);
-        const display = hours <= 96 ? `${days}${suffix} DOL (${hours} HOL)` : `${days}${suffix} DOL`;
-        return { days, hours, display };
-      } catch (e) {
-        console.error('Error calculating neonatal age:', e);
-        return { days: 1, hours: 24, display: '1st DOL (24 HOL)' };
-      }
-    }
-    function toggleAutoInputsForm() {
-      const autoInputs = document.getElementById('form-auto-age-inputs');
-      const isAuto = document.querySelector('#form-age-toggle input[value="auto"]:checked');
-      autoInputs.style.display = isAuto ? 'flex' : 'none';
-    }
-    function addPatient() {
-      const isAutoAge = document.querySelector('#form-age-toggle input[value="auto"]:checked');
-      const dob = document.getElementById('dob').value;
-      const dot = document.getElementById('dot').value;
-      let age = document.getElementById('age').value;
-      if (isAutoAge && dob && dot) {
-        age = calculateNeonatalAge(dob, dot).display;
-      } else if (isAutoAge && (!dob || !dot)) {
-        age = calculateNeonatalAge('', '').display;
-      }
-      const patient = {
-        name: document.getElementById('name').value,
-        id: document.getElementById('id').value,
-        doa: document.getElementById('doa').value,
-        dob: dob || '',
-        dot: dot || '',
-        isAutoAge: !!isAutoAge,
-        shift: document.getElementById('shift').value,
-        bed: document.getElementById('bed').value,
-        age: age,
-        sex: document.getElementById('sex').value,
-        weight: document.getElementById('weight').value,
-        diagnosis: document.getElementById('diagnosis').value,
-        medications: document.getElementById('medications').value,
-        issues: document.getElementById('issues').value,
-        hopi: document.getElementById('hopi').value,
-        ward: document.getElementById('ward').value,
-        plan: document.getElementById('plan').value,
-        isNew: document.getElementById('isNew').checked,
-        timestamp: Date.now(),
-        logs: '',
-        lastLoggedPlan: ''
+
+    // --- MAIN LOGIC ---
+    let currentPatientId=null, localPatients={}, chartInstance=null, lastLoggedPlanSnapshot="";
+    document.getElementById("doa").value = getLocalISODate();
+
+    // --- HANDOVER SUMMARY ---
+    function recalcSummary() {
+      const d={
+        adM:+document.getElementById('adM').value||0, adE:+document.getElementById('adE').value||0, adN:+document.getElementById('adN').value||0,
+        disM:+document.getElementById('disM').value||0, disE:+document.getElementById('disE').value||0, disN:+document.getElementById('disN').value||0
       };
-      db.collection('patients').add(patient).then(() => {
-        console.log('Patient added successfully:', patient);
-        document.getElementById('formSection').style.display = 'none';
-      }).catch(error => {
-        console.error("Error adding patient:", error);
+      document.getElementById('totalAd').innerText=d.adM+d.adE+d.adN; document.getElementById('totalDis').innerText=d.disM+d.disE+d.disN;
+      db.collection('summaries').doc('current').set(d);
+    }
+    db.collection('summaries').doc('current').get().then(doc=>{ if(doc.exists){ const d=doc.data(); ['adM','adE','adN','disM','disE','disN'].forEach(k=>document.getElementById(k).value=d[k]||0); recalcSummary(); } });
+
+    // --- PATIENT LOADING ---
+    function loadPatients() {
+      const container=document.getElementById('wardsContainer'), wards=["PW","GW","SW","PVT","ICU","NICU","ER","Discharge"], wardGrids={};
+      container.innerHTML='';
+      wards.forEach(w=>{
+         const sec=document.createElement('div'), h=document.createElement('h2'), g=document.createElement('div');
+         h.className='ward-header'; if(w==='Discharge'){ h.classList.add('discharge-header'); h.onclick=()=>toggleDischarge(w); }
+         h.style.background=`var(--${w})`; h.id=`header-${w}`; h.innerText=`${w} (0)`;
+         g.className='card-grid'; g.id=`ward-${w}`; if(w!=='Discharge') g.classList.add('expanded');
+         sec.appendChild(h); sec.appendChild(g); container.appendChild(sec); wardGrids[w]=g;
+      });
+
+      db.collection('patients').onSnapshot(snap=>{
+        const wardCounts={}, patientsByWard={}; wards.forEach(w=>{ wardCounts[w]=0; patientsByWard[w]=[]; });
+        let totalActive=0; localPatients={}; const currentIds=new Set();
+        
+        snap.forEach(doc=>{
+           const p=doc.data(); p.docId=doc.id; currentIds.add(p.docId); localPatients[doc.id]=p;
+           if(wards.includes(p.ward)){ patientsByWard[p.ward].push(p); wardCounts[p.ward]++; if(p.ward!=='Discharge') totalActive++; }
+        });
+        document.getElementById('totalCount').innerText=totalActive;
+        const bdText=["PW","GW","SW","PVT","ICU","NICU","ER"].map(w=>`${w} (${wardCounts[w]||0})`).join(', ');
+        if(document.getElementById('wardBreakdown')) document.getElementById('wardBreakdown').innerText=bdText;
+        document.querySelectorAll('.patient-card').forEach(c=>{ if(!currentIds.has(c.getAttribute('data-id'))) c.remove(); });
+        wards.forEach(w=>{
+           if(w==='Discharge') patientsByWard[w].sort((a,b)=>(b.dischargeTimestamp||b.timestamp||0)-(a.dischargeTimestamp||a.timestamp||0));
+           else patientsByWard[w].sort((a,b)=>(parseInt(a.bed)||0)-(parseInt(b.bed)||0));
+           patientsByWard[w].forEach(p=>{
+              let c=document.getElementById(`card-${p.docId}`);
+              if(!c) c=createCard(p); else updateCardDOM(c,p);
+              wardGrids[w].appendChild(c);
+           });
+           document.getElementById(`header-${w}`).innerText=`${w} (${wardCounts[w]})`;
+        });
+        if(currentPatientId&&localPatients[currentPatientId]) refreshModalIfOpen();
       });
     }
+
+    // --- CARD RENDERING ---
+    function createCard(p) {
+        const id=p.docId, c=document.createElement('div'); c.className='patient-card'; c.id=`card-${id}`; c.setAttribute('data-id',id);
+        const days=calculateDaysAdmitted(p.doa), age=p.isAutoAge&&p.dob&&p.dot?calculateNeonatalAge(p.dob,p.dot).display:p.age;
+        const disTag=p.ward==='Discharge'?`<span class="discharge-badge discharge-active card-ctrl">Discharged ${formatTimestamp(p.dischargeTimestamp||p.timestamp||Date.now())}</span>`:'';
+        const cp = (p.plan||'').trim();
+        const ll = (p.lastLoggedPlan||'').trim();
+        const isUnlogged = cp !== '' && cp !== ll;
+        const btnText = isUnlogged ? 'Log' : 'Logged';
+        const btnDisabled = !isUnlogged;
+        c.innerHTML = `
+             <button class="expand-btn card-ctrl" onclick="openModal('${id}')">⛶</button>
+             <button class="delete-btn card-ctrl" onclick="deletePatient('${id}')">×</button>
+             <span class="new-badge${p.isNew?' new-active':''} card-ctrl">NEW</span>${disTag}
+             <p><strong>Name:</strong> <span data-field="name" contenteditable class="editable" onblur="updateField('${id}','name',this.innerText)">${p.name}</span></p>
+             <p><strong>ID:</strong> <span data-field="id" contenteditable class="editable" onblur="updateField('${id}','id',this.innerText)">${p.id||''}</span></p>
+             <p><strong>DOA:</strong> <span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></p>
+             <p><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
+             <p><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
+             <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span></p>
+             <div class="age-toggle" id="age-toggle-${id}">
+                <label><input type="radio" name="ageMode-${id}" value="manual" ${!p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Man</label>
+                <label><input type="radio" name="ageMode-${id}" value="auto" ${p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Auto</label>
+                <div class="auto-age-inputs" id="auto-age-${id}" style="display:${p.isAutoAge?'flex':'none'}">
+                   <input type="date" id="dob-${id}" value="${p.dob||''}" onblur="saveAgeMode('${id}')"><input type="time" id="dot-${id}" value="${p.dot||''}" onblur="saveAgeMode('${id}')">
+                </div>
+             </div>
+             <p class="inline-fields"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
+             <p><strong>Weight:</strong> <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span></p>
+             <p><strong>Diagnosis:</strong> <span data-field="diagnosis" contenteditable class="editable" onblur="updateField('${id}','diagnosis',this.innerText)">${p.diagnosis||''}</span></p>
+             <p><strong>Medications:</strong></p><p><span data-field="medications" contenteditable class="editable" onblur="updateField('${id}','medications',this.innerText)">${p.medications||''}</span></p>
+             <p><strong>Issues:</strong> <span data-field="issues" contenteditable class="editable" onblur="updateField('${id}','issues',this.innerText)">${p.issues||''}</span></p>
+             <p><strong class="hopi-toggle" onclick="toggleHopi('${id}')">HOPI: ►</strong></p><div class="hopi-content" id="hopi-content-${id}"><span data-field="hopi" contenteditable class="editable" onblur="updateField('${id}','hopi',this.innerText)">${p.hopi||''}</span></div>
+             <p><strong class="hopi-toggle" onclick="togglePlanHist('${id}')">Plan history: ►</strong></p><div class="hopi-content plan-history" id="plan-hist-${id}"><div data-field="logs" contenteditable class="editable" onblur="updateField('${id}','logs',this.innerText)">${p.logs||''}</div></div>
+             <p><strong class="current-plan-label">Current plan:</strong></p><p><span data-field="plan" contenteditable class="editable" id="plan-content-${id}" onblur="updateField('${id}','plan',this.innerText)">${p.plan||''}</span></p>
+             <button class="log-btn" onclick="logPlan('${id}')" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>
+             <p><strong>Ward:</strong><select onchange="changeWard('${id}',this.value)">${["PW","GW","SW","PVT","ICU","NICU","ER","Discharge"].map(w=>`<option value="${w}" ${w===p.ward?'selected':''}>${w}</option>`).join('')}</select></p>
+             <div class="new-checkbox"><label><input type="checkbox" ${p.isNew?'checked':''} onchange="toggleNew('${id}')"> New</label></div>
+        `;
+        return c;
+    }
+
+    function updateCardDOM(c, p) {
+        ['name','id','doa','shift','bed','age','sex','weight','diagnosis','medications','issues','hopi','plan','logs'].forEach(f=>{
+            const el=c.querySelector(`[data-field="${f}"]`);
+            if(el&&document.activeElement!==el) {
+                let v=p[f]||''; if(f==='age'&&p.isAutoAge&&p.dob&&p.dot) v=calculateNeonatalAge(p.dob,p.dot).display;
+                if(f==='doa') { el.innerText=v; if(el.nextElementSibling)el.nextElementSibling.innerText=`(${calculateDaysAdmitted(v)})`; }
+                else if(el.innerText!==v) el.innerText=v;
+            }
+        });
+        const w=c.querySelector('select'); if(w&&document.activeElement!==w) w.value=p.ward;
+        const nc=c.querySelector('input[type="checkbox"]'); if(nc) nc.checked=p.isNew;
+        const nb=c.querySelector('.new-badge'); if(nb){ if(p.isNew&&!nb.classList.contains('new-active'))nb.classList.add('new-active'); if(!p.isNew)nb.classList.remove('new-active'); }
+        const lb = c.querySelector('.log-btn'); 
+        if(lb){ 
+            const cp=(p.plan||'').trim();
+            const ll=(p.lastLoggedPlan||'').trim();
+            const nl = cp !== '' && cp !== ll; 
+            lb.disabled = !nl; 
+            lb.innerText = nl ? 'Log' : 'Logged'; 
+        }
+    }
+
+    // --- CARD ACTIONS ---
+    function updateField(id,f,v) { db.collection('patients').doc(id).update({[f]:v}); }
+    function toggleHopi(id) { document.getElementById(`hopi-content-${id}`).classList.toggle('expanded'); }
+    function togglePlanHist(id) { document.getElementById(`plan-hist-${id}`).classList.toggle('expanded'); }
+    function toggleAgeMode(id) { const e=document.getElementById(`age-toggle-${id}`); e.style.display=e.style.display==='block'?'none':'block'; }
+    function toggleAutoInputs(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked; document.getElementById(`auto-age-${id}`).style.display=a?'flex':'none'; document.getElementById(`age-disp-${id}`).contentEditable=!a; saveAgeMode(id); }
+    function saveAgeMode(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked, dob=document.getElementById(`dob-${id}`).value, dot=document.getElementById(`dot-${id}`).value, u={isAutoAge:a,dob,dot}; if(a&&dob&&dot) u.age=calculateNeonatalAge(dob,dot).display; db.collection('patients').doc(id).update(u); }
+    function changeWard(id,w) { const u={ward:w}; if(w==='Discharge') u.dischargeTimestamp=Date.now(); db.collection('patients').doc(id).update(u); }
+    function toggleNew(id) { db.collection('patients').doc(id).get().then(d=>db.collection('patients').doc(id).update({isNew:!d.data().isNew})); }
+    function toggleDischarge(w) { document.getElementById(`ward-${w}`).classList.toggle('expanded'); document.getElementById(`header-${w}`).classList.toggle('expanded'); }
     function deletePatient(id) {
-      const discharge = confirm("Discharge patient? Click 'OK' to move to Discharges");
-      if (discharge) {
-        changeWard(id, 'Discharge');
-      } else {
-        if (confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
-          db.collection('patients').doc(id).delete().then(() => {
-            console.log('Patient deleted:', id);
-          }).catch(error => {
-            console.error("Error deleting patient:", error);
-          });
-        }
-      }
-    }
-    function updateField(id, field, value) {
-      if (field === 'age' && document.querySelector(`#age-toggle-${id} input[value='auto']:checked`)) {
-        alert('Cannot edit age in Auto mode. Switch to Manual mode.');
-        return;
-      }
-      const normalizedValue = value.trim();
-      console.log(`Updating field ${field} for patient ${id} with value: "${normalizedValue}"`);
-      db.collection('patients').doc(id).update({ [field]: normalizedValue }).then(() => {
-        console.log(`Field ${field} updated successfully for patient ${id}`);
-        if (field === 'plan') {
-          const planEl = document.querySelector(`#plan-content-${id}`);
-          const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
-          if (planEl && logBtn) {
-            const currentPlan = planEl.innerText.trim();
-            db.collection('patients').doc(id).get().then(doc => {
-              if (doc.exists) {
-                const lastLoggedPlan = (doc.data().lastLoggedPlan || '').trim();
-                const needsLog = currentPlan !== '' && currentPlan !== lastLoggedPlan;
-                logBtn.disabled = !needsLog;
-                logBtn.innerText = needsLog ? 'Log' : 'Logged';
-                console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
-              }
-            }).catch(error => {
-              console.error(`Error checking plan state for patient ${id}:`, error);
-              logBtn.disabled = true;
-              logBtn.innerText = 'Logged';
-            });
-          }
-        }
-        if (field === 'doa') {
-          const card = document.querySelector(`.patient-card [data-id="${id}"]`)?.closest('.patient-card');
-          if (card) {
-            const doaSpan = card.querySelector(`#doa-days-${id}`);
-            if (doaSpan) {
-              doaSpan.innerText = `(${calculateDaysAdmitted(normalizedValue)})`;
-            }
-          }
-        }
-        if (field === 'dob' || field === 'dot') {
-          db.collection('patients').doc(id).get().then(doc => {
-            if (doc.exists && doc.data().isAutoAge) {
-              const d = doc.data();
-              const computed = calculateNeonatalAge(d.dob, d.dot);
-              const ageSpan = document.querySelector(`#age-display-${id}`);
-              if (ageSpan) {
-                ageSpan.innerText = computed.display;
-                db.collection('patients').doc(id).update({ age: computed.display });
-              }
-            }
-          });
-        }
-      }).catch(error => {
-        console.error(`Error updating ${field}:`, error);
-        if (field === 'plan') {
-          const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
-          if (logBtn) {
-            logBtn.disabled = true;
-            logBtn.innerText = 'Logged';
-          }
-        }
-      });
-    }
-    function updateLog(id, newText) {
-      console.log(`Updating logs for patient ${id} with newText:`, newText);
-      db.collection('patients').doc(id).update({ logs: newText }).then(() => {
-        console.log(`Logs updated successfully for patient ${id}`);
-      }).catch(error => {
-        console.error('Error updating logs:', error);
-      });
-    }
-    function toggleAgeMode(id) {
-      const toggleDiv = document.getElementById(`age-toggle-${id}`);
-      toggleDiv.style.display = toggleDiv.style.display === 'block' ? 'none' : 'block';
-    }
-    function toggleAutoInputs(id) {
-      const autoInputs = document.getElementById(`auto-age-inputs-${id}`);
-      const isAuto = document.querySelector(`#age-toggle-${id} input[value='auto']:checked`);
-      autoInputs.style.display = isAuto ? 'flex' : 'none';
-      const ageSpan = document.querySelector(`#age-display-${id}`);
-      ageSpan.contentEditable = !isAuto;
-    }
-    function saveAgeMode(id) {
-      const isAuto = document.querySelector(`#age-toggle-${id} input[value='auto']:checked`);
-      const dob = document.getElementById(`dob-${id}`).value;
-      const dot = document.getElementById(`dot-${id}`).value;
-      const ageSpan = document.querySelector(`#age-display-${id}`);
-      let updates = { isAutoAge: !!isAuto };
-      if (isAuto && dob && dot) {
-        const computed = calculateNeonatalAge(dob, dot);
-        updates.age = computed.display;
-        updates.dob = dob;
-        updates.dot = dot;
-        ageSpan.innerText = computed.display;
-        ageSpan.contentEditable = 'false';
-      } else if (!isAuto) {
-        updates.age = ageSpan.innerText || 'Unknown';
-        ageSpan.contentEditable = 'true';
-      }
-      db.collection('patients').doc(id).update(updates).then(() => {
-        console.log(`Age mode updated for patient ${id}:`, updates);
-        document.getElementById(`age-toggle-${id}`).style.display = 'none';
-      }).catch(error => {
-        console.error('Error updating age mode:', error);
-      });
-    }
-    function changeWard(id, newWard) {
-      console.log(`Changing ward for patient ${id} to ${newWard}`);
-      db.collection('patients').doc(id).get().then(doc => {
-        if (doc.exists) {
-          const oldWard = doc.data().ward;
-          const updates = { ward: newWard };
-          if (newWard === 'Discharge' && !doc.data().dischargeTimestamp) {
-            updates.dischargeTimestamp = Date.now();
-          }
-          db.collection('patients').doc(id).update(updates).then(() => {
-            console.log(`Ward changed to ${newWard} for patient ${id}`);
-          }).catch(error => {
-            console.error("Error changing ward:", error);
-          });
-        }
-      });
-    }
-    function toggleNewTag(id) {
-      db.collection('patients').doc(id).get().then(doc => {
-        if (doc.exists) {
-          const isNew = !doc.data().isNew;
-          console.log(`Toggling new tag for patient ${id} to ${isNew}`);
-          db.collection('patients').doc(id).update({ isNew: isNew }).then(() => {
-            const badge = document.querySelector(`.new-badge[data-id="${id}"]`);
-            if (badge) {
-              badge.classList.toggle('new-active', isNew);
-            }
-          }).catch(error => {
-            console.error("Error toggling new tag:", error);
-          });
-        }
-      });
-    }
-    function toggleHopi(id) {
-      const content = document.getElementById(`hopi-content-${id}`);
-      const toggle = document.getElementById(`hopi-toggle-${id}`);
-      const newExpanded = !content.classList.contains('expanded');
-      content.classList.toggle('expanded', newExpanded);
-      toggle.setAttribute('aria-expanded', newExpanded);
-      toggle.innerText = newExpanded ? 'HOPI: ▼' : 'HOPI: ►';
-    }
-    function togglePlan(id) {
-      const content = document.getElementById(`plan-history-${id}`);
-      const toggle = document.getElementById(`plan-toggle-${id}`);
-      const newExpanded = !content.classList.contains('expanded');
-      content.classList.toggle('expanded', newExpanded);
-      toggle.setAttribute('aria-expanded', newExpanded);
-      toggle.innerText = newExpanded ? 'Plan history: ▼' : 'Plan history: ►';
+       if(confirm("Discharge? OK to discharge, Cancel to DELETE PERMANENTLY.")) changeWard(id,'Discharge');
+       else if(confirm("WARNING: Permanently delete record AND X-RAYS?")) {
+         db.collection('patients').doc(id).get().then(d=>{
+             if(d.exists) { const i=d.data().images||[], ps=i.map(x=>(x.url&&x.url.includes('firebasestorage'))?storage.refFromURL(x.url).delete().catch(e=>console.warn(e)):Promise.resolve());
+             Promise.all(ps).finally(()=>db.collection('patients').doc(id).delete()); }
+             else db.collection('patients').doc(id).delete();
+         });
+       }
     }
     function logPlan(id) {
-      console.log(`Attempting to log plan for patient ${id}`);
-      const planEl = document.querySelector(`#plan-content-${id}`);
-      const currentPlan = planEl ? planEl.innerText.trim() : '';
-      if (currentPlan === '') {
-        console.log('Plan is empty, not logging');
-        return;
-      }
-      db.collection('patients').doc(id).get().then(doc => {
-        if (doc.exists) {
-          const doa = doc.data().doa;
-          const daysAdmitted = calculateDaysAdmitted(doa);
-          const timestamp = Date.now();
-          const formattedTimestamp = formatTimestamp(timestamp);
-          const fullLogEntry = `• ${formattedTimestamp} (${daysAdmitted})\n  ${currentPlan}\n\n`;
+       const p=localPatients[id], c=document.getElementById(`plan-content-${id}`).innerText; if(!c)return;
+       const e=`• ${formatTimestamp(Date.now())} (${calculateDaysAdmitted(p.doa)})\n ${c}\n\n`;
+       db.collection('patients').doc(id).update({logs:(p.logs||'')+e, lastLoggedPlan:c});
+    }
 
-          const lastLoggedPlan = (doc.data().lastLoggedPlan || '').trim();
-          const currentLines = currentPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
-          const lastLines = lastLoggedPlan.split('\n').map(line => line.trim()).filter(line => line !== '');
-          
-          let commonPrefixLength = 0;
-          while (commonPrefixLength < lastLines.length && 
-                 commonPrefixLength < currentLines.length && 
-                 lastLines[commonPrefixLength] === currentLines[commonPrefixLength]) {
-            commonPrefixLength++;
-          }
-          
-          let newLogEntry = fullLogEntry;
-          const newLines = currentLines.slice(commonPrefixLength).join('\n  ');
-          if (newLines) {
-            newLogEntry = `• ${formattedTimestamp} (${daysAdmitted})\n  ${newLines}\n\n`;
-          }
-          
-          if (!newLines && currentPlan === lastLoggedPlan) {
-            console.log('No new content to log');
-            return;
-          }
-          
-          const currentLogs = doc.data().logs || '';
-          const updatedLogs = currentLogs + newLogEntry;
-          
-          db.collection('patients').doc(id).update({
-            logs: updatedLogs,
-            lastLoggedPlan: currentPlan
-          }).then(() => {
-            console.log('Plan logged successfully for patient', id);
-            console.log(`Updated lastLoggedPlan to: "${currentPlan}"`);
-            const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
-            if (logBtn) {
-              logBtn.disabled = true;
-              logBtn.innerText = 'Logged';
-            }
-          }).catch(error => {
-            console.error('Error logging plan:', error);
-            const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
-            if (logBtn) {
-              logBtn.disabled = true;
-              logBtn.innerText = 'Logged';
-            }
-          });
+    // --- QUICK ADD FORM ---
+    function toggleForm() { 
+        const f=document.getElementById('formSection'); 
+        f.style.display=f.style.display==='block'?'none':'block'; 
+        if(f.style.display === 'block') {
+            document.getElementById('doa').value = getLocalISODate();
+            document.getElementById('shift').value = getCurrentShift();
         }
-      });
     }
-    function refreshButtonState(id, currentPlan) {
-      const logBtn = document.querySelector(`.log-btn[onclick="logPlan('${id}')"]`);
-      if (!logBtn) {
-        console.error(`Cannot find log button for patient ${id}`);
-        return;
-      }
-      db.collection('patients').doc(id).get().then(doc => {
-        if (doc.exists) {
-          const lastLoggedPlan = (doc.data().lastLoggedPlan || '').trim();
-          const normalizedCurrentPlan = currentPlan.trim();
-          const needsLog = normalizedCurrentPlan !== '' && normalizedCurrentPlan !== lastLoggedPlan;
-          logBtn.disabled = !needsLog;
-          logBtn.innerText = needsLog ? 'Log' : 'Logged';
-          console.log(`refreshButtonState for patient ${id}: needsLog=${needsLog}, currentPlan="${normalizedCurrentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
+    function toggleAutoInputsForm() { 
+        const el = document.getElementById('form-radio-auto');
+        const a = el ? el.checked : false;
+        document.getElementById('form-auto-age-inputs').style.display=a?'flex':'none'; 
+    }
+    function addPatient() {
+       const autoRadio = document.getElementById('form-radio-auto');
+       const a = autoRadio ? autoRadio.checked : false;
+       const dob=document.getElementById('dob').value, dot=document.getElementById('dot').value;
+       let age=document.getElementById('age').value; if(a&&dob&&dot) age=calculateNeonatalAge(dob,dot).display;
+       db.collection('patients').add({
+         name:document.getElementById('name').value, id:document.getElementById('id').value, doa:document.getElementById('doa').value,
+         age, dob:dob||'', dot:dot||'', isAutoAge:a, shift:document.getElementById('shift').value, bed:document.getElementById('bed').value,
+         sex:document.getElementById('sex').value, weight:document.getElementById('weight').value, diagnosis:document.getElementById('diagnosis').value,
+         medications:document.getElementById('medications').value, issues:document.getElementById('issues').value, hopi:document.getElementById('hopi').value,
+         ward:document.getElementById('ward').value, plan:document.getElementById('plan').value, isNew:document.getElementById('isNew').checked,
+         timestamp:Date.now(), logs:'', lastLoggedPlan:'', labs:{dates:[],tests:{}}, images:[]
+       }).then(()=>document.getElementById('formSection').style.display='none');
+    }
+    function toggleDarkMode() { const h=document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); }
+
+    // --- DETAIL MODAL ---
+    function openModal(id) {
+       currentPatientId=id; const p=localPatients[id]; if(!p)return;
+       document.getElementById('detailModal').classList.add('active'); document.getElementById('modalTitle').innerText=`${p.name} - Details`;
+       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi','plan'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
+       
+       // Handle split ID for detail modal
+       const hosp = document.getElementById('det-hosp');
+       const nid = document.getElementById('det-nid');
+       if(p.id && p.id.includes(',')) {
+           const parts = p.id.split(',');
+           if(hosp) hosp.innerText = parts[0].trim();
+           if(nid) nid.innerText = parts.length > 1 ? parts[1].trim() : '';
+       } else {
+           if(hosp) hosp.innerText = p.id || '';
+           if(nid) nid.innerText = '';
+       }
+
+       lastLoggedPlanSnapshot=p.lastLoggedPlan||''; checkPlanChange();
+       renderLabMatrix(); renderImages(); renderHistory(); switchTab('details');
+    }
+    function refreshModalIfOpen() {
+       const p=localPatients[currentPatientId]; if(!p)return;
+       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi','plan'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
+       if(document.activeElement.id!=='det-plan') { lastLoggedPlanSnapshot=p.lastLoggedPlan||''; checkPlanChange(); }
+       if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
+       if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
+       if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
+    }
+    function closeModal() { document.getElementById('detailModal').classList.remove('active'); currentPatientId=null; }
+    window.onclick = function(e) { if(e.target==document.getElementById('detailModal'))closeModal(); if(e.target==document.getElementById('admissionModal'))closeAdmissionModal(); if(e.target==document.getElementById('lightbox'))closeLightbox(); }
+    function switchTab(id) {
+       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+       const btn=Array.from(document.querySelectorAll('.tab-btn')).find(b=>b.getAttribute('onclick').includes(id)); if(btn)btn.classList.add('active');
+       document.getElementById(`tab-${id}`).classList.add('active'); if(id==='labs') renderLabMatrix();
+    }
+    function updateFromDetail(f,v) { if(currentPatientId) db.collection('patients').doc(currentPatientId).update({[f]:v}); }
+    
+    // NEW: Update function for the split ID fields in details view
+    function updateIdFromDetail() {
+        if(!currentPatientId) return;
+        const h = document.getElementById('det-hosp').innerText.trim();
+        const n = document.getElementById('det-nid').innerText.trim();
+        const combined = (h && n) ? `${h}, ${n}` : (h || n || "");
+        db.collection('patients').doc(currentPatientId).update({id: combined});
+    }
+
+    function checkPlanChange() {
+       const v = document.getElementById('det-plan').innerText;
+       const b = document.getElementById('modalLogBtn');
+       const isChanged = v.trim() !== lastLoggedPlanSnapshot.trim();
+       if (isChanged && v.trim() !== '') { b.disabled = false; b.innerText = 'Log Changes'; } else { b.disabled = true; b.innerText = 'Logged'; }
+    }
+    function logPlanFromModal() {
+       const c=document.getElementById('det-plan').innerText; if(!c)return;
+       const p=localPatients[currentPatientId], ts=formatTimestamp(Date.now()), e=`• ${ts}\n ${c}\n\n`;
+       db.collection('patients').doc(currentPatientId).update({logs:(p.logs||'')+e, lastLoggedPlan:c});
+       lastLoggedPlanSnapshot = c; checkPlanChange();
+    }
+
+    // --- PRINTING ---
+    function printReport(t,wl) {
+       const d=document.getElementById('handoverDate').innerText, txt=`HANDOVER REPORT - ${t} - ${d}\n\n`;
+       wl.forEach(w=>{
+         const l=Object.values(localPatients).filter(p=>p.ward===w);
+         if(l.length>0){ 
+             txt+=`--- ${w} (${l.length}) ---\n`;
+             l.sort((a,b)=>(parseInt(a.bed)||0)-(parseInt(b.bed)||0));
+             l.forEach(p=>{ txt+=`BED ${p.bed}: ${p.name} (${p.age}/${p.sex})\n   Dx: ${p.diagnosis}\n   Plan: ${p.plan}\n\n`; });
+         }
+       });
+       const w=window.open('','_blank'); w.document.write(`<pre style="font-family:monospace;white-space:pre-wrap;">${txt}</pre>`); w.document.close();
+    }
+    function printAll(){ printReport('ALL',["PW","GW","SW","PVT","ICU","NICU","ER"]); }
+    function printNICU(){ printReport('NICU',["NICU"]); }
+    function printWard(){ printReport('WARD',["PW","GW","SW","PVT","ICU"]); }
+    function printNew(){
+       const d=document.getElementById('handoverDate').innerText, txt=`NEW ADMISSIONS - ${d}\n\n`;
+       Object.values(localPatients).filter(p=>p.isNew).forEach(p=>{ txt+=`${p.ward} Bed ${p.bed}: ${p.name}\n   ${p.diagnosis}\n   ${p.plan}\n\n`; });
+       const w=window.open('','_blank'); w.document.write(`<pre style="font-family:monospace;white-space:pre-wrap;">${txt}</pre>`); w.document.close();
+    }
+
+    // --- LABS & IMAGING ---
+    function renderLabMatrix() {
+       const p=localPatients[currentPatientId], labs=p.labs||{dates:[],tests:{}}, t=document.getElementById('labMatrix'); t.innerHTML='';
+       const thead=document.createElement('thead'), tr=document.createElement('tr');
+       let h=`<th></th>`; labs.dates.forEach((d,i)=>h+=`<th><input type="text" value="${d}" onblur="upLabDate(${i},this.value)"></th>`);
+       h+=`<th><button class="btn-sm" onclick="addLabCol()">Add Col</button></th>`; tr.innerHTML=h; thead.appendChild(tr); t.appendChild(thead);
+       const tbody=document.createElement('tbody');
+       Object.keys(labs.tests).forEach(k=>{
+           const r=document.createElement('tr'); let c=`<td><input type="text" value="${k}" style="font-weight:bold;" onblur="renTest('${k}',this.value)"></td>`;
+           // REMOVED conditional logic for 'lab-abnormal' class here
+           labs.tests[k].forEach((v,i)=>{ c+=`<td><input type="text" value="${v}" onblur="upLabVal('${k}',${i},this.value)"></td>`; });
+           c+=`<td></td>`; r.innerHTML=c; tbody.appendChild(r);
+       });
+       const addRow=document.createElement('tr'); addRow.innerHTML=`<td><button class="btn-sm" onclick="addLabRow()">Add Row</button></td><td colspan="${labs.dates.length+1}"></td>`; tbody.appendChild(addRow); t.appendChild(tbody);
+       renderChart(labs);
+    }
+    function upLabVal(k,i,v){ const p=localPatients[currentPatientId], l=p.labs; l.tests[k][i]=v; db.collection('patients').doc(currentPatientId).update({labs:l}); }
+    function upLabDate(i,v){ const p=localPatients[currentPatientId], l=p.labs; l.dates[i]=v; db.collection('patients').doc(currentPatientId).update({labs:l}); }
+    function renTest(o,n){ if(o===n)return; const p=localPatients[currentPatientId], l=p.labs, nt={}; Object.keys(l.tests).forEach(k=>{ if(k===o)nt[n]=l.tests[k]; else nt[k]=l.tests[k]; }); l.tests=nt; db.collection('patients').doc(currentPatientId).update({labs:l}); }
+    function addLabCol(){ const p=localPatients[currentPatientId], l=p.labs||{dates:[],tests:{}}, t=new Date(); l.dates.push(`${t.getDate()}/${t.getMonth()+1}`); Object.keys(l.tests).forEach(k=>l.tests[k].push("-")); db.collection('patients').doc(currentPatientId).update({labs:l}); }
+    function addLabRow(){ const p=localPatients[currentPatientId], l=p.labs||{dates:[],tests:{}}; let n="New Test", c=1; while(l.tests[n]){c++;n=`New Test ${c}`;} l.tests[n]=new Array(l.dates.length).fill("-"); db.collection('patients').doc(currentPatientId).update({labs:l}); }
+    function renderChart(l){
+       const ctx=document.getElementById('labsChart').getContext('2d'); if(chartInstance)chartInstance.destroy();
+       const clr=['#e63946','#2a9d8f','#457b9d','#f4a261']; let ci=0;
+       const ds=Object.keys(l.tests).map(k=>{ const d=l.tests[k].map(v=>parseFloat(v)||null); if(d.every(v=>v===null))return null; return {label:k,data:d,borderColor:clr[ci++%4],tension:0.3,spanGaps:true}; }).filter(d=>d);
+       chartInstance=new Chart(ctx,{type:'line',data:{labels:l.dates,datasets:ds},options:{responsive:true,maintainAspectRatio:false}});
+    }
+
+    function renderImages(){
+       const p=localPatients[currentPatientId], g=document.getElementById('img-grid'); g.innerHTML='';
+       (p.images||[]).forEach((img,i)=>{
+          const d=document.createElement('div'); d.className='img-card';
+          d.innerHTML=`<img src="${img.url}" onclick="openLightbox('${img.url}')"><div class="img-caption">${img.caption}</div><button class="img-delete" onclick="delImg(${i})">×</button>`;
+          g.appendChild(d);
+       });
+    }
+    function addImage(){ 
+        const fi=document.getElementById('img-file'), f=fi.files[0], cap=document.getElementById('img-cap').value, btn=document.getElementById('upload-btn');
+        if(!f){alert("Select file");return;} btn.disabled=true; btn.innerText="Starting...";
+        const ref=storage.ref().child('images/'+currentPatientId+'/'+Date.now()+'_'+f.name);
+        const task=ref.put(f);
+        task.on('state_changed', s=>{ btn.innerText=`${Math.round((s.bytesTransferred/s.totalBytes)*100)}%`; }, e=>{alert(e.message); btn.disabled=false;}, ()=>{
+            task.snapshot.ref.getDownloadURL().then(u=>{
+                const p=localPatients[currentPatientId], i=p.images||[]; i.push({url:u,caption:cap||'Image'});
+                return db.collection('patients').doc(currentPatientId).update({images:i});
+            }).then(()=>{ fi.value=''; document.getElementById('img-cap').value=''; btn.disabled=false; btn.innerText="Upload"; });
+        });
+    }
+    function delImg(i){
+        if(!confirm("Delete from storage?"))return;
+        const p=localPatients[currentPatientId], img=p.images[i];
+        let prom=Promise.resolve();
+        if(img.url&&img.url.includes('firebasestorage')) prom=storage.refFromURL(img.url).delete().catch(e=>console.warn(e));
+        prom.finally(()=>{ const n=p.images.filter((_,x)=>x!==i); db.collection('patients').doc(currentPatientId).update({images:n}); });
+    }
+    function openLightbox(u){ document.getElementById('lightbox').style.display='flex'; document.getElementById('lightbox-img').src=u; }
+    function closeLightbox(){ document.getElementById('lightbox').style.display='none'; }
+    function renderHistory(){
+       const p=localPatients[currentPatientId], l=document.getElementById('history-list'); l.innerHTML='';
+       (p.logs||'').split('•').filter(e=>e.trim().length>0).reverse().forEach(e=>{
+           const parts=e.split('\n'), d=parts[0], t=parts.slice(1).join('\n').trim();
+           if(d&&t){ const li=document.createElement('li'); li.className='history-item'; li.innerHTML=`<div class="history-date">${d}</div><div class="history-text">${t}</div>`; l.appendChild(li); }
+       });
+    }
+
+    const MAP_FORM_PDF = {
+       'f-name': 'name', 'f-hosp-no': 'hid', 'f-age': 'age', 'f-sex': 'sex', 'f-ward': 'ward', 'f-bed': 'bed', 'f-doa': 'doa',
+       'f-finaldx': 'dx', 'f-plan': 'management', 'f-complaints': 'complains', 
+       'f-hopi': 'hopi', 'f-past': 'pasthx', 'f-family': 'fhx', 'f-treatment': 'txhx',
+       'f-obs': 'obs', 'f-personal': 'personalhx', 'f-ge': 'ge',
+       'f-cvs': 'cvs', 'f-rs': 'rs', 'f-abd': 'pa', 'f-pelvis': 'pelvis', 'f-cns': 'cns', 'f-le': 'le'
+    };
+    const MAP_PDF_DB = {
+       'name':'name', 'hid':'id', 'age':'age', 'sex':'sex', 'ward':'ward', 'bed':'bed', 'doa':'doa',
+       'management':'plan', 'complains':'complaint',
+       'hopi':'hopi', 'pasthx':'past_history', 'fhx':'family_history', 'txhx':'treatment_history',
+       'obs':'obs_history', 'personalhx':'personal_history', 'ge':'general_exam',
+       'cvs':'cvs', 'rs':'rs', 'pa':'abdomen', 'pelvis':'pelvis', 'cns':'cns', 'le':'local_exam', 'dx':'diagnosis' 
+    };
+
+    const ALLOWED_EDIT_PDF = [
+        'dx', 'management', 'complains', 'hopi', 'pasthx', 'fhx',
+        'txhx', 'obs', 'personalhx', 'ge', 'cvs', 'rs', 'pa',
+        'pelvis', 'cns', 'le'
+    ];
+
+    const FIELD_MAX_LINES = {
+        'f-hopi': 9, 'f-complaints': 3, 'f-past': 6, 'f-personal': 6, 'f-family': 6, 'f-treatment': 6,
+        'f-obs': 6, 'f-ge': 5, 'f-cvs': 5, 'f-rs': 5, 'f-abd': 5, 'f-pelvis': 5, 'f-cns': 5, 'f-le': 5, 'f-plan': 8
+    };
+
+    let pdfDoc = null;
+    let anchors = {};
+    let pdfValues = {};
+    let currentMode = 'form';
+    let pdfFontSize = 13;
+    let pdfLineHeight = 1.3;
+
+    function launchAdmissionSystem() {
+       document.getElementById('admission-system').style.display='flex';
+       document.querySelectorAll('#admission-system input, #admission-system textarea').forEach(e => e.value = '');
+       document.getElementById('f-doa').value = getLocalISODate();
+       document.getElementById('f-shift').value = getCurrentShift();
+       pdfValues = {}; 
+       setMode('form');
+       if(!pdfDoc) loadPdfEngine();
+       if(Object.keys(anchors).length === 0) fetch(ANCHORS_URL).then(r=>r.json()).then(d=> anchors = d.anchorsByPage || d);
+       loadTemplates();
+       document.getElementById('admSidebar').classList.remove('show');
+    }
+    function closeAdmissionSystem() { document.getElementById('admission-system').style.display='none'; }
+    
+    function setMode(mode) {
+       currentMode = mode;
+       document.getElementById('btn-mode-form').className = `mode-card ${mode==='form'?'active':''}`;
+       document.getElementById('btn-mode-pdf').className = `mode-card ${mode==='pdf'?'active':''}`;
+       document.getElementById('view-form').style.display = mode==='form'?'block':'none';
+       document.getElementById('view-pdf').style.display = mode==='pdf'?'flex':'none';
+       document.getElementById('pdf-controls').style.display = mode==='pdf'?'flex':'none';
+       
+       if(document.body.classList.contains('is-mobile')) {
+           toggleAdmSidebar(); 
+       }
+
+       if(mode==='pdf' && document.getElementById('pdf-stage').innerHTML === '') {
+           if(pdfDoc) renderPdfVisual(); 
+       }
+    }
+
+    function toggleAdmSidebar() {
+        document.getElementById('admSidebar').classList.toggle('show');
+    }
+
+    function toggleAdmAutoInputs() { 
+       const el = document.getElementById('adm-radio-auto');
+       const a = el ? el.checked : false;
+       document.getElementById('adm-auto-age-inputs').style.display = a ? 'flex' : 'none'; 
+    }
+
+    async function loadPdfEngine() {
+       try {
+         const pdfBytes = await fetch(PDF_URL).then(r=>r.arrayBuffer());
+         pdfDoc = await pdfjsLib.getDocument(pdfBytes).promise;
+         if(currentMode==='pdf') renderPdfVisual();
+         document.getElementById('pdf-loading').style.display='none';
+       } catch(e) { console.error("PDF Load Error", e); }
+    }
+
+    function updateVisualField(pdfKey, value) {
+       pdfValues[pdfKey] = value;
+    }
+    
+    function syncDx(val, fromBottom) {
+       // Syncs the top Diagnosis field with the bottom one and Visual PDF
+       if (fromBottom) {
+           document.getElementById('f-adm-dx').value = val;
+       } else {
+           document.getElementById('f-finaldx').value = val;
+       }
+       pdfValues['dx'] = val;
+    }
+
+    function checkOverflow(fieldId) {
+        if (fieldId !== 'f-hopi') return;
+
+        const pdfKey = MAP_FORM_PDF[fieldId];
+        if(!pdfKey) return;
+        
+        let targetAnchor = null;
+        Object.values(anchors).forEach(pageAnchors => {
+            const found = pageAnchors.find(a => a.name === pdfKey);
+            if(found) targetAnchor = found;
+        });
+        
+        if(!targetAnchor) return;
+
+        const maxLines = FIELD_MAX_LINES[fieldId] || 9;
+        const text = document.getElementById(fieldId).value;
+        const warnEl = document.getElementById('warn-' + fieldId);
+        
+        const canvas = document.createElement('canvas'); 
+        const ctx = canvas.getContext('2d');
+        const fontSize = 9; 
+        ctx.font = `${fontSize}px Helvetica`; 
+        
+        const pageWidth = 595; 
+        const boxW = targetAnchor.w * pageWidth; 
+        
+        const words = text.split(' '); 
+        let lineCount = 1; 
+        let currentLineW = 0;
+        
+        for(const word of words) {
+           if(word.includes('\n')) {
+               const parts = word.split('\n');
+               const firstW = ctx.measureText(parts[0] + ' ').width;
+               if (currentLineW + firstW > boxW) { lineCount++; }
+               
+               for(let k=1; k<parts.length; k++) {
+                   lineCount++;
+                   const partW = ctx.measureText(parts[k] + ' ').width;
+                   if(partW > boxW) {
+                        lineCount += Math.floor(partW / boxW);
+                        currentLineW = partW % boxW;
+                   } else {
+                        currentLineW = partW;
+                   }
+               }
+               continue;
+           }
+
+           const wordW = ctx.measureText(word + ' ').width;
+           if (currentLineW + wordW > boxW) { 
+               lineCount++; 
+               currentLineW = wordW; 
+           } else { 
+               currentLineW += wordW; 
+           }
         }
-      }).catch(error => {
-        console.error(`Error refreshing button state for patient ${id}:`, error);
-        logBtn.disabled = true;
-        logBtn.innerText = 'Logged';
-      });
-    }
-    function formatTimestamp(timestamp) {
-      const date = new Date(timestamp);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = String(date.getFullYear()).slice(-2);
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    }
-    function toggleDischargeWard() {
-      const grid = document.getElementById('ward-Discharge');
-      const header = document.getElementById('header-Discharge');
-      const isExpanded = grid.classList.contains('expanded');
-      grid.classList.toggle('expanded', !isExpanded);
-      header.classList.toggle('expanded', !isExpanded);
-      console.log(`Toggled Discharge ward: ${isExpanded ? 'collapsed' : 'expanded'}`);
-    }
-    function generateReportHeader(type, date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, totalCount) {
-      if (type === 'NICU') {
-        return `NICU HANDOVER\n` +
-               `Date: ${date}\n` +
-               `Shift: _\n` +
-               `# Total number of neonates: ${totalCount}\n` +
-               `# Number of admissions: _\n` +
-               `# Number of shift outs: _\n` +
-               `# Number of discharges: _\n\n` +
-               `=======================\n\n`;
-      } else if (type === 'Ward') {
-        return `WARD HANDOVER\n` +
-               `Date: ${date}\n` +
-               `Shift: _\n` +
-               `# Total number of patients: ${totalCount}\n` +
-               `# Number of admissions: ${totalAd}\n` +
-               `# Number of discharges: ${totalDis}\n\n` +
-               `=======================\n\n`;
-      } else {
-        let text = `PEDIATRIC HANDOVER REPORT\n`;
-        text += `Date: ${date}\n\n`;
-        text += `ADMISSIONS/DISCHARGES SUMMARY\n`;
-        text += `Admissions (Morning): ${adM}\n`;
-        text += `Admissions (Evening): ${adE}\n`;
-        text += `Admissions (Night): ${adN}\n`;
-        text += `Total Admissions: ${totalAd}\n\n`;
-        text += `Discharges (Morning): ${disM}\n`;
-        text += `Discharges (Evening): ${disE}\n`;
-        text += `Discharges (Night): ${disN}\n`;
-        text += `Total Discharges: ${totalDis}\n\n`;
-        text += `Total Patients: ${totalCount}\n\n`;
-        text += `=======================\n\n`;
-        return text;
-      }
-    }
-    function generatePatientSection(patientsByWard, wards, type) {
-      let text = '';
-      wards.forEach(ward => {
-        const patients = patientsByWard[ward];
-        if (patients.length > 0) {
-          text += `${ward.toUpperCase()} WARD (${patients.length} patients)\n`;
-          text += '---------------------------------\n';
-          patients.forEach(p => {
-            const sexAbbr = p.sex?.charAt(0).toUpperCase() || '';
-            let patientLine = `BED ${p.bed}`;
-            if (type === 'NICU') {
-              patientLine += ` - ${p.name}`;
+        
+        if(lineCount > maxLines) {
+            if(warnEl) {
+                warnEl.style.display = 'block';
+                warnEl.innerText = `⚠️ Text limit exceeded: ${lineCount}/${maxLines} lines`;
             }
-            patientLine += ` - ${p.age}/${sexAbbr}, ${p.diagnosis || 'N/A'}${p.isNew ? ' (NEW)' : ''}\n`;
-            text += patientLine;
-            if (p.medications) text += `Medications: ${p.medications}\n`;
-            if (p.issues) text += `Issues: ${p.issues}\n`;
-            if (p.hopi && p.isNew) text += `HOPI: ${p.hopi}\n`;
-            if (p.plan) text += `Plan: ${p.plan}\n`;
-            text += '---------------------------------\n';
-          });
-          text += '\n\n';
+        } else {
+            if(warnEl) warnEl.style.display = 'none';
         }
-      });
-      return text;
     }
-    function printReport(type, wardsToInclude, totalPatients) {
-      const date = document.getElementById('handoverDate').innerText;
-      const adM = +document.getElementById('adM').value || 0;
-      const adE = +document.getElementById('adE').value || 0;
-      const adN = +document.getElementById('adN').value || 0;
-      const disM = +document.getElementById('disM').value || 0;
-      const disE = +document.getElementById('disE').value || 0;
-      const disN = +document.getElementById('disN').value || 0;
-      const totalAd = document.getElementById('totalAd').innerText;
-      const totalDis = document.getElementById('totalDis').innerText;
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      db.collection('patients').get().then(snap => {
-        const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
-        const patientsByWard = {};
-        wards.forEach(ward => patientsByWard[ward] = []);
-        snap.forEach(doc => {
-          const patient = doc.data();
-          const ward = patient.ward;
-          if (wards.includes(ward) && wardsToInclude.includes(ward)) {
-            patientsByWard[ward].push({
-              id: doc.id,
-              ...patient
+
+    async function renderPdfVisual() {
+       const stage = document.getElementById('pdf-stage'); stage.innerHTML = ''; 
+       const container = document.getElementById('view-pdf');
+       const containerW = container.clientWidth || window.innerWidth;
+       const p1 = await pdfDoc.getPage(1);
+       const v1 = p1.getViewport({ scale: 1 });
+       const margin = 20;
+       
+       const availableWidth = Math.min(containerW, 850);
+       const scaleFit = (availableWidth - margin) / v1.width; 
+
+       for(let i=1; i<=pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i);
+          const viewport = page.getViewport({ scale: scaleFit }); 
+          const wrapper = document.createElement('div');
+          wrapper.className = 'pdf-page'; 
+          
+          wrapper.style.width = viewport.width + 'px'; 
+          wrapper.style.height = viewport.height + 'px';
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          canvas.className = 'pdf-canvas';
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+          wrapper.appendChild(canvas);
+          if(anchors[i]) {
+             anchors[i].forEach(a => {
+                const box = document.createElement('div');
+                box.className = 'pdf-box'; 
+                
+                if(ALLOWED_EDIT_PDF.includes(a.name)) {
+                    box.contentEditable = true;
+                } else {
+                    box.contentEditable = false;
+                    box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)';
+                    box.title = "Edit in Sidebar";
+                }
+
+                box.style.left = (a.x * 100) + '%'; 
+                box.style.top = (a.y * 100) + '%'; 
+                
+                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%';
+                box.style.fontSize = (pdfFontSize * scaleFit) + 'px'; box.style.lineHeight = pdfLineHeight;
+                box.innerText = pdfValues[a.name] || '';
+                if(box.contentEditable === "true") {
+                    box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; };
+                }
+                wrapper.appendChild(box);
+             });
+          }
+          stage.appendChild(wrapper);
+       }
+    }
+    
+    function changePdfFont(val) { pdfFontSize = parseInt(val); renderPdfVisual(); }
+    function changePdfLineHeight(val) { pdfLineHeight = parseFloat(val); renderPdfVisual(); }
+
+    function syncFormToPdf() {
+       Object.keys(MAP_FORM_PDF).forEach(fid => {
+           const el = document.getElementById(fid);
+           if(el) { pdfValues[MAP_FORM_PDF[fid]] = el.value || ''; }
+       });
+    }
+    
+    function syncPdfToForm() {
+       Object.keys(MAP_FORM_PDF).forEach(fid => {
+           const pdfKey = MAP_FORM_PDF[fid];
+           if (pdfValues[pdfKey] !== undefined) {
+               const el = document.getElementById(fid);
+               if(el) el.value = pdfValues[pdfKey];
+           }
+       });
+    }
+
+    function openAdmissionForPatient() {
+        if(!currentPatientId || !localPatients[currentPatientId]) return;
+        const p = localPatients[currentPatientId];
+        launchAdmissionSystem(); 
+        if(p.admissionData) {
+            pdfValues = { ...p.admissionData };
+            Object.keys(MAP_FORM_PDF).forEach(fid => {
+                const pdfKey = MAP_FORM_PDF[fid];
+                if(pdfValues[pdfKey]) { const el = document.getElementById(fid); if(el) el.value = pdfValues[pdfKey]; }
             });
-          }
-        });
-        wards.forEach(ward => {
-          patientsByWard[ward].sort((a, b) => {
-            return (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0);
+            // Try to split ID back if saved as "Hosp, NID"
+            if(p.id && p.id.includes(',')) {
+                const parts = p.id.split(',');
+                if(parts.length >= 2) {
+                    document.getElementById('f-hosp-no').value = parts[0].trim();
+                    document.getElementById('f-nid-no').value = parts[1].trim();
+                }
+            } else {
+                document.getElementById('f-hosp-no').value = p.id || '';
+            }
+            // Sync Diagnosis
+            if(p.diagnosis) {
+                document.getElementById('f-adm-dx').value = p.diagnosis;
+                document.getElementById('f-finaldx').value = p.diagnosis;
+            }
+        } else {
+            document.getElementById('f-name').value = p.name || '';
+            document.getElementById('f-hosp-no').value = p.id || ''; // Fallback for old records
+            document.getElementById('f-doa').value = p.doa || '';
+            document.getElementById('f-shift').value = p.shift || 'Morning';
+            document.getElementById('f-ward').value = p.ward || 'PW';
+            document.getElementById('f-bed').value = p.bed || '';
+            document.getElementById('f-age').value = p.age || '';
+            document.getElementById('f-sex').value = p.sex || 'Male';
+            document.getElementById('f-weight').value = p.weight || '';
+            document.getElementById('f-finaldx').value = p.diagnosis || '';
+            document.getElementById('f-adm-dx').value = p.diagnosis || '';
+            document.getElementById('f-plan').value = p.plan || '';
+        }
+        syncFormToPdf(); closeModal(); 
+    }
+
+    function calculateOptimalFontSize(minSize, maxSize) {
+       if(Object.keys(anchors).length === 0) return maxSize;
+       const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+       const checkFit = (size) => {
+         ctx.font = `${size}px Helvetica`; const lineHeight = size * pdfLineHeight;
+         for(const pageNum in anchors) {
+             for(const a of anchors[pageNum]) {
+                const text = String(pdfValues[a.name] || '').trim(); if(!text) continue;
+                const pageWidth = 595; const pageHeight = 842;
+                const boxW = a.w * pageWidth; const boxH = a.h * pageHeight;
+                const words = text.split(' '); let lineCount = 1; let currentLineW = 0;
+                for(const word of words) {
+                   const wordW = ctx.measureText(word + ' ').width;
+                   if (currentLineW + wordW > boxW) { lineCount++; currentLineW = wordW; } else { currentLineW += wordW; }
+                }
+                const totalH = lineCount * lineHeight; if(totalH > boxH) return false;
+             }
+         }
+         return true;
+       };
+       for (let s = maxSize; s >= minSize; s--) { if (checkFit(s)) return s; }
+       return minSize; 
+    }
+
+    async function saveAndAdd() {
+       const printWin = window.open('', '_blank');
+       if (printWin) {
+           printWin.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Saving & Generating PDF...</h2></body></html>');
+       } else {
+           alert("Please allow popups to print.");
+           return;
+       }
+
+       if (currentMode === 'pdf') {
+           syncPdfToForm(); 
+       } else {
+           syncFormToPdf();
+       }
+       
+       const p = { timestamp: Date.now(), isNew: true, logs: '', lastLoggedPlan: '', labs: {dates:[], tests:{}}, images: [] };
+       
+       const rawName = document.getElementById('f-name').value || "Unknown";
+       
+       // NEW: Combine Hosp No and NID No
+       const hospNo = document.getElementById('f-hosp-no').value || "";
+       const nidNo = document.getElementById('f-nid-no').value || "";
+       const combinedId = (hospNo && nidNo) ? `${hospNo}, ${nidNo}` : (hospNo || nidNo || "");
+
+       const rawAge = document.getElementById('f-age').value || "?";
+       const rawSex = document.getElementById('f-sex').value || "Male";
+       const rawWard = document.getElementById('f-ward').value || "PW";
+       const rawBed = document.getElementById('f-bed').value || "";
+       
+       p.name = rawName;
+       p.id = combinedId; // Saved as combined string
+       p.bed = rawBed;
+       p.ward = rawWard;
+       p.sex = rawSex;
+       p.isNew = true; // FORCE NEW for Admission Center
+
+       let isAuto = false;
+       const autoRadio = document.getElementById('adm-radio-auto');
+       if(autoRadio) isAuto = autoRadio.checked;
+       const dob = document.getElementById('f-dob').value;
+       const dot = document.getElementById('f-dot').value;
+       if (isAuto && dob && dot) {
+          p.age = calculateNeonatalAge(dob, dot).display; 
+          p.dob = dob; p.dot = dot; p.isAutoAge = true; 
+       } else { 
+          p.age = rawAge; 
+       }
+
+       pdfValues['age'] = `${p.age} / ${p.sex}`;
+       pdfValues['hid'] = hospNo; // PDF only takes Hospital No usually
+       pdfValues['ward'] = p.ward;
+       pdfValues['bed'] = p.bed;
+       pdfValues['name'] = p.name;
+       pdfValues['nid'] = formatTimestamp(Date.now());
+       
+       p.doa = document.getElementById('f-doa').value || getLocalISODate();
+       p.shift = document.getElementById('f-shift').value || 'Morning';
+       p.weight = document.getElementById('f-weight').value || '';
+       p.admissionData = { ...pdfValues };
+       
+       Object.keys(MAP_PDF_DB).forEach(pk => { 
+           if(!p[MAP_PDF_DB[pk]] && pdfValues[pk]) { p[MAP_PDF_DB[pk]] = pdfValues[pk]; }
+       });
+       
+       let aggregatedHopi = "";
+       const addLine = (label, val) => { if(val && val.trim()) aggregatedHopi += `${label}:\n${val.trim()}\n\n`; };
+       addLine("C/O", pdfValues['complains']); addLine("HOPI", pdfValues['hopi']); addLine("Past Hx", pdfValues['pasthx']);
+       addLine("Personal Hx", pdfValues['personalhx']); addLine("Family Hx", pdfValues['fhx']); addLine("Tx Hx", pdfValues['txhx']);
+       addLine("Obs/Gyn", pdfValues['obs']); addLine("G/E", pdfValues['ge']); addLine("CVS", pdfValues['cvs']);
+       addLine("RS", pdfValues['rs']); addLine("Abd", pdfValues['pa']); addLine("Pelvis", pdfValues['pelvis']);
+       addLine("CNS", pdfValues['cns']); addLine("Local", pdfValues['le']);
+       
+       p.hopi = aggregatedHopi; 
+       p.diagnosis = pdfValues['dx'] || ""; 
+       p.plan = pdfValues['management'] || "";
+       const note = `ADMISSION GENERATED:\n${aggregatedHopi}\nDx: ${p.diagnosis}`;
+       p.logs = `• ${formatTimestamp(Date.now())}\n ${note}\n\n`;
+
+       const cleanP = JSON.parse(JSON.stringify(p));
+
+       try {
+           await db.collection('patients').add(cleanP);
+       } catch (dbError) {
+           alert("CRITICAL ERROR: Could not save patient to database.\n" + dbError.message);
+           if(printWin) printWin.close();
+           return; 
+       }
+
+       try {
+           await generatePdfBlob(currentMode === 'form', printWin);
+       } catch (pdfError) {
+           console.error(pdfError);
+           if (printWin) {
+               printWin.document.body.innerHTML = "<h2 style='color:red'>PDF Generation Failed</h2><p>The patient was saved to the dashboard, but the PDF could not be created.</p>";
+           }
+           alert("Patient saved successfully, but PDF generation failed.");
+       }
+
+       closeAdmissionSystem();
+       pdfValues={}; 
+       document.querySelectorAll('#view-form input, #view-form textarea').forEach(e=>e.value=''); 
+       document.getElementById('f-complaints').value=''; 
+    }
+    
+    async function printOnly() {
+       const printWin = window.open('', '_blank');
+       if(printWin) { printWin.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;"><h2>Generating PDF... Please wait.</h2></body></html>'); } 
+       else { alert("Please allow popups to print."); }
+       
+       if(currentMode==='form') syncFormToPdf();
+       
+       const hospNo = document.getElementById('f-hosp-no').value || "";
+       const rawWard = document.getElementById('f-ward').value || "";
+       const rawBed = document.getElementById('f-bed').value || "";
+       const rawAge = document.getElementById('f-age').value || "?";
+       const rawSex = document.getElementById('f-sex').value || "Male";
+       
+       pdfValues['hid'] = hospNo;
+       pdfValues['ward'] = rawWard;
+       pdfValues['bed'] = rawBed;
+       pdfValues['age'] = `${rawAge} / ${rawSex}`;
+       pdfValues['nid'] = formatTimestamp(Date.now());
+
+       await generatePdfBlob(currentMode === 'form', printWin);
+    }
+
+    async function printRequestOnly() {
+        if(currentMode === 'form') syncFormToPdf(); else syncPdfToForm();
+
+        const printWin = window.open('', '_blank');
+        if(!printWin) { alert("Please allow popups."); return; }
+        printWin.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Filling Admission Request...</h2></body></html>');
+
+        try {
+            const bytes = await fetch(REQUEST_URL).then(r => r.arrayBuffer());
+            const pdf = await PDFLib.PDFDocument.load(bytes);
+            const form = pdf.getForm();
+
+            // --- MAPPING CONFIGURATION (UPDATED TO CAPITAL 'T') ---
+            const fieldMap = {
+                'Text21': pdfValues['name'] || document.getElementById('f-name').value,      // Name
+                'Text20': document.getElementById('f-hosp-no').value,                        // Hosp No
+                'Text23': document.getElementById('f-nid-no').value,                         // NID No
+                'Text22': pdfValues['ward'] || document.getElementById('f-ward').value,      // Ward
+                'Text24': pdfValues['bed'] || document.getElementById('f-bed').value,        // Bed
+                'Text27': pdfValues['doa'] || document.getElementById('f-doa').value,        // Date
+                'Text29': document.getElementById('f-adm-dx').value                          // Diagnosis
+            };
+
+            // --- FILLING LOGIC ---
+            Object.keys(fieldMap).forEach(fieldName => {
+                try {
+                    const field = form.getTextField(fieldName);
+                    if (field) {
+                        const val = fieldMap[fieldName] || '';
+                        field.setText(String(val));
+                    }
+                } catch (err) {
+                    console.warn(`Field '${fieldName}' not found in PDF. Ignoring.`);
+                }
+            });
+
+            const pdfOut = await pdf.save();
+            const blob = new Blob([pdfOut], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            printWin.location.href = url;
+
+        } catch (e) {
+            console.error(e);
+            printWin.document.body.innerHTML = "Error: " + e.message;
+        }
+    }
+
+    async function generatePdfBlob(autoFit, targetWindow) {
+       try {
+           const bytes = await fetch(PDF_URL).then(r=>r.arrayBuffer());
+           const pdf = await PDFLib.PDFDocument.load(bytes);
+           const font = await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
+           const pages = pdf.getPages();
+           
+           let useFontSize = pdfFontSize; 
+           if(autoFit) { 
+               useFontSize = calculateOptimalFontSize(9, 14); 
+           }
+           
+           Object.keys(anchors).forEach(pNum => {
+              if(!pages[pNum-1]) return; const page = pages[pNum-1]; const { width, height } = page.getSize();
+              anchors[pNum].forEach(a => {
+                 const rawVal = pdfValues[a.name]; 
+                 let text = (rawVal === null || rawVal === undefined) ? '' : String(rawVal).trim();
+                 text = text.replace(/[\u2010-\u2015]/g, "-").replace(/[^\x00-\x7F]/g, "");
+                 
+                 if(!text) return; 
+                 let fs = autoFit ? useFontSize : pdfFontSize;
+                 page.drawText(text, { x: a.x * width + 2, y: height - (a.y * height) - fs, size: fs, font: font, maxWidth: (a.w * width) - 4, lineHeight: fs * pdfLineHeight });
+              });
+           });
+           const pdfOut = await pdf.save();
+           const blob = new Blob([pdfOut], { type: 'application/pdf' });
+           const url = URL.createObjectURL(blob);
+           if (targetWindow && !targetWindow.closed) { targetWindow.location.href = url; } 
+           else { window.open(url, '_blank'); }
+       } catch (e) { 
+           throw e; 
+       }
+    }
+
+    function saveTemplate() {
+       const name = prompt("Template Name:");
+       if(name) { db.collection('admissions').add({ type:'template', name, values: {...pdfValues} }).then(loadTemplates); }
+    }
+    function loadTemplates() {
+       db.collection('admissions').where('type','==','template').onSnapshot(snap => {
+          const list = document.getElementById('template-list'); list.innerHTML='';
+          snap.forEach(doc => {
+             const d = document.createElement('div'); d.style.padding='8px'; d.style.borderBottom='1px solid #eee'; d.style.cursor='pointer';
+             d.innerHTML = `<span>${doc.data().name}</span> <span style="float:right;color:red;">×</span>`;
+             d.onclick = (e) => { if(e.target.innerText==='×') { e.stopPropagation(); db.collection('admissions').doc(doc.id).delete(); return; } pdfValues = { ...doc.data().values }; setMode('pdf'); renderPdfVisual(); };
+             list.appendChild(d);
           });
-        });
-        const reportText = generateReportHeader(type, date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, totalPatients) +
-                          generatePatientSection(patientsByWard, wardsToInclude, type);
-        const textWindow = window.open('', '_blank');
-        textWindow.document.write(`
-          <html data-theme="${currentTheme}">
-          <head>
-            <title>Handover Report - ${type} - ${date}</title>
-            <style>
-              :root {
-                --bg: ${currentTheme === 'dark' ? '#1a202c' : '#f4f7fb'};
-                --text: ${currentTheme === 'dark' ? '#e2e8f0' : '#1d3557'};
-                --card-bg: ${currentTheme === 'dark' ? '#2d3748' : '#ffffff'};
-              }
-              body { font-family: 'Inter', sans-serif; padding: 19px; background: var(--bg); color: var(--text); }
-              .copy-btn {
-                padding: 9.5px 19px;
-                font-weight: 600;
-                background: #6b7280;
-                color: #fff;
-                border: none;
-                border-radius: 7.6px;
-                cursor: pointer;
-                margin-bottom: 9.5px;
-                font-size: 14.3px;
-              }
-              .copy-btn:hover { background: #4b5563; }
-              pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
-            </style>
-          </head>
-          <body>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(() => alert('Report copied to clipboard!')).catch(() => alert('Failed to copy report'))">Copy</button>
-            <pre>${reportText}</pre>
-          </body>
-          </html>
-        `);
-        textWindow.document.close();
-      }).catch(error => {
-        console.error(`Error generating ${type} report:`, error);
-      });
+       });
     }
-    function printAll() {
-      const totalCount = document.getElementById('totalCount').innerText;
-      printReport('All', ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"], totalCount);
-    }
-    function printNICU() {
-      db.collection('patients').where('ward', '==', 'NICU').get().then(snap => {
-        printReport('NICU', ['NICU'], snap.size);
-      });
-    }
-    function printWard() {
-      db.collection('patients').where('ward', 'in', ["PW", "GW", "SW", "PVT", "ICU", "ER"]).get().then(snap => {
-        printReport('Ward', ["PW", "GW", "SW", "PVT", "ICU", "ER"], snap.size);
-      });
-    }
-    function printNew() {
-      const date = document.getElementById('handoverDate').innerText;
-      const adM = +document.getElementById('adM').value || 0;
-      const adE = +document.getElementById('adE').value || 0;
-      const adN = +document.getElementById('adN').value || 0;
-      const disM = +document.getElementById('disM').value || 0;
-      const disE = +document.getElementById('disE').value || 0;
-      const disN = +document.getElementById('disN').value || 0;
-      const totalAd = document.getElementById('totalAd').innerText;
-      const totalDis = document.getElementById('totalDis').innerText;
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      const wardsAll = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
-      const wardsToInclude = ["PW", "GW", "SW", "PVT", "ICU", "NICU"];
-      db.collection('patients').where('isNew', '==', true).get().then(snap => {
-        const patientsByWard = {};
-        wardsAll.forEach(w => patientsByWard[w] = []);
-        snap.forEach(doc => {
-          const p = doc.data();
-          if (wardsToInclude.includes(p.ward)) {
-            patientsByWard[p.ward].push({ id: doc.id, ...p });
-          }
-        });
-        wardsToInclude.forEach(w => {
-          patientsByWard[w].sort((a, b) => (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0));
-        });
-        const includedCount = wardsToInclude.reduce((sum, w) => sum + patientsByWard[w].length, 0);
-        const header = generateReportHeader('Ward', date, adM, adE, adN, disM, disE, disN, totalAd, totalDis, includedCount);
-        const body = generatePatientSection(patientsByWard, wardsToInclude, 'Ward');
-        const reportText = header + body;
-        const textWindow = window.open('', '_blank');
-        textWindow.document.write(`
-          <html data-theme="${currentTheme}">
-          <head>
-            <title>Handover Report - NEW cases - ${date}</title>
-            <style>
-              :root {
-                --bg: ${currentTheme === 'dark' ? '#1a202c' : '#f4f7fb'};
-                --text: ${currentTheme === 'dark' ? '#e2e8f0' : '#1d3557'};
-                --card-bg: ${currentTheme === 'dark' ? '#2d3748' : '#ffffff'};
-              }
-              body { font-family: 'Inter', sans-serif; padding: 19px; background: var(--bg); color: var(--text); }
-              .copy-btn {
-                padding: 9.5px 19px;
-                font-weight: 600;
-                background: #6b7280;
-                color: #fff;
-                border: none;
-                border-radius: 7.6px;
-                cursor: pointer;
-                margin-bottom: 9.5px;
-                font-size: 14.3px;
-              }
-              .copy-btn:hover { background: #4b5563; }
-              pre { white-space: pre-wrap; font-family: 'Inter', monospace; font-size: 14.3px; }
-            </style>
-          </head>
-          <body>
-            <button class="copy-btn" onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(() => alert('Report copied to clipboard!')).catch(() => alert('Failed to copy report'))">Copy</button>
-            <pre>${reportText}</pre>
-          </body>
-          </html>
-        `);
-        textWindow.document.close();
-      }).catch(err => {
-        console.error('Error generating NEW cases report:', err);
-      });
-    }
-    function recalcSummary() {
-      const adM = +document.getElementById('adM').value || 0;
-      const adE = +document.getElementById('adE').value || 0;
-      const adN = +document.getElementById('adN').value || 0;
-      const disM = +document.getElementById('disM').value || 0;
-      const disE = +document.getElementById('disE').value || 0;
-      const disN = +document.getElementById('disN').value || 0;
-      document.getElementById('totalAd').innerText = adM + adE + adN;
-      document.getElementById('totalDis').innerText = disM + disE + disN;
-      const data = { adM, adE, adN, disM, disE, disN, date: new Date().toISOString().split("T")[0] };
-      localStorage.setItem('summary', JSON.stringify(data));
-      db.collection('summaries').doc('current').set(data);
-    }
-    function restoreSummary() {
-      const saved = localStorage.getItem('summary');
-      if (saved) {
-        const { adM, adE, adN, disM, disE, disN } = JSON.parse(saved);
-        document.getElementById('adM').value = adM;
-        document.getElementById('adE').value = adE;
-        document.getElementById('adN').value = adN;
-        document.getElementById('disM').value = disM;
-        document.getElementById('disE').value = disE;
-        document.getElementById('disN').value = disN;
-      }
-      db.collection('summaries').doc('current').get().then(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          document.getElementById('adM').value = data.adM;
-          document.getElementById('adE').value = data.adE;
-          document.getElementById('adN').value = data.adN;
-          document.getElementById('disM').value = data.disM;
-          document.getElementById('disE').value = data.disE;
-          document.getElementById('disN').value = data.disN;
-          recalcSummary();
-        }
-      });
-    }
-    function loadPatients() {
-      const container = document.getElementById('wardsContainer');
-      const wards = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER", "Discharge"];
-      const wardGrids = {};
-      let patientCards = {};
-
-      wards.forEach(w => {
-        const sec = document.createElement('div');
-        const header = document.createElement('h2');
-        header.className = 'ward-header';
-        header.style.background = `var(--${w})`;
-        header.id = `header-${w}`;
-        header.innerText = w === 'Discharge' ? `Discharges (0)` : `${w} (0)`;
-        if (w === 'Discharge') {
-          header.classList.add('discharge-header');
-          header.onclick = toggleDischargeWard;
-        }
-        sec.appendChild(header);
-        const grid = document.createElement('div');
-        grid.className = 'card-grid';
-        grid.id = `ward-${w}`;
-        if (w !== 'Discharge') {
-          grid.classList.add('expanded');
-        }
-        sec.appendChild(grid);
-        container.appendChild(sec);
-        wardGrids[w] = grid;
-      });
-
-      db.collection('patients').onSnapshot(snap => {
-        const scrollY = window.scrollY; // Capture scroll position before re-render
-        const wardCounts = {};
-        const patientsByWard = {};
-        wards.forEach(w => {
-          wardCounts[w] = 0;
-          patientsByWard[w] = [];
-        });
-        let totalActive = 0;
-        const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-        const now = Date.now();
-
-        Object.keys(patientCards).forEach(id => {
-          if (patientCards[id]) {
-            patientCards[id].remove();
-          }
-        });
-        patientCards = {};
-
-        snap.forEach(doc => {
-          const d = doc.data();
-          const id = doc.id;
-          const ward = d.ward;
-
-          if (!wards.includes(ward)) {
-            console.warn(`Invalid ward for patient ${id}: ${ward}`);
-            return;
-          }
-
-          if (ward === 'Discharge' && (d.dischargeTimestamp || d.timestamp || now) < now - oneWeekMs) {
-            console.log(`Deleting patient ${id} from Discharges: dischargeTimestamp=${d.dischargeTimestamp} is over a week old`);
-            db.collection('patients').doc(id).delete().catch(error => {
-              console.error(`Error deleting patient ${id}:`, error);
-            });
-            return;
-          }
-
-          patientsByWard[ward].push({ id, data: d });
-          wardCounts[ward]++;
-          if (ward !== 'Discharge') totalActive++;
-        });
-
-        document.getElementById('totalCount').innerText = totalActive;
-
-        wards.forEach(w => {
-          if (w === 'Discharge') {
-            patientsByWard[w].sort((a, b) => {
-              const timeA = a.data.dischargeTimestamp || a.data.timestamp || 0;
-              const timeB = b.data.dischargeTimestamp || b.data.timestamp || 0;
-              return timeB - timeA;
-            });
-          } else {
-            patientsByWard[w].sort((a, b) => {
-              const bedA = parseInt(a.data.bed) || 0;
-              const bedB = parseInt(b.data.bed) || 0;
-              return bedA - bedB;
-            });
-          }
-
-          wardGrids[w].innerHTML = '';
-
-          patientsByWard[w].forEach(({ id, data: d }) => {
-            console.log(`Rendering patient ${id}: ward=${d.ward}, dischargeTimestamp=${d.dischargeTimestamp}`);
-            const daysAdmitted = calculateDaysAdmitted(d.doa);
-            let computedAge = d.age;
-            if (d.isAutoAge && d.dob && d.dot) {
-              computedAge = calculateNeonatalAge(d.dob, d.dot).display;
-              if (computedAge !== d.age) {
-                db.collection('patients').doc(id).update({ age: computedAge });
-              }
-            }
-            const makeEditable = (field, label = '') =>
-              `<p><strong>${label}</strong><span contenteditable class="editable" onblur="updateField('${id}', '${field}', this.innerText)">${d[field] || ''}</span></p>`;
-            const logs = d.logs || 'No logs yet';
-            let dischargeTag = '';
-            if (d.ward === 'Discharge') {
-              const timestamp = d.dischargeTimestamp || d.timestamp || Date.now();
-              const formatted = formatTimestamp(timestamp);
-              dischargeTag = `<span class="discharge-badge discharge-active" data-id="${id}">Discharged on ${formatted}</span>`;
-              console.log(`Adding discharge badge for patient ${id}: Discharged on ${formatted}`);
-            }
-            const currentPlan = (d.plan || '').trim();
-            const lastLoggedPlan = (d.lastLoggedPlan || '').trim();
-            const needsLog = currentPlan !== '' && currentPlan !== lastLoggedPlan;
-            console.log(`Patient ${id}: needsLog=${needsLog}, currentPlan="${currentPlan}", lastLoggedPlan="${lastLoggedPlan}"`);
-            const card = document.createElement('div');
-            card.className = 'patient-card';
-            card.innerHTML = `
-              <button class="delete-btn" onclick="deletePatient('${id}')">×</button>
-              <span class="new-badge${d.isNew ? ' new-active' : ''}" data-id="${id}">NEW</span>
-              ${dischargeTag}
-              <p><strong>Name:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'name', this.innerText)">${d.name}</span></p>
-              <p><strong>ID:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'id', this.innerText)">${d.id || ''}</span></p>
-              <p><strong>DOA:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'doa', this.innerText)">${d.doa || ''}</span> <span id="doa-days-${id}">(${daysAdmitted})</span></p>
-              <p><strong>Shift:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'shift', this.innerText)">${d.shift || ''}</span></p>
-              <p><strong>Bed:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'bed', this.innerText)">${d.bed || ''}</span></p>
-              <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span id="age-display-${id}" contenteditable="${!d.isAutoAge}" onblur="updateField('${id}', 'age', this.innerText)">${computedAge}</span></p>
-              <div class="age-toggle" id="age-toggle-${id}">
-                <label><input type="radio" name="ageMode-${id}" value="manual" ${!d.isAutoAge ? 'checked' : ''} onchange="toggleAutoInputs('${id}')"> Manual</label>
-                <label><input type="radio" name="ageMode-${id}" value="auto" ${d.isAutoAge ? 'checked' : ''} onchange="toggleAutoInputs('${id}'); saveAgeMode('${id}')"> Auto (HOL/DOL)</label>
-                <div class="auto-age-inputs" id="auto-age-inputs-${id}" style="display: ${d.isAutoAge ? 'flex' : 'none'}">
-                  <input type="date" id="dob-${id}" value="${d.dob || ''}" onblur="saveAgeMode('${id}')">
-                  <input type="time" id="dot-${id}" value="${d.dot || ''}" onblur="saveAgeMode('${id}')">
-                </div>
-              </div>
-              <p class="inline-fields">
-                <strong>Sex:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'sex', this.innerText)">${d.sex || ''}</span>
-              </p>
-              <p><strong>Weight:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'weight', this.innerText)">${d.weight || ''}</span></p>
-              <p><strong>Diagnosis:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'diagnosis', this.innerText)">${d.diagnosis || ''}</span></p>
-              <p><strong>Medications:</strong></p>
-              <p><span contenteditable class="editable" onblur="updateField('${id}', 'medications', this.innerText)">${d.medications || ''}</span></p>
-              <p><strong>Issues:</strong> <span contenteditable class="editable" onblur="updateField('${id}', 'issues', this.innerText)">${d.issues || ''}</span></p>
-              <p><strong class="hopi-toggle" id="hopi-toggle-${id}" onclick="toggleHopi('${id}')" aria-expanded="false">HOPI: ►</strong></p>
-              <div class="hopi-content" id="hopi-content-${id}">
-                <span contenteditable class="editable" onblur="updateField('${id}', 'hopi', this.innerText)">${d.hopi || ''}</span>
-              </div>
-              <p><strong class="hopi-toggle" id="plan-toggle-${id}" onclick="togglePlan('${id}')" aria-expanded="false">Plan history: ►</strong></p>
-              <div class="hopi-content plan-history" id="plan-history-${id}">
-                <div contenteditable class="editable" onblur="updateLog('${id}', this.innerText)">${logs}</div>
-              </div>
-              <p><strong class="current-plan-label">Current plan:</strong></p>
-              <p><span contenteditable class="editable" id="plan-content-${id}" onblur="updateField('${id}', 'plan', this.innerText)">${d.plan || ''}</span></p>
-              <button class="log-btn" onclick="logPlan('${id}')" ${needsLog ? '' : 'disabled'}>${needsLog ? 'Log' : 'Logged'}</button>
-              <p><strong>Ward:</strong>
-                <select onchange="changeWard('${id}', this.value)">
-                  ${wards.map(wr => `<option value="${wr}" ${wr === d.ward ? 'selected' : ''}>${wr}</option>`).join('')}
-                </select>
-              </p>
-              <p class="new-checkbox">
-                <label><input type="checkbox" ${d.isNew ? 'checked' : ''} onchange="toggleNewTag('${id}')"> New</label>
-              </p>
-            `;
-            wardGrids[w].appendChild(card);
-            patientCards[id] = card;
-            if (d.ward === 'Discharge') {
-              const badge = card.querySelector('.discharge-badge');
-              if (badge) {
-                console.log(`Discharge badge found for patient ${id}, classes: ${badge.className}`);
-              } else {
-                console.error(`Discharge badge not found for patient ${id}`);
-              }
-            }
-          });
-
-          const header = document.getElementById(`header-${w}`);
-          if (header) {
-            header.innerText = `${w === 'Discharge' ? 'Discharges' : w} (${wardCounts[w]} patient${wardCounts[w] !== 1 ? 's' : ''})`;
-          }
-        });
-
-        const breakdownOrder = ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"];
-        const breakdownText = breakdownOrder.map(w => `${w} (${wardCounts[w] || 0})`).join(', ');
-        const breakdownEl = document.getElementById('wardBreakdown');
-        if (breakdownEl) breakdownEl.innerText = breakdownText;
-
-        // Restore scroll position after re-render
-        setTimeout(() => {
-          window.scrollTo({ top: scrollY, behavior: 'instant' });
-        }, 0);
-      }, error => {
-        console.error('Error loading patients:', error);
-      });
-    }
-    loadTheme();
-    restoreSummary();
-    loadPatients();
   </script>
 </body>
 </html>
