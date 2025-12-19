@@ -92,7 +92,8 @@
     #ward-Discharge.card-grid { display: none; }
     #ward-Discharge.card-grid.expanded { display: flex; }
     
-    .patient-card { background: var(--card-bg); padding: 17.1px; border-radius: 11.4px; box-shadow: var(--shadow); position: relative; transition: transform 0.18s; padding-top: 50px; font-size: 15px; width: 295px; }
+    /* WIDTH RESTORED FOR 3-COLUMN LAYOUT */
+    .patient-card { background: var(--card-bg); padding: 17.1px; border-radius: 11.4px; box-shadow: var(--shadow); position: relative; transition: transform 0.18s; padding-top: 50px; font-size: 15px; width: 285px; }
     .patient-card:hover { transform: scale(1.015); }
     .patient-card p { margin: 3.8px 0; font-size: 15px; }
     .patient-card p strong { font-weight: 700; font-size: 15px; }
@@ -148,6 +149,20 @@
     .patient-card .history-text { font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
     
     .recent-logs-container { margin: 8px 0; max-height: 200px; overflow-y: auto; padding-left: 4px; }
+
+    /* HIDE SCROLLBARS UNLESS HOVERED */
+    .recent-logs-container::-webkit-scrollbar, .hopi-content::-webkit-scrollbar {
+        width: 6px;
+        background: transparent;
+    }
+    .recent-logs-container::-webkit-scrollbar-thumb, .hopi-content::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 3px;
+        visibility: hidden;
+    }
+    .recent-logs-container:hover::-webkit-scrollbar-thumb, .hopi-content:hover::-webkit-scrollbar-thumb {
+        visibility: visible;
+    }
 
     /* EDIT & DELETE STYLES FOR LOGS */
     .edit-history-link { font-size: 12px; color: var(--primary); cursor: pointer; margin-left: auto; margin-right: 10px; font-weight: 600; }
@@ -373,7 +388,10 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle">Patient Details</h2>
-        <button class="btn-sm" onclick="openAdmissionForPatient()" style="margin-left:auto; margin-right:15px; background:var(--accent);">Reprint/Edit Admission folder</button>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+            <button class="btn-sm" onclick="openAdmissionForPatient()" style="background:var(--accent);">Reprint/Edit Admission folder</button>
+            <button class="btn-sm" onclick="dischargeFromModal()" style="background:var(--discharge-btn);">Discharge Summary</button>
+        </div>
         <button class="close-modal" onclick="closeModal()">×</button>
       </div>
       <div class="modal-tabs">
@@ -621,6 +639,12 @@
                               <td colspan="7"><textarea id="dc-diagnosis"></textarea></td>
                           </tr>
 
+                          <tr id="row-birth-hx-split" style="display:none;">
+                              <td colspan="1"><span class="label-text" id="lbl-split-row">BIRTH HISTORY:</span></td>
+                              <td colspan="4"><textarea id="dc-birth-hx-col1" style="min-height:80px;"></textarea></td>
+                              <td colspan="3"><textarea id="dc-birth-hx-col2" style="min-height:80px;"></textarea></td>
+                          </tr>
+
                           <tr id="row-history">
                               <td colspan="1"><span class="label-text" id="lbl-history">HISTORY:</span></td>
                               <td colspan="7"><textarea id="dc-history" style="min-height:80px;"></textarea></td>
@@ -629,12 +653,6 @@
                           <tr id="row-exam">
                               <td colspan="1"><span class="label-text" id="lbl-exam">EXAMINATION:</span></td>
                               <td colspan="7"><textarea id="dc-exam" style="min-height:80px;"></textarea></td>
-                          </tr>
-
-                          <tr id="row-birth-hx-split" style="display:none;">
-                              <td colspan="1"><span class="label-text" id="lbl-split-row">BIRTH HISTORY:</span></td>
-                              <td colspan="4"><textarea id="dc-birth-hx-col1" style="min-height:80px;"></textarea></td>
-                              <td colspan="3"><textarea id="dc-birth-hx-col2" style="min-height:80px;"></textarea></td>
                           </tr>
 
                           <tr id="row-maternal-hx" style="display:none;">
@@ -702,10 +720,9 @@
     const DOCX_URL_NEO = "https://raw.githubusercontent.com/nuhadwrk/admission/main/neonate.docx"; 
     const DOCX_URL_NEO_HX = "https://raw.githubusercontent.com/nuhadwrk/admission/main/neonatehx.docx";
 
-    // *** UPDATED: DEFAULTS FOR TEMPLATES ***
-    // (Ensure strict left alignment)
+    // *** UPDATED: DEFAULTS FOR TEMPLATES (Strict Left Align) ***
     const DEFAULTS = {
-        neo_birth_hx_col1: `Date & Time of Birth: \nType of Delivery: \nMaturity: \nAPGAR Score: /10, /10 \nLiquor Quality: Clear, Adequate\nDistress: None\nCried immediately after delivery: Yes`,
+        neo_birth_hx_col1: `Date & Time of Birth:\nType of Delivery:\nMaturity:\nAPGAR Score: /10, /10\nLiquor Quality: Clear, Adequate\nDistress: None\nCried immediately after delivery: Yes`,
         neo_birth_hx_col2: `Birth weight:  KG\nHC:  cm\nLength:  cm\nSpO2:  % on RA\nHR:  b/min`,
         
         neohx_birth_hx_col1: `Date & Time of Birth:\nType of Delivery:\nMaturity:\nAPGAR Score:\nLiquor Quality:\nCongenital anomalies`,
@@ -746,7 +763,6 @@
             const now = new Date();
             if(isNaN(birthDate.getTime())) return "";
             const diffMs = now - birthDate;
-            // Floor of total days = completed days
             const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             return `${days} DOL`;
         } catch(e) { return ""; }
@@ -886,6 +902,25 @@
         updateDcTemplate(); 
         document.querySelectorAll('#dc-form-container textarea').forEach(el => el.value = '');
         document.getElementById('dc-history-list').innerHTML = '<div style="text-align:center;color:#888;margin-top:20px;">Select a patient to view history</div>';
+    }
+
+    // NEW: Open DC from Modal with selection logic
+    function dischargeFromModal() {
+        if(!currentPatientId) return;
+        closeModal();
+        launchDischargeSystem();
+        
+        // Wait briefly for the system to open and dropdown to populate
+        setTimeout(() => {
+            const selectEl = document.getElementById('dc-patient-select');
+            if(selectEl) {
+                selectEl.value = currentPatientId;
+                // If value set successfully (patient exists in list), trigger selection
+                if(selectEl.value === currentPatientId) {
+                    selectDcPatient(currentPatientId);
+                }
+            }
+        }, 100); 
     }
 
     function closeDischargeSystem() {
@@ -1475,13 +1510,21 @@
        const a = autoRadio ? autoRadio.checked : false;
        const dob=document.getElementById('dob').value, dot=document.getElementById('dot').value;
        let age=document.getElementById('age').value; if(a&&dob&&dot) age=calculateNeonatalAge(dob,dot).display;
+       
+       // NEW: Log initial plan automatically
+       const initialPlan = document.getElementById('plan').value;
+       let initialLogs = '';
+       if(initialPlan) {
+           initialLogs = `• ${formatTimestamp(Date.now())}\n Initial Plan: ${initialPlan}\n\n`;
+       }
+
        db.collection('patients').add({
          name:document.getElementById('name').value, id:document.getElementById('id').value, doa:document.getElementById('doa').value,
          age, dob:dob||'', dot:dot||'', isAutoAge:a, shift:document.getElementById('shift').value, bed:document.getElementById('bed').value,
          sex:document.getElementById('sex').value, weight:document.getElementById('weight').value, diagnosis:document.getElementById('diagnosis').value,
          medications:document.getElementById('medications').value, issues:document.getElementById('issues').value, hopi:document.getElementById('hopi').value,
-         ward:document.getElementById('ward').value, plan:document.getElementById('plan').value, isNew:document.getElementById('isNew').checked,
-         timestamp:Date.now(), logs:'', lastLoggedPlan:'', labs:{dates:[],tests:{}}, images:[]
+         ward:document.getElementById('ward').value, plan:initialPlan, isNew:document.getElementById('isNew').checked,
+         timestamp:Date.now(), logs: initialLogs, lastLoggedPlan: initialPlan, labs:{dates:[],tests:{}}, images:[]
        }).then(()=>document.getElementById('formSection').style.display='none');
     }
     function toggleDarkMode() { const h=document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); }
@@ -1982,9 +2025,21 @@
        
        p.hopi = aggregatedHopi; 
        p.diagnosis = pdfValues['dx'] || ""; 
-       p.plan = pdfValues['management'] || "";
-       const note = `ADMISSION GENERATED:\n${aggregatedHopi}\nDx: ${p.diagnosis}`;
-       p.logs = `• ${formatTimestamp(Date.now())}\n ${note}\n\n`;
+       
+       // NEW: Log initial plan text if saving from admission
+       const planText = pdfValues['management'] || "";
+       p.plan = planText;
+       
+       // --- SEPARATE PLAN LOGGING LOGIC ---
+       // 1. Admission Generated Log
+       let logText = `ADMISSION GENERATED:\n${aggregatedHopi}\nDx: ${p.diagnosis}\n\n`;
+       let logs = `• ${formatTimestamp(Date.now())}\n ${logText}\n\n`;
+
+       // 2. Separate Plan Log (if plan exists)
+       if(planText) {
+           logs += `• ${formatTimestamp(Date.now())}\n PLAN:\n${planText}\n\n`;
+       }
+       p.logs = logs;
 
        const cleanP = JSON.parse(JSON.stringify(p));
 
