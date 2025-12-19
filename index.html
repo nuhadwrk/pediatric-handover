@@ -12,6 +12,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.42.0/docxtemplater.js"></script>
+  <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -44,6 +47,9 @@
     .top-buttons button:hover, .dropdown:hover .dropdown-btn { transform: translateY(-1.9px); }
     .add { background: var(--primary); color: #fff; }
     .btn-green { background: #28a745; color: #fff; }
+    .btn-teal { background: #17a2b8; color: #fff; }
+    .btn-teal:hover { background: #138496; }
+
     .dropdown { position: relative; display: inline-block; }
     .dropdown-btn { background: var(--accent); color: #fff; }
     .dropdown-content { display: none; position: absolute; background-color: var(--card-bg); min-width: 160px; box-shadow: var(--shadow); z-index: 100; border-radius: 7.6px; overflow: hidden; border: 1px solid var(--border); }
@@ -100,18 +106,70 @@
     .expand-btn { left: 9.5px; background: var(--accent); color: #fff; border: none; width: 28px; cursor: pointer; font-size: 16px; opacity: 0.5; transition: opacity 0.2s; }
     .expand-btn:hover { opacity: 1; }
   
-    .editable { border: none; background: transparent; border-bottom: 0.95px dashed var(--editable-border); padding: 0 3.8px; min-width: 19px; white-space: pre-wrap; font-size: 15px; }
+    .editable { border: none; background: transparent; border-bottom: 0.95px dashed var(--editable-border); padding: 0 3.8px; min-width: 19px; white-space: pre-wrap; font-size: 15px; display: inline; }
     .editable:focus { outline: none; border-bottom: 0.95px solid var(--editable-focus); }
-    .hopi-toggle { cursor: pointer; color: var(--text); font-weight: 600; margin: 3.8px 0; font-size: 15px; }
+    
+    .patient-card p .editable[id^="new-plan-"] {
+        display: block; 
+        width: 100%; 
+        min-height: 20px;
+    }
+
+    /* ARROW & EXPANSION STYLES */
+    .hopi-toggle { cursor: pointer; color: var(--text); font-weight: 600; margin: 3.8px 0; font-size: 15px; display: inline-flex; align-items: center; }
+    .hopi-toggle::after { content: '►'; margin-left: 5px; font-size: 12px; transition: transform 0.2s; display: inline-block; }
+    .hopi-toggle.expanded::after { transform: rotate(90deg); }
+
     .hopi-content { display: none; color: var(--text); font-size: 15px; }
     .hopi-content.expanded { display: block; }
-    .current-plan-label { font-weight: 600; margin-top: 7.6px; display: block; font-size: 15px; }
+    
     .inline-fields { display: flex; gap: 7.6px; align-items: baseline; }
     .inline-fields strong { flex-shrink: 0; font-size: 15px; }
-    .log-btn { padding: 5.7px 11.4px; border: none; border-radius: 3.8px; cursor: pointer; color: #fff; margin: 7.6px 0; font-size: 15px; }
-    .log-btn:disabled { cursor: not-allowed; background: #6c757d; color: #eee; }
+    
+    /* LOGGING & HISTORY STYLES */
+    .log-btn { padding: 5.7px 11.4px; border: none; border-radius: 3.8px; cursor: pointer; color: #fff; margin: 7.6px 0; font-size: 15px; transition: background-color 0.2s; }
+    .log-btn:disabled { cursor: not-allowed; background: #6c757d !important; color: #eee; opacity: 0.6; }
     .log-btn:not(:disabled) { background: #28a745; }
     
+    .current-plan-label { font-weight: 600; margin-top: 7.6px; display: block; font-size: 15px; }
+
+    /* HISTORY LIST STYLES */
+    .patient-card .history-list { margin: 5px 0; padding: 0 0 0 4px; list-style: none; }
+    
+    .patient-card .history-item { 
+        padding-left: 12px; margin-bottom: 8px; border-left: 2px solid var(--border); 
+        position: relative; 
+    }
+    .patient-card .history-item::before { 
+        content: ''; position: absolute; left: -4px; top: 6px; 
+        width: 6px; height: 6px; border-radius: 50%; background: var(--primary); 
+    }
+    .patient-card .history-date { font-size: 11px; opacity: 0.8; font-weight: 700; color: var(--primary); }
+    .patient-card .history-text { font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
+    
+    .recent-logs-container { margin: 8px 0; max-height: 200px; overflow-y: auto; padding-left: 4px; }
+
+    /* EDIT & DELETE STYLES FOR LOGS */
+    .edit-history-link { font-size: 12px; color: var(--primary); cursor: pointer; margin-left: auto; margin-right: 10px; font-weight: 600; }
+    .edit-history-link:hover { text-decoration: underline; }
+
+    .history-text[contenteditable="true"]:hover,
+    .history-text[contenteditable="true"]:focus {
+        background-color: rgba(0, 0, 0, 0.03);
+        outline: none;
+        border-radius: 4px;
+    }
+    
+    .log-delete-btn {
+        position: absolute; right: 0; top: 0; color: #e63946; font-weight: bold; cursor: pointer;
+        font-size: 16px; padding: 2px 8px; opacity: 0.4; transition: opacity 0.2s; z-index: 10;
+        display: none;
+    }
+    .history-list.editing-mode .log-delete-btn { display: block; }
+    .log-delete-btn:hover { opacity: 1; background-color: rgba(230, 57, 70, 0.1); border-radius: 4px; }
+    .history-item.editable-item { padding-right: 25px; }
+
+    /* MODAL STYLES */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
     .modal-overlay.active { display: flex; }
     .modal-content { background: var(--card-bg); width: 95%; max-width: 1000px; height: 85vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
@@ -151,7 +209,7 @@
     .history-text { white-space: pre-wrap; font-size: 14px; }
     .btn-sm { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; background: var(--primary); color: white; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .form-control { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-  
+    
     /* ADMISSION SYSTEM STYLES */
     #admission-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
     #adm-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; height: 50px; }
@@ -188,59 +246,57 @@
     body.is-mobile .adm-sidebar { position: absolute; top: 0; left: 0; bottom: 0; transform: translateX(-100%); box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
     body.is-mobile .adm-sidebar.show { transform: translateX(0); }
     body.is-mobile .adm-sidebar-toggle { display: block; }
+
+    /* DISCHARGE CENTER STYLES */
+    #discharge-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
+    #dc-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; height: 60px; }
+    .dc-selector { font-size: 16px; padding: 5px; min-width: 300px; }
+
+    #dc-body { flex: 1; display: flex; overflow: hidden; position: relative; }
+    .dc-split-view { display: flex; width: 100%; height: 100%; }
+
+    /* Left Pane: The Form */
+    .dc-form-pane { flex: 6; overflow-y: auto; padding: 20px; background: #fff; border-right: 2px solid #ccc; }
+    .dc-paper { background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 850px; margin: 0 auto; }
+
+    /* Right Pane: History */
+    .dc-history-pane { flex: 4; overflow-y: auto; padding: 20px; background: #f4f7fb; }
     
+    /* REUSED CLASSES FROM MODAL for consistency */
+    .dc-history-item { 
+        padding-left: 15px; margin-bottom: 20px; border-left: 2px solid var(--border); 
+        position: relative; 
+    }
+    .dc-history-item::before { 
+        content: ''; position: absolute; left: -5px; top: 0; 
+        width: 8px; height: 8px; border-radius: 50%; background: var(--primary); 
+    }
+    .dc-history-date { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .dc-history-text { white-space: pre-wrap; font-size: 14px; }
+
+    /* SCOPED STYLES FOR DC TEMPLATE */
+    #dc-form-container * { margin: 0; padding: 0; text-indent: 0; }
+    #dc-form-container .label-text { font-family: "Times New Roman", serif; font-size: 11pt; font-weight: normal; color: black; }
+    #dc-form-container .s5 { font-family: Cambria, serif; font-size: 11pt; color: black; }
+    #dc-form-container .s6 { font-family: "Times New Roman", serif; font-weight: bold; font-size: 11pt; color: black; }
+    #dc-form-container h1.dc-title { font-family: "Times New Roman", serif; font-weight: bold; text-decoration: underline; font-size: 14pt; text-align: center; margin: 10px 0; color: black; }
+    
+    #dc-form-container table { width: 100%; border-collapse: collapse; font-family: "Times New Roman", serif; table-layout: fixed; }
+    #dc-form-container td { border: 1px solid black !important; padding: 2px; vertical-align: top; }
+    #dc-form-container textarea { width: 100%; border: none; font-family: "Times New Roman", serif; font-size: 11pt; resize: both; overflow: hidden; min-height: 25px; background: transparent; padding: 0; display: block; vertical-align: top; }
+    
+    /* SLEEK BUTTON STYLE for DC Download & Reset */
+    .btn-sleek { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #17a2b8; color: white; border: none; cursor: pointer; transition: transform 0.1s; }
+    .btn-sleek:hover { transform: scale(1.05); }
+
+    /* Orange Reset Button Variant */
+    .btn-sleek.btn-warn { background: #f0ad4e; color: white; }
+    .btn-sleek.btn-warn:hover { background: #ec971f; }
+
     @media (max-width: 900px) {
        .modal-header { display: flex; flex-wrap: wrap; }
        .modal-header h2 { width: 100%; margin-bottom: 10px; }
        .modal-header button.btn-sm { margin-left: 0 !important; }
-    }
-  
-    @media only screen and (max-device-width: 768px) {
-      body { padding: 5px !important; }
-      
-      .top-buttons button, .dropdown-btn, .theme-toggle { 
-          font-size: 28px !important; padding: 20px 30px !important; height: 60px !important; line-height: 1 !important; box-sizing: border-box !important;
-      }
-      .dropdown-content a { font-size: 24px !important; padding: 20px !important; }
-      
-      #detailModal .modal-content { max-width: 98% !important; }
-      #detailModal, #detailModal input, #detailModal textarea, #detailModal select, #detailModal div, #detailModal span, #detailModal .sleek-label, #detailModal .sleek-input {
-          font-size: 28px !important; line-height: 1.4 !important;
-      }
-      #detailModal .compact-grid { grid-template-columns: 1fr 1fr !important; }
-      #detailModal .log-btn { font-size: 24px !important; padding: 10px 20px !important; }
-      .modal-header h2 { font-size: 40px !important; }
-      .close-modal { font-size: 50px !important; }
-      .tab-btn { font-size: 28px !important; padding: 20px 30px !important; }
-      .btn-sm { font-size: 24px !important; padding: 15px 25px !important; }
-      
-      #admission-system { font-size: 28px !important; padding: 5px !important; }
-      .adm-viewport { padding: 5px !important; }
-      #adm-shared-details, #view-form { width: 100% !important; max-width: none !important; margin: 0 0 15px 0 !important; box-sizing: border-box !important; }
-
-      #adm-header h2 { font-size: 32px !important; }
-      #adm-header button { font-size: 40px !important; } 
-      .adm-sidebar-toggle { font-size: 40px !important; }
-      .adm-sidebar { width: 400px !important; } 
-      .mode-card { padding: 20px !important; margin-bottom: 15px !important; }
-      .mode-card div:first-child { font-size: 28px !important; } 
-      .mode-card div:last-child { font-size: 22px !important; } 
-      #template-list div { font-size: 24px !important; padding: 15px !important; }
-
-      #admission-system label { font-size: 24px !important; margin-bottom: 8px !important; color: #444 !important; }
-      #admission-system input, #admission-system select, #admission-system textarea { font-size: 28px !important; padding: 12px !important; height: auto !important; margin-bottom: 15px !important; }
-      
-      .warning-text { font-size: 24px !important; margin-top: 10px !important; }
-
-      #adm-toolbar {
-          position: fixed !important; bottom: 40px !important; left: auto !important; right: 20px !important;
-          transform: none !important; width: auto !important; padding: 8px 20px !important;
-          border-radius: 30px !important; box-shadow: 0 5px 20px rgba(0,0,0,0.3) !important;
-          z-index: 6000 !important; display: flex !important; gap: 10px !important;
-      }
-      #adm-toolbar .tool-btn { font-size: 24px !important; padding: 10px 20px !important; border-radius: 20px !important; }
-      #adm-toolbar select { font-size: 24px !important; padding: 5px !important; height: auto !important; margin: 0 !important; }
-      #adm-toolbar label { font-size: 20px !important; margin-right: 5px !important; }
     }
   </style>
 </head>
@@ -250,6 +306,7 @@
   <div class="top-buttons">
     <button class="add" onclick="toggleForm()">Add Patient</button>
     <button class="btn-green" onclick="launchAdmissionSystem()">Admission</button>
+    <button class="btn-teal" onclick="launchDischargeSystem()">DC</button>
     <div class="dropdown">
       <button class="dropdown-btn">Print ▼</button>
       <div class="dropdown-content">
@@ -351,7 +408,6 @@
              <div class="sleek-row"><span class="sleek-label">Issues</span><div contenteditable="true" id="det-issues" class="sleek-input" data-field="issues" style="min-height: 60px;" onblur="updateFromDetail('issues', this.innerText)"></div></div>
           </div>
           <div class="sleek-row"><span class="sleek-label">HOPI</span><div contenteditable="true" id="det-hopi" class="sleek-input" data-field="hopi" style="min-height: 100px; white-space: pre-wrap;" onblur="updateFromDetail('hopi', this.innerText)"></div></div>
-          <div class="sleek-row"><span class="sleek-label" style="color: var(--primary);">Current Plan</span><div contenteditable="true" id="det-plan" class="sleek-input" data-field="plan" style="min-height: 100px; white-space: pre-wrap; border-bottom: 2px solid var(--primary);" oninput="checkPlanChange()" onblur="updateFromDetail('plan', this.innerText)"></div><button id="modalLogBtn" class="log-btn" disabled onclick="logPlanFromModal()">Logged</button></div>
         </div>
         <div id="tab-labs" class="tab-pane">
           <div style="overflow-x: auto;"><table class="lab-table" id="labMatrix"></table></div>
@@ -369,7 +425,10 @@
           <div class="img-grid" id="img-grid"></div>
         </div>
         <div id="tab-history" class="tab-pane">
-           <h3>Plan Log</h3>
+           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h3 style="margin:0;">Plan Log</h3>
+              <span class="edit-history-link" id="modal-edit-link" onclick="toggleEditHistory(null, 'modal')">Edit</span>
+           </div>
            <ul class="history-list" id="history-list"></ul>
         </div>
       </div>
@@ -494,7 +553,133 @@
     </div>
   </div>
 
+  <div id="discharge-system">
+    <div id="dc-header">
+      <div style="display:flex; align-items:center; gap: 15px;">
+          <h2 style="margin:0; font-size:18px;">Discharge Center</h2>
+          
+          <select id="dc-template-type" class="dc-selector" style="min-width: 150px;" onchange="updateDcTemplate()">
+              <option value="pediatric">Template: Pediatric</option>
+              <option value="neonate">Template: Neonate</option>
+              <option value="neonate_hx">Template: Neonate with Hx</option>
+          </select>
+
+          <select id="dc-patient-select" class="dc-selector" onchange="selectDcPatient(this.value)">
+              <option value="">-- Select Patient to Discharge --</option>
+          </select>
+
+          <button class="btn-sleek" onclick="generateDcDocx()">Download .docx</button>
+          <button class="btn-sleek btn-warn" style="margin-left:5px;" onclick="resetDcForm()">Reset</button>
+      </div>
+      <div style="display:flex; gap:10px;">
+          <button onclick="closeDischargeSystem()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+      </div>
+    </div>
+    
+    <div id="dc-body">
+      <div class="dc-split-view">
+          <div class="dc-form-pane">
+              <div id="dc-form-container" class="dc-paper">
+                  <h1 class="dc-title">DISCHARGE SUMMARY</h1>
+                  
+                  <table>
+                      <tbody id="dc-table-body">
+                          <tr>
+                              <td style="width:19%;"><span class="label-text">NAME:</span></td>
+                              <td style="width:23%;"><textarea id="dc-name" rows="1"></textarea></td>
+                              <td style="width:10%;"><span class="label-text">AGE:</span></td>
+                              <td style="width:10%;"><textarea id="dc-age" rows="1"></textarea></td>
+                              <td style="width:13%;"><span class="label-text">GENDER:</span></td>
+                              <td style="width:10%;"><textarea id="dc-sex" rows="1"></textarea></td>
+                              <td style="width:10%;"><span class="label-text" id="lbl-weight">WEIGHT:</span></td>
+                              <td style="width:10%;"><textarea id="dc-weight" rows="1"></textarea></td>
+                          </tr>
+                          <tr>
+                              <td><span class="label-text">ADDRESS:</span></td>
+                              <td colspan="3"><textarea id="dc-address" rows="1"></textarea></td>
+                              <td colspan="2"><span class="label-text">HOSPITAL No:</span></td>
+                              <td colspan="2"><textarea id="dc-mrn" rows="1"></textarea></td>
+                          </tr>
+                          <tr>
+                              <td><span class="label-text">WARD:</span></td>
+                              <td><textarea id="dc-ward" rows="1"></textarea></td>
+                              <td><span class="label-text">BED:</span></td>
+                              <td><textarea id="dc-bed" rows="1"></textarea></td>
+                              <td colspan="2"><span class="label-text">FOLDER No:</span></td>
+                              <td colspan="2"><textarea id="dc-folder" rows="1"></textarea></td>
+                          </tr>
+                          <tr>
+                              <td colspan="2"><span class="label-text">DATE OF ADMISSION:</span></td>
+                              <td colspan="2"><textarea id="dc-doa" rows="1"></textarea></td>
+                              <td colspan="2"><span class="label-text">DATE OF DISCHARGE:</span></td>
+                              <td colspan="2"><textarea id="dc-dod" rows="1"></textarea></td>
+                          </tr>
+                          <tr><td colspan="8" style="border:none!important; height:10px;"></td></tr>
+                          
+                          <tr id="row-diagnosis">
+                              <td colspan="1" style="width:19%;"><span class="label-text">DIAGNOSIS:</span></td>
+                              <td colspan="7"><textarea id="dc-diagnosis"></textarea></td>
+                          </tr>
+
+                          <tr id="row-history">
+                              <td colspan="1"><span class="label-text" id="lbl-history">HISTORY:</span></td>
+                              <td colspan="7"><textarea id="dc-history" style="min-height:80px;"></textarea></td>
+                          </tr>
+
+                          <tr id="row-exam">
+                              <td colspan="1"><span class="label-text" id="lbl-exam">EXAMINATION:</span></td>
+                              <td colspan="7"><textarea id="dc-exam" style="min-height:80px;"></textarea></td>
+                          </tr>
+
+                          <tr id="row-birth-hx-split" style="display:none;">
+                              <td colspan="1"><span class="label-text" id="lbl-split-row">BIRTH HISTORY:</span></td>
+                              <td colspan="4"><textarea id="dc-birth-hx-col1" style="min-height:80px;"></textarea></td>
+                              <td colspan="3"><textarea id="dc-birth-hx-col2" style="min-height:80px;"></textarea></td>
+                          </tr>
+
+                          <tr id="row-maternal-hx" style="display:none;">
+                              <td colspan="1"><span class="label-text">MATERNAL HISTORY:</span></td>
+                              <td colspan="7"><textarea id="dc-maternal-hx" style="min-height:60px;"></textarea></td>
+                          </tr>
+
+                          <tr>
+                              <td colspan="1"><span class="label-text">INVESTIGATIONS:</span></td>
+                              <td colspan="7"><textarea id="dc-ix">ALL ENCLOSED</textarea></td>
+                          </tr>
+                          <tr>
+                              <td colspan="1"><span class="label-text">TREATMENT AND HOSPITAL COURSE:</span></td>
+                              <td colspan="7"><textarea id="dc-course" style="min-height:120px;"></textarea></td>
+                          </tr>
+                          
+                          <tr><td colspan="8" style="border:none!important; height:10px;"></td></tr>
+                          
+                          <tr>
+                              <td colspan="1"><span class="label-text">ON DISCHARGE CONDITION:</span></td>
+                              <td colspan="7"><textarea id="dc-cond">Alert, oriented.&#10;Vitals: Stable.</textarea></td>
+                          </tr>
+                          <tr>
+                              <td colspan="1"><span class="label-text">TREATMENT ON DISCHARGE:</span></td>
+                              <td colspan="7"><textarea id="dc-rx"></textarea></td>
+                          </tr>
+                          <tr>
+                              <td colspan="1"><span class="label-text">REVIEW:</span></td>
+                              <td colspan="7"><textarea id="dc-review">Follow up in P-OPD after   days</textarea></td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+
+          <div class="dc-history-pane">
+              <h3>Plan History (Earliest First)</h3>
+              <div id="dc-history-list"></div>
+          </div>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Initialize Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyC3_DD-ezlWahQeCdPLcFh_lohLn63Q7eY",
       authDomain: "pediatric-handover.firebaseapp.com",
@@ -512,13 +697,549 @@
     const REQUEST_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/AdmissionRequest.pdf';
     const ANCHORS_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/anchors.json';
 
+    // *** TEMPLATE URLs ***
+    const DOCX_URL_PED = "https://raw.githubusercontent.com/nuhadwrk/admission/main/discharge_template.docx"; 
+    const DOCX_URL_NEO = "https://raw.githubusercontent.com/nuhadwrk/admission/main/neonate.docx"; 
+    const DOCX_URL_NEO_HX = "https://raw.githubusercontent.com/nuhadwrk/admission/main/neonatehx.docx";
+
+    // *** UPDATED: DEFAULTS FOR TEMPLATES ***
+    // (Ensure strict left alignment)
+    const DEFAULTS = {
+        neo_birth_hx_col1: `Date & Time of Birth: \nType of Delivery: \nMaturity: \nAPGAR Score: /10, /10 \nLiquor Quality: Clear, Adequate\nDistress: None\nCried immediately after delivery: Yes`,
+        neo_birth_hx_col2: `Birth weight:  KG\nHC:  cm\nLength:  cm\nSpO2:  % on RA\nHR:  b/min`,
+        
+        neohx_birth_hx_col1: `Date & Time of Birth:\nType of Delivery:\nMaturity:\nAPGAR Score:\nLiquor Quality:\nCongenital anomalies`,
+        neohx_birth_hx_col2: `Birth weight: KG\nHC: cm\nCCHD: Passed initial screening`,
+
+        neo_findings: `Cried after delivery, Vigorous, Pink\nCongenital anomalies: none grossly.\nHip Abduction test: normal\nUA: 3 vessels\nCVS: S1+S2+M0\nRS: B/L EAE, No added sounds\nCRT: <3s\nAbdomen: no organomegaly\nB/L descended testes\nNeonatal reflexes: normal\nUrine and meconium: Passed\nCCHD: Passed, RH:   RF:   `,
+        
+        neohx_exam: `GC: CRT <2s, tongue moist, AF-level, jaundice up to umbilicus\nActivity, color, tone and reflexes were normal.\nVitals 70/38mmHg, HR 130bpm, RR 55/mt, SPO2 98% in RA, T 37.3*c, GRBS 89mg/dl,\nWeight on admission kg`,
+
+        neo_maternal: `Age:   years, GPL at   WOG\nBlood group: O +ve; G6PD: Normal, VDRL/ HIV/HBsAg: Non-reactive`,
+        
+        neo_cond: `- Sucking well.\n- Breast feeding on demand.\n- Urine and meconium passing\n- All vitals stable.\n- Weight on discharge:   kg`,
+        
+        neo_course: `1. Breast feeding on demand\n2. Inj. vitamin K 1mg given at birth (left thigh) on \n3. Vaccines given: BCG, Hep. B on `,
+        
+        neo_rx: `- Early morning and light exposure.\n- Exclusive breastfeeding for 6 months.\n- Cord care.\n- Immunization according to schedule.\n- Advised to keep home smoke-free.\n- Check for increase in yellowish discoloration of skin, poor feeding, lethargy etc.\n- Jusdee oral drops 1 ml PO OD x 1 year.\n\nVaccinations:\nInj. Synflorix 0.5ml IM at 2,4 and 6 months\nDrop. Rotarix 1.5ml PO at 2 and 4 months`,
+        
+        neohx_rx: `- Early morning and light exposure.\n- Exclusive breastfeeding for 6 months.\n- Cord care.\n- Immunization according to schedule.\n- Advised to keep home smoke-free including balconies, doorway and stairs and do not allow anyone to smoke near baby.\n- Check for increase in yellowish discoloration of skin, poor feeding, lethargy etc.`,
+
+        neo_review: `Follow up in P-OPD after 3days with Hb/PCV, TSB, DSB, FT4, TSH\nNeonatal Metabolic screening`,
+
+        ped_cond: `Alert, oriented.\nVitals: Stable.`,
+        ped_rx: ``
+    };
+
     // --- UTILS ---
     function getOrdinalSuffix(n) { const l=n%10, t=n%100; if(t>=11&&t<=13)return'th'; return l===1?'st':l===2?'nd':l===3?'rd':'th'; }
     function calculateDaysAdmitted(doa) { try{ const d=new Date(doa), t=new Date(); t.setHours(0,0,0,0); d.setHours(0,0,0,0); const diff=Math.floor((t-d)/86400000)+1; return diff<=0?'1st DOA':`${diff}${getOrdinalSuffix(diff)} DOA`; }catch(e){return'1st DOA';} }
+    
+    // AGE LOGIC FOR PATIENT CARD
     function calculateNeonatalAge(dob, dot) { try{ if(!dob||!dot)return{display:'?'}; const b=new Date(`${dob}T${dot}:00`); if(isNaN(b.getTime()))return{display:'?'}; const n=new Date(), h=Math.floor((n-b)/3600000), d=Math.floor(h/24)+1; return {days:d,hours:h,display:h<=96?`${d}${getOrdinalSuffix(d)} DOL (${h} HOL)`:`${d}${getOrdinalSuffix(d)} DOL`}; }catch(e){return{days:1,hours:24,display:'?'};} }
+    
+    // NEW: AGE LOGIC FOR DISCHARGE SUMMARY (Completed Days)
+    function calculateCompletedDOL(dob, dot) {
+        if(!dob || !dot) return "";
+        try {
+            const birthDate = new Date(`${dob}T${dot}:00`);
+            const now = new Date();
+            if(isNaN(birthDate.getTime())) return "";
+            const diffMs = now - birthDate;
+            // Floor of total days = completed days
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            return `${days} DOL`;
+        } catch(e) { return ""; }
+    }
+
     function formatTimestamp(ts) { const d=new Date(ts); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
     function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
     function getCurrentShift() { const h = new Date().getHours(); if (h>=8 && h<16) return "Morning"; if (h>=16) return "Evening"; return "Night"; }
+
+    // --- LOGGING UTILS ---
+    function parseLogDate(dateStr) {
+        if(!dateStr) return new Date(0);
+        try {
+            const [d, t] = dateStr.split(' ');
+            const [day, month, year] = d.split('/');
+            const [hr, min] = t.split(':');
+            return new Date(`20${year}-${month}-${day}T${hr}:${min}:00`);
+        } catch(e) { return new Date(0); }
+    }
+
+    function formatLogsToHtml(logsStr, patientId, limitToLast3 = false, allowEdit = false) {
+        if (!logsStr) return allowEdit ? '' : '<div style="font-size:12px; color:#888; font-style:italic; padding-left:5px;">No logs</div>';
+        
+        let entries = logsStr.split('•').filter(e => e.trim().length > 0).reverse();
+        
+        if (limitToLast3) {
+            entries = entries.slice(0, 3);
+            allowEdit = false;
+        }
+
+        let html = '';
+        entries.forEach(e => {
+            const lines = e.trim().split('\n');
+            const datePart = lines[0].trim();
+            const body = lines.slice(1).join('\n').trim();
+            
+            if(body) {
+                if (allowEdit) {
+                    html += `
+                    <li class="history-item editable-item">
+                        <div class="history-date">${datePart}</div>
+                        <div class="history-text" contenteditable="false" onblur="saveLogsFromDom('${patientId}', this)">${body}</div>
+                        <span class="log-delete-btn" onclick="deleteLogItem(this, '${patientId}')" title="Delete Log">×</span>
+                    </li>`;
+                } else {
+                    html += `
+                    <li class="history-item">
+                        <div class="history-date">${datePart}</div>
+                        <div class="history-text">${body}</div>
+                    </li>`;
+                }
+            }
+        });
+        
+        if (limitToLast3 && html === '') return '<div style="font-size:12px; color:#888; font-style:italic; padding-left:5px;">No recent logs</div>';
+        
+        const listId = limitToLast3 ? `recent-list-${patientId}` : `full-list-${patientId}`;
+        return `<ul class="history-list" id="${listId}">${html}</ul>`;
+    }
+
+    function toggleEditHistory(id, context) {
+        const patientId = context === 'modal' ? currentPatientId : id;
+        const listId = context === 'modal' ? 'history-list' : `full-list-${patientId}`;
+        const listEl = document.getElementById(listId);
+        
+        if(!listEl) return;
+
+        listEl.classList.toggle('editing-mode');
+        const isEditing = listEl.classList.contains('editing-mode');
+
+        const textItems = listEl.querySelectorAll('.history-text');
+        textItems.forEach(el => el.contenteditable = isEditing); 
+        textItems.forEach(el => el.setAttribute('contenteditable', isEditing)); 
+
+        const linkId = context === 'modal' ? 'modal-edit-link' : `card-edit-link-${patientId}`;
+        const linkEl = document.getElementById(linkId);
+        if(linkEl) {
+            linkEl.innerText = isEditing ? 'Done' : 'Edit';
+            linkEl.style.color = isEditing ? '#28a745' : 'var(--primary)';
+        }
+    }
+
+    function saveLogsFromDom(patientId, element) {
+        const listContainer = element.closest('ul');
+        if (!listContainer) return;
+
+        const items = listContainer.querySelectorAll('li.history-item');
+        let logEntries = [];
+        items.forEach(li => {
+            const dateText = li.querySelector('.history-date').innerText.trim();
+            const bodyText = li.querySelector('.history-text').innerText.trim();
+            if (dateText && bodyText) {
+                logEntries.push(`• ${dateText}\n ${bodyText}\n\n`);
+            }
+        });
+        const reconstructedLogs = logEntries.reverse().join('');
+        db.collection('patients').doc(patientId).update({
+            logs: reconstructedLogs
+        }).catch(e => console.error("Error saving logs", e));
+    }
+
+    function deleteLogItem(btn, patientId) {
+        if(!confirm("Delete this log entry?")) return;
+        const li = btn.closest('li');
+        const ul = li.closest('ul');
+        li.remove();
+        
+        const items = ul.querySelectorAll('li.history-item');
+        let logEntries = [];
+        items.forEach(li => {
+            const dateText = li.querySelector('.history-date').innerText.trim();
+            const bodyText = li.querySelector('.history-text').innerText.trim();
+            if (dateText && bodyText) {
+                logEntries.push(`• ${dateText}\n ${bodyText}\n\n`);
+            }
+        });
+        const reconstructedLogs = logEntries.reverse().join('');
+        db.collection('patients').doc(patientId).update({ logs: reconstructedLogs });
+    }
+
+    function checkLogInput(id) {
+        const el = document.getElementById(`new-plan-${id}`);
+        const btn = document.getElementById(`btn-log-${id}`);
+        const txt = el.innerText.trim();
+        if(txt.length > 0) { btn.disabled = false; } 
+        else { btn.disabled = true; }
+    }
+
+    // --- DISCHARGE CENTER LOGIC ---
+    let currentDcPatientId = null;
+
+    function launchDischargeSystem() {
+        document.getElementById('discharge-system').style.display = 'flex';
+        loadDcPatients();
+        // Default to Pediatric
+        document.getElementById('dc-template-type').value = 'pediatric';
+        updateDcTemplate(); 
+        document.querySelectorAll('#dc-form-container textarea').forEach(el => el.value = '');
+        document.getElementById('dc-history-list').innerHTML = '<div style="text-align:center;color:#888;margin-top:20px;">Select a patient to view history</div>';
+    }
+
+    function closeDischargeSystem() {
+        document.getElementById('discharge-system').style.display = 'none';
+        currentDcPatientId = null;
+    }
+
+    function loadDcPatients() {
+        const select = document.getElementById('dc-patient-select');
+        select.innerHTML = '<option value="">-- Select Patient --</option>';
+        
+        const wards = ["NICU", "ICU", "PW", "GW", "SW", "PVT", "ER"];
+        const grouped = {};
+        
+        Object.values(localPatients).forEach(p => {
+            if(p.ward === 'Discharge') return;
+            if(!grouped[p.ward]) grouped[p.ward] = [];
+            grouped[p.ward].push(p);
+        });
+
+        wards.forEach(w => {
+            if(grouped[w] && grouped[w].length > 0) {
+                const group = document.createElement('optgroup');
+                group.label = w;
+                grouped[w].sort((a,b) => (parseInt(a.bed)||0) - (parseInt(b.bed)||0));
+                grouped[w].forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.docId;
+                    opt.innerText = `Bed ${p.bed}: ${p.name}`;
+                    group.appendChild(opt);
+                });
+                select.appendChild(group);
+            }
+        });
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    function formatDateDDMMYYYY(iso) {
+        if(!iso) return '';
+        try {
+            const d = new Date(iso);
+            if(isNaN(d.getTime())) return iso;
+            return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+        } catch(e) { return iso; }
+    }
+
+    // NEW: Handle Template Switching
+    function updateDcTemplate() {
+        const type = document.getElementById('dc-template-type').value;
+        
+        // Rows
+        const rowHistory = document.getElementById('row-history');
+        const rowBirthHxSplit = document.getElementById('row-birth-hx-split');
+        const rowExam = document.getElementById('row-exam');
+        const rowMaternalHx = document.getElementById('row-maternal-hx');
+        const tBody = document.getElementById('dc-table-body');
+        
+        // Labels
+        const lblWeight = document.getElementById('lbl-weight');
+        const lblExam = document.getElementById('lbl-exam');
+        const lblHistory = document.getElementById('lbl-history');
+        const lblSplit = document.getElementById('lbl-split-row');
+
+        // Reset visibility
+        rowHistory.style.display = 'none';
+        rowBirthHxSplit.style.display = 'none';
+        rowMaternalHx.style.display = 'none';
+
+        if (type === 'pediatric') {
+            lblWeight.innerText = "WEIGHT:";
+            lblExam.innerText = "EXAMINATION:";
+            lblHistory.innerText = "HISTORY:";
+            
+            // Standard order: History -> Exam
+            if(tBody.contains(rowHistory)) tBody.insertBefore(rowHistory, rowExam);
+            rowHistory.style.display = 'table-row';
+            rowExam.style.display = 'table-row';
+        } 
+        else if (type === 'neonate') {
+            // Template 2: Diagnosis -> Birth History (History Box) -> Findings (Split Box) -> Maternal
+            lblWeight.innerText = "BIRTH WEIGHT:";
+            lblHistory.innerText = "BIRTH HISTORY:"; 
+            lblSplit.innerText = "FINDINGS AT BIRTH:"; 
+            
+            // Re-purpose History row for "Birth History" title
+            if(tBody.contains(rowHistory)) tBody.insertBefore(rowHistory, rowExam);
+            rowHistory.style.display = 'table-row';
+
+            // Show Split Row as "Findings"
+            if (rowHistory.nextSibling) {
+                tBody.insertBefore(rowBirthHxSplit, rowHistory.nextSibling);
+            } else {
+                tBody.appendChild(rowBirthHxSplit);
+            }
+            rowBirthHxSplit.style.display = 'table-row';
+            
+            // Hide standard Exam Row (replaced by Findings Split)
+            rowExam.style.display = 'none';
+            
+            rowMaternalHx.style.display = 'table-row';
+        } 
+        else if (type === 'neonate_hx') {
+            // Template 3: Diagnosis -> History -> Exam -> Birth Hx (Split)
+            lblWeight.innerText = "WEIGHT:";
+            lblExam.innerText = "EXAMINATION:";
+            lblHistory.innerText = "HISTORY:";
+            lblSplit.innerText = "BIRTH HISTORY:";
+            
+            rowHistory.style.display = 'table-row';
+            rowExam.style.display = 'table-row';
+
+            // Show Split Row as "Birth Hx" AFTER Exam
+            if (rowExam.nextSibling) {
+                tBody.insertBefore(rowBirthHxSplit, rowExam.nextSibling);
+            } else {
+                tBody.appendChild(rowBirthHxSplit);
+            }
+            rowBirthHxSplit.style.display = 'table-row';
+            
+            rowMaternalHx.style.display = 'table-row';
+        }
+        
+        if(currentDcPatientId) selectDcPatient(currentDcPatientId);
+    }
+
+    function selectDcPatient(id, forceReset = false) {
+        if(!id) return;
+        currentDcPatientId = id;
+        const p = localPatients[id];
+        const data = forceReset ? {} : (p.dischargeData || {});
+        const type = document.getElementById('dc-template-type').value;
+        
+        let mrnOnly = p.id || ''; 
+        let nidOnly = '';
+        if(p.id && p.id.includes(',')) {
+            const parts = p.id.split(',');
+            mrnOnly = parts[0].trim();
+            nidOnly = parts.length > 1 ? parts[1].trim() : '';
+        }
+        const nameWithNid = nidOnly ? `${p.name} (${nidOnly})` : p.name;
+        
+        // --- Calculate Completed DOL ---
+        let ageDisplay = p.age;
+        if ((type === 'neonate' || type === 'neonate_hx') && p.isAutoAge && p.dob && p.dot) {
+            ageDisplay = calculateCompletedDOL(p.dob, p.dot);
+        }
+
+        // --- ADMISSION DATA MAPPING ---
+        let admHist = "";
+        if(p.admissionData) {
+            const hopiRaw = (p.admissionData.hopi || '').trim();
+            const past = (p.admissionData.pasthx || '').trim();
+            const personal = (p.admissionData.personalhx || '').trim();
+            const family = (p.admissionData.fhx || '').trim();
+            admHist = `${hopiRaw}\n\nPast Hx: ${past}\n\nPersonal Hx: ${personal}\n\nFamily Hx: ${family}`;
+        } else {
+            admHist = (p.hopi || '').trim();
+        }
+
+        const admGeneralExamOnly = p.admissionData?.ge || p.general_exam || "";
+        
+        const examParts = [
+            { l: 'G/E', v: p.general_exam },
+            { l: 'CVS', v: p.cvs },
+            { l: 'RS', v: p.rs },
+            { l: 'Abd', v: p.abdomen },
+            { l: 'CNS', v: p.cns }
+        ];
+        const admExamFull = examParts
+            .filter(part => (part.v || '').trim() !== '')
+            .map(part => `${part.l}: ${part.v.trim()}`)
+            .join('\n');
+        
+        const admissionCourse = `In ER:\n${(p.treatment_history||'').trim()}\n\nAfter Admission:`;
+
+        const map = {
+            'dc-name': data.name || nameWithNid,
+            'dc-age': data.age || ageDisplay,
+            'dc-sex': data.sex || p.sex,
+            'dc-weight': data.weight || p.weight,
+            'dc-mrn': data.mrn || mrnOnly,
+            'dc-ward': data.ward || p.ward,
+            'dc-bed': data.bed || p.bed,
+            'dc-folder': data.folder || '',
+            'dc-doa': data.doa || formatDateDDMMYYYY(p.doa),
+            'dc-dod': data.dod || formatDateDDMMYYYY(getLocalISODate()),
+            'dc-diagnosis': data.diagnosis || p.diagnosis,
+            'dc-address': data.address || '',
+            'dc-ix': data.ix || "ALL ENCLOSED",
+            'dc-review': data.review || "Follow up in P-OPD after 3 days"
+        };
+
+        // --- CONDITIONAL MAPPING ---
+        if (type === 'neonate') {
+             // Template 2
+             map['dc-history'] = data.history || DEFAULTS.neo_birth_hx_col1; // Re-purposed for Birth Hx
+             map['dc-birth-hx-col1'] = data.birth_hx_1 || DEFAULTS.neo_findings; // Split Left -> Findings
+             map['dc-birth-hx-col2'] = data.birth_hx_2 || DEFAULTS.neo_birth_hx_col2; // Split Right -> Measurements
+             map['dc-course'] = data.course || DEFAULTS.neo_course;
+             map['dc-review'] = data.review || DEFAULTS.neo_review;
+        } 
+        else if (type === 'neonate_hx') {
+             // Template 3
+             map['dc-history'] = data.history || admHist; // HOPI
+             
+             // Exam: From Admission G/E if avail, else Default
+             const hasAdmGE = (admGeneralExamOnly && admGeneralExamOnly.trim().length > 0);
+             map['dc-exam'] = data.exam || (hasAdmGE ? admExamFull : DEFAULTS.neohx_exam);
+             
+             map['dc-birth-hx-col1'] = data.birth_hx_1 || DEFAULTS.neohx_birth_hx_col1;
+             map['dc-birth-hx-col2'] = data.birth_hx_2 || DEFAULTS.neohx_birth_hx_col2;
+             map['dc-course'] = data.course || ''; // Blank
+        } 
+        else {
+             // Standard Pediatric
+             map['dc-history'] = data.history || admHist;
+             map['dc-exam'] = data.exam || admExamFull;
+             map['dc-course'] = data.course || admissionCourse;
+        }
+
+        map['dc-maternal-hx'] = data.maternal_hx || DEFAULTS.neo_maternal;
+
+        if (type === 'neonate') {
+            map['dc-cond'] = data.cond || DEFAULTS.neo_cond;
+            map['dc-rx'] = data.rx || DEFAULTS.neo_rx;
+        } else if (type === 'neonate_hx') {
+            map['dc-cond'] = data.cond || DEFAULTS.neo_cond;
+            map['dc-rx'] = data.rx || DEFAULTS.neohx_rx;
+        } else {
+            map['dc-cond'] = data.cond || DEFAULTS.ped_cond;
+            map['dc-rx'] = data.rx || DEFAULTS.ped_rx;
+        }
+
+        for (const [elId, val] of Object.entries(map)) {
+            const el = document.getElementById(elId);
+            if(el) {
+                el.value = val;
+                if(el.tagName === 'TEXTAREA') autoResize(el);
+            }
+        }
+
+        renderDcHistory(p.logs);
+    }
+
+    function renderDcHistory(logsStr) {
+        const container = document.getElementById('dc-history-list');
+        if(!logsStr) { container.innerHTML = "No history."; return; }
+
+        let entries = logsStr.split('•').filter(e => e.trim().length > 0);
+        let html = "";
+        entries.forEach(e => {
+            const lines = e.trim().split('\n');
+            const datePart = lines[0].trim();
+            const body = lines.slice(1).join('\n').trim();
+            if(body) {
+                html += `
+                <div class="dc-history-item">
+                    <div class="dc-history-date">${datePart}</div>
+                    <div class="dc-history-text">${body}</div>
+                </div>`;
+            }
+        });
+        container.innerHTML = html;
+    }
+    
+    function resetDcForm() {
+        if(!currentDcPatientId) return;
+        if(!confirm("WARNING: This will wipe all manual edits in the Discharge Summary and revert to the latest patient card data. Continue?")) return;
+        selectDcPatient(currentDcPatientId, true);
+        document.querySelector('#dc-form-container').dispatchEvent(new Event('input'));
+    }
+
+    document.querySelector('#dc-form-container').addEventListener('input', function(e) {
+        if(e.target.tagName === 'TEXTAREA') autoResize(e.target);
+        if(!currentDcPatientId) return;
+        
+        const data = {};
+        document.querySelectorAll('#dc-form-container textarea').forEach(el => {
+            const key = el.id.replace('dc-', '').replace(/-/g, '_'); 
+            data[key] = el.value;
+        });
+
+        db.collection('patients').doc(currentDcPatientId).update({ dischargeData: data });
+    });
+
+    async function generateDcDocx() {
+        if(!currentDcPatientId) { alert("Select a patient."); return; }
+        
+        const type = document.getElementById('dc-template-type').value;
+        let url = DOCX_URL_PED;
+        if(type === 'neonate') url = DOCX_URL_NEO;
+        if(type === 'neonate_hx') url = DOCX_URL_NEO_HX;
+
+        try {
+            const response = await fetch(url);
+            if(!response.ok) throw new Error("Template fetch failed");
+            const content = await response.arrayBuffer();
+            const zip = new PizZip(content);
+            const doc = new window.docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+            
+            let rawName = document.getElementById('dc-name').value;
+            let nid = "";
+            const match = rawName.match(/^(.*)\s*\((.*)\)$/);
+            if (match) {
+               rawName = match[1].trim(); 
+               nid = match[2].trim();
+            }
+
+            const data = {
+                name: rawName,
+                nid: nid, 
+                age: document.getElementById('dc-age').value,
+                sex: document.getElementById('dc-sex').value,
+                weight: document.getElementById('dc-weight').value,
+                mrn: document.getElementById('dc-mrn').value,
+                address: document.getElementById('dc-address').value,
+                ward: document.getElementById('dc-ward').value,
+                bed: document.getElementById('dc-bed').value,
+                folder: document.getElementById('dc-folder').value,
+                doa: document.getElementById('dc-doa').value,
+                dod: document.getElementById('dc-dod').value,
+                diagnosis: document.getElementById('dc-diagnosis').value,
+                
+                // MAPPINGS
+                history: document.getElementById('dc-history').value, 
+                exam: document.getElementById('dc-exam').value,
+                maternal_hx: document.getElementById('dc-maternal-hx').value,
+                birth_hx_1: document.getElementById('dc-birth-hx-col1').value,
+                birth_hx_2: document.getElementById('dc-birth-hx-col2').value,
+                
+                investigations: document.getElementById('dc-ix').value,
+                course: document.getElementById('dc-course').value,
+                condition: document.getElementById('dc-cond').value,
+                rx: document.getElementById('dc-rx').value,
+                review: document.getElementById('dc-review').value,
+                
+                adm_cons: "",
+                dis_cons: "DR. ALAA ADEL AHMED SAYED AHMED SOBEIH ELAMAWEY",
+                prep_by: ""
+            };
+
+            doc.render(data);
+            const out = doc.getZip().generate({ type:"blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+            
+            // Updated Filename: [Hospital No] [Name].docx
+            saveAs(out, `${data.mrn} ${rawName.split('(')[0].trim()}.docx`);
+        } catch(e) {
+            console.error(e); alert("Error: " + e.message);
+        }
+    }
 
     // --- JS MOBILE DETECTION & INITIALIZATION ---
     function checkMobile() {
@@ -536,7 +1257,7 @@
     }
 
     // --- MAIN LOGIC ---
-    let currentPatientId=null, localPatients={}, chartInstance=null, lastLoggedPlanSnapshot="";
+    let currentPatientId=null, localPatients={}, chartInstance=null;
     document.getElementById("doa").value = getLocalISODate();
 
     // --- HANDOVER SUMMARY ---
@@ -593,21 +1314,22 @@
         const id=p.docId, c=document.createElement('div'); c.className='patient-card'; c.id=`card-${id}`; c.setAttribute('data-id',id);
         const days=calculateDaysAdmitted(p.doa), age=p.isAutoAge&&p.dob&&p.dot?calculateNeonatalAge(p.dob,p.dot).display:p.age;
         const disTag=p.ward==='Discharge'?`<span class="discharge-badge discharge-active card-ctrl">Discharged ${formatTimestamp(p.dischargeTimestamp||p.timestamp||Date.now())}</span>`:'';
-        const cp = (p.plan||'').trim();
-        const ll = (p.lastLoggedPlan||'').trim();
-        const isUnlogged = cp !== '' && cp !== ll;
-        const btnText = isUnlogged ? 'Log' : 'Logged';
-        const btnDisabled = !isUnlogged;
+        
+        const fullHistoryHtml = formatLogsToHtml(p.logs || '', id, false, true);
+        const recentHistoryHtml = formatLogsToHtml(p.logs || '', id, true, false);
+
         c.innerHTML = `
              <button class="expand-btn card-ctrl" onclick="openModal('${id}')">⛶</button>
              <button class="delete-btn card-ctrl" onclick="deletePatient('${id}')">×</button>
              <span class="new-badge${p.isNew?' new-active':''} card-ctrl">NEW</span>${disTag}
+             
              <p><strong>Name:</strong> <span data-field="name" contenteditable class="editable" onblur="updateField('${id}','name',this.innerText)">${p.name}</span></p>
              <p><strong>ID:</strong> <span data-field="id" contenteditable class="editable" onblur="updateField('${id}','id',this.innerText)">${p.id||''}</span></p>
              <p><strong>DOA:</strong> <span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></p>
              <p><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
              <p><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
              <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span></p>
+             
              <div class="age-toggle" id="age-toggle-${id}">
                 <label><input type="radio" name="ageMode-${id}" value="manual" ${!p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Man</label>
                 <label><input type="radio" name="ageMode-${id}" value="auto" ${p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Auto</label>
@@ -615,15 +1337,35 @@
                    <input type="date" id="dob-${id}" value="${p.dob||''}" onblur="saveAgeMode('${id}')"><input type="time" id="dot-${id}" value="${p.dot||''}" onblur="saveAgeMode('${id}')">
                 </div>
              </div>
+             
              <p class="inline-fields"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
              <p><strong>Weight:</strong> <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span></p>
              <p><strong>Diagnosis:</strong> <span data-field="diagnosis" contenteditable class="editable" onblur="updateField('${id}','diagnosis',this.innerText)">${p.diagnosis||''}</span></p>
              <p><strong>Medications:</strong></p><p><span data-field="medications" contenteditable class="editable" onblur="updateField('${id}','medications',this.innerText)">${p.medications||''}</span></p>
              <p><strong>Issues:</strong> <span data-field="issues" contenteditable class="editable" onblur="updateField('${id}','issues',this.innerText)">${p.issues||''}</span></p>
-             <p><strong class="hopi-toggle" onclick="toggleHopi('${id}')">HOPI: ►</strong></p><div class="hopi-content" id="hopi-content-${id}"><span data-field="hopi" contenteditable class="editable" onblur="updateField('${id}','hopi',this.innerText)">${p.hopi||''}</span></div>
-             <p><strong class="hopi-toggle" onclick="togglePlanHist('${id}')">Plan history: ►</strong></p><div class="hopi-content plan-history" id="plan-hist-${id}"><div data-field="logs" contenteditable class="editable" onblur="updateField('${id}','logs',this.innerText)">${p.logs||''}</div></div>
-             <p><strong class="current-plan-label">Current plan:</strong></p><p><span data-field="plan" contenteditable class="editable" id="plan-content-${id}" onblur="updateField('${id}','plan',this.innerText)">${p.plan||''}</span></p>
-             <button class="log-btn" onclick="logPlan('${id}')" ${btnDisabled ? 'disabled' : ''}>${btnText}</button>
+             
+             <p><strong class="hopi-toggle" id="hopi-toggle-btn-${id}" onclick="toggleHopi('${id}')">HOPI:</strong></p>
+             <div class="hopi-content" id="hopi-content-${id}">
+                <span data-field="hopi" contenteditable class="editable" onblur="updateField('${id}','hopi',this.innerText)">${p.hopi||''}</span>
+             </div>
+             
+             <p style="display:flex; justify-content:space-between; align-items:center;">
+                <strong class="hopi-toggle" id="plan-toggle-btn-${id}" onclick="togglePlanHist('${id}')">Plan History:</strong>
+                <span class="edit-history-link" id="card-edit-link-${id}" style="display:none;" onclick="toggleEditHistory('${id}', 'card')">Edit</span>
+             </p>
+             <div class="hopi-content plan-history" id="plan-hist-${id}">
+                ${fullHistoryHtml}
+             </div>
+
+             <div class="recent-logs-container" id="recent-logs-${id}">
+                ${recentHistoryHtml}
+             </div>
+
+             <p><strong class="current-plan-label">Current plan:</strong></p>
+             <p><span contenteditable class="editable" id="new-plan-${id}" oninput="checkLogInput('${id}')"></span></p>
+             
+             <button class="log-btn" id="btn-log-${id}" disabled onclick="logPlan('${id}')">Log</button>
+             
              <p><strong>Ward:</strong><select onchange="changeWard('${id}',this.value)">${["PW","GW","SW","PVT","ICU","NICU","ER","Discharge"].map(w=>`<option value="${w}" ${w===p.ward?'selected':''}>${w}</option>`).join('')}</select></p>
              <div class="new-checkbox"><label><input type="checkbox" ${p.isNew?'checked':''} onchange="toggleNew('${id}')"> New</label></div>
         `;
@@ -631,7 +1373,7 @@
     }
 
     function updateCardDOM(c, p) {
-        ['name','id','doa','shift','bed','age','sex','weight','diagnosis','medications','issues','hopi','plan','logs'].forEach(f=>{
+        ['name','id','doa','shift','bed','age','sex','weight','diagnosis','medications','issues','hopi'].forEach(f=>{
             const el=c.querySelector(`[data-field="${f}"]`);
             if(el&&document.activeElement!==el) {
                 let v=p[f]||''; if(f==='age'&&p.isAutoAge&&p.dob&&p.dot) v=calculateNeonatalAge(p.dob,p.dot).display;
@@ -642,20 +1384,41 @@
         const w=c.querySelector('select'); if(w&&document.activeElement!==w) w.value=p.ward;
         const nc=c.querySelector('input[type="checkbox"]'); if(nc) nc.checked=p.isNew;
         const nb=c.querySelector('.new-badge'); if(nb){ if(p.isNew&&!nb.classList.contains('new-active'))nb.classList.add('new-active'); if(!p.isNew)nb.classList.remove('new-active'); }
-        const lb = c.querySelector('.log-btn'); 
-        if(lb){ 
-            const cp=(p.plan||'').trim();
-            const ll=(p.lastLoggedPlan||'').trim();
-            const nl = cp !== '' && cp !== ll; 
-            lb.disabled = !nl; 
-            lb.innerText = nl ? 'Log' : 'Logged'; 
+        
+        const histContainer = c.querySelector(`#plan-hist-${p.docId}`);
+        const isEditingHistory = histContainer && histContainer.classList.contains('editing-mode');
+
+        if(!isEditingHistory && histContainer) {
+            histContainer.innerHTML = formatLogsToHtml(p.logs || '', p.docId, false, true);
         }
+        
+        const recentContainer = c.querySelector(`#recent-logs-${p.docId}`);
+        if(recentContainer) recentContainer.innerHTML = formatLogsToHtml(p.logs || '', p.docId, true, false);
     }
 
     // --- CARD ACTIONS ---
     function updateField(id,f,v) { db.collection('patients').doc(id).update({[f]:v}); }
-    function toggleHopi(id) { document.getElementById(`hopi-content-${id}`).classList.toggle('expanded'); }
-    function togglePlanHist(id) { document.getElementById(`plan-hist-${id}`).classList.toggle('expanded'); }
+    
+    function toggleHopi(id) { 
+        document.getElementById(`hopi-content-${id}`).classList.toggle('expanded');
+        document.getElementById(`hopi-toggle-btn-${id}`).classList.toggle('expanded');
+    }
+    
+    function togglePlanHist(id) { 
+        const isExpanded = document.getElementById(`plan-hist-${id}`).classList.toggle('expanded');
+        document.getElementById(`plan-toggle-btn-${id}`).classList.toggle('expanded');
+        
+        const editLink = document.getElementById(`card-edit-link-${id}`);
+        if(editLink) editLink.style.display = isExpanded ? 'block' : 'none';
+        
+        if(!isExpanded) {
+            const listEl = document.getElementById(`full-list-${id}`);
+            if(listEl && listEl.classList.contains('editing-mode')) {
+                toggleEditHistory(id, 'card');
+            }
+        }
+    }
+    
     function toggleAgeMode(id) { const e=document.getElementById(`age-toggle-${id}`); e.style.display=e.style.display==='block'?'none':'block'; }
     function toggleAutoInputs(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked; document.getElementById(`auto-age-${id}`).style.display=a?'flex':'none'; document.getElementById(`age-disp-${id}`).contentEditable=!a; saveAgeMode(id); }
     function saveAgeMode(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked, dob=document.getElementById(`dob-${id}`).value, dot=document.getElementById(`dot-${id}`).value, u={isAutoAge:a,dob,dot}; if(a&&dob&&dot) u.age=calculateNeonatalAge(dob,dot).display; db.collection('patients').doc(id).update(u); }
@@ -672,10 +1435,25 @@
          });
        }
     }
+    
     function logPlan(id) {
-       const p=localPatients[id], c=document.getElementById(`plan-content-${id}`).innerText; if(!c)return;
-       const e=`• ${formatTimestamp(Date.now())} (${calculateDaysAdmitted(p.doa)})\n ${c}\n\n`;
-       db.collection('patients').doc(id).update({logs:(p.logs||'')+e, lastLoggedPlan:c});
+        const inputEl = document.getElementById(`new-plan-${id}`);
+        const content = inputEl.innerText.trim();
+        if(!content) return;
+        const p = localPatients[id];
+        const ts = formatTimestamp(Date.now());
+        const days = calculateDaysAdmitted(p.doa);
+        const newEntry = `• ${ts} (${days})\n ${content}\n\n`;
+        const updatedLogs = (p.logs || '') + newEntry;
+
+        db.collection('patients').doc(id).update({
+            logs: updatedLogs,
+            plan: content, // Update plan for printing compatibility
+            lastLoggedPlan: content
+        }).then(() => {
+            inputEl.innerText = '';
+            checkLogInput(id);
+        });
     }
 
     // --- QUICK ADD FORM ---
@@ -712,9 +1490,8 @@
     function openModal(id) {
        currentPatientId=id; const p=localPatients[id]; if(!p)return;
        document.getElementById('detailModal').classList.add('active'); document.getElementById('modalTitle').innerText=`${p.name} - Details`;
-       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi','plan'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
+       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
        
-       // Handle split ID for detail modal
        const hosp = document.getElementById('det-hosp');
        const nid = document.getElementById('det-nid');
        if(p.id && p.id.includes(',')) {
@@ -726,13 +1503,11 @@
            if(nid) nid.innerText = '';
        }
 
-       lastLoggedPlanSnapshot=p.lastLoggedPlan||''; checkPlanChange();
        renderLabMatrix(); renderImages(); renderHistory(); switchTab('details');
     }
     function refreshModalIfOpen() {
        const p=localPatients[currentPatientId]; if(!p)return;
-       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi','plan'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
-       if(document.activeElement.id!=='det-plan') { lastLoggedPlanSnapshot=p.lastLoggedPlan||''; checkPlanChange(); }
+       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
        if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
        if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
        if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
@@ -746,26 +1521,12 @@
     }
     function updateFromDetail(f,v) { if(currentPatientId) db.collection('patients').doc(currentPatientId).update({[f]:v}); }
     
-    // NEW: Update function for the split ID fields in details view
     function updateIdFromDetail() {
         if(!currentPatientId) return;
         const h = document.getElementById('det-hosp').innerText.trim();
         const n = document.getElementById('det-nid').innerText.trim();
         const combined = (h && n) ? `${h}, ${n}` : (h || n || "");
         db.collection('patients').doc(currentPatientId).update({id: combined});
-    }
-
-    function checkPlanChange() {
-       const v = document.getElementById('det-plan').innerText;
-       const b = document.getElementById('modalLogBtn');
-       const isChanged = v.trim() !== lastLoggedPlanSnapshot.trim();
-       if (isChanged && v.trim() !== '') { b.disabled = false; b.innerText = 'Log Changes'; } else { b.disabled = true; b.innerText = 'Logged'; }
-    }
-    function logPlanFromModal() {
-       const c=document.getElementById('det-plan').innerText; if(!c)return;
-       const p=localPatients[currentPatientId], ts=formatTimestamp(Date.now()), e=`• ${ts}\n ${c}\n\n`;
-       db.collection('patients').doc(currentPatientId).update({logs:(p.logs||'')+e, lastLoggedPlan:c});
-       lastLoggedPlanSnapshot = c; checkPlanChange();
     }
 
     // --- PRINTING ---
@@ -799,7 +1560,6 @@
        const tbody=document.createElement('tbody');
        Object.keys(labs.tests).forEach(k=>{
            const r=document.createElement('tr'); let c=`<td><input type="text" value="${k}" style="font-weight:bold;" onblur="renTest('${k}',this.value)"></td>`;
-           // REMOVED conditional logic for 'lab-abnormal' class here
            labs.tests[k].forEach((v,i)=>{ c+=`<td><input type="text" value="${v}" onblur="upLabVal('${k}',${i},this.value)"></td>`; });
            c+=`<td></td>`; r.innerHTML=c; tbody.appendChild(r);
        });
@@ -848,11 +1608,8 @@
     function openLightbox(u){ document.getElementById('lightbox').style.display='flex'; document.getElementById('lightbox-img').src=u; }
     function closeLightbox(){ document.getElementById('lightbox').style.display='none'; }
     function renderHistory(){
-       const p=localPatients[currentPatientId], l=document.getElementById('history-list'); l.innerHTML='';
-       (p.logs||'').split('•').filter(e=>e.trim().length>0).reverse().forEach(e=>{
-           const parts=e.split('\n'), d=parts[0], t=parts.slice(1).join('\n').trim();
-           if(d&&t){ const li=document.createElement('li'); li.className='history-item'; li.innerHTML=`<div class="history-date">${d}</div><div class="history-text">${t}</div>`; l.appendChild(li); }
-       });
+       const p=localPatients[currentPatientId];
+       document.getElementById('history-list').innerHTML = formatLogsToHtml(p.logs || '', currentPatientId, false, true);
     }
 
     const MAP_FORM_PDF = {
@@ -943,7 +1700,6 @@
     }
     
     function syncDx(val, fromBottom) {
-       // Syncs the top Diagnosis field with the bottom one and Visual PDF
        if (fromBottom) {
            document.getElementById('f-adm-dx').value = val;
        } else {
@@ -1104,7 +1860,6 @@
                 const pdfKey = MAP_FORM_PDF[fid];
                 if(pdfValues[pdfKey]) { const el = document.getElementById(fid); if(el) el.value = pdfValues[pdfKey]; }
             });
-            // Try to split ID back if saved as "Hosp, NID"
             if(p.id && p.id.includes(',')) {
                 const parts = p.id.split(',');
                 if(parts.length >= 2) {
@@ -1114,14 +1869,13 @@
             } else {
                 document.getElementById('f-hosp-no').value = p.id || '';
             }
-            // Sync Diagnosis
             if(p.diagnosis) {
                 document.getElementById('f-adm-dx').value = p.diagnosis;
                 document.getElementById('f-finaldx').value = p.diagnosis;
             }
         } else {
             document.getElementById('f-name').value = p.name || '';
-            document.getElementById('f-hosp-no').value = p.id || ''; // Fallback for old records
+            document.getElementById('f-hosp-no').value = p.id || '';
             document.getElementById('f-doa').value = p.doa || '';
             document.getElementById('f-shift').value = p.shift || 'Morning';
             document.getElementById('f-ward').value = p.ward || 'PW';
@@ -1169,17 +1923,11 @@
            return;
        }
 
-       if (currentMode === 'pdf') {
-           syncPdfToForm(); 
-       } else {
-           syncFormToPdf();
-       }
+       if (currentMode === 'pdf') { syncPdfToForm(); } else { syncFormToPdf(); }
        
        const p = { timestamp: Date.now(), isNew: true, logs: '', lastLoggedPlan: '', labs: {dates:[], tests:{}}, images: [] };
        
        const rawName = document.getElementById('f-name').value || "Unknown";
-       
-       // NEW: Combine Hosp No and NID No
        const hospNo = document.getElementById('f-hosp-no').value || "";
        const nidNo = document.getElementById('f-nid-no').value || "";
        const combinedId = (hospNo && nidNo) ? `${hospNo}, ${nidNo}` : (hospNo || nidNo || "");
@@ -1190,11 +1938,11 @@
        const rawBed = document.getElementById('f-bed').value || "";
        
        p.name = rawName;
-       p.id = combinedId; // Saved as combined string
+       p.id = combinedId;
        p.bed = rawBed;
        p.ward = rawWard;
        p.sex = rawSex;
-       p.isNew = true; // FORCE NEW for Admission Center
+       p.isNew = true; 
 
        let isAuto = false;
        const autoRadio = document.getElementById('adm-radio-auto');
@@ -1209,7 +1957,7 @@
        }
 
        pdfValues['age'] = `${p.age} / ${p.sex}`;
-       pdfValues['hid'] = hospNo; // PDF only takes Hospital No usually
+       pdfValues['hid'] = hospNo;
        pdfValues['ward'] = p.ward;
        pdfValues['bed'] = p.bed;
        pdfValues['name'] = p.name;
@@ -1297,19 +2045,15 @@
             const bytes = await fetch(REQUEST_URL).then(r => r.arrayBuffer());
             const pdf = await PDFLib.PDFDocument.load(bytes);
             const form = pdf.getForm();
-
-            // --- MAPPING CONFIGURATION (UPDATED TO CAPITAL 'T') ---
             const fieldMap = {
-                'Text21': pdfValues['name'] || document.getElementById('f-name').value,      // Name
-                'Text20': document.getElementById('f-hosp-no').value,                        // Hosp No
-                'Text23': document.getElementById('f-nid-no').value,                         // NID No
-                'Text22': pdfValues['ward'] || document.getElementById('f-ward').value,      // Ward
-                'Text24': pdfValues['bed'] || document.getElementById('f-bed').value,        // Bed
-                'Text27': pdfValues['doa'] || document.getElementById('f-doa').value,        // Date
-                'Text29': document.getElementById('f-adm-dx').value                          // Diagnosis
+                'Text21': pdfValues['name'] || document.getElementById('f-name').value,        
+                'Text20': document.getElementById('f-hosp-no').value,                        
+                'Text23': document.getElementById('f-nid-no').value,                          
+                'Text22': pdfValues['ward'] || document.getElementById('f-ward').value,      
+                'Text24': pdfValues['bed'] || document.getElementById('f-bed').value,        
+                'Text27': pdfValues['doa'] || document.getElementById('f-doa').value,        
+                'Text29': document.getElementById('f-adm-dx').value                          
             };
-
-            // --- FILLING LOGIC ---
             Object.keys(fieldMap).forEach(fieldName => {
                 try {
                     const field = form.getTextField(fieldName);
