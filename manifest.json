@@ -1,5 +1,5 @@
 {
-  "name": "Pediatric Dosage Calculator",
+  "name": "Pediatric Handover",
   "short_name": "PaedWard",
   "description": "A Progressive Web App for pediatric ward management",
   "start_url": "./index.html",
