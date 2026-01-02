@@ -1698,7 +1698,7 @@ async function generateDcDocx() {
              <p><strong>DOA:</strong> <span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></p>
              <p><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
              <p><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
-             <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span>${p.cgaWeeks ? ` <span style="font-size:10px; color:var(--primary); font-weight:600;">(CGA: ${p.cgaWeeks}+${p.cgaDays})</span>` : ''}</p>
+             <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span><span id="cga-label-${id}">${p.cgaWeeks ? ` (CGA: ${p.cgaWeeks}+${p.cgaDays})` : ''}</span></p>
 
              <div class="age-toggle" id="age-toggle-${id}">
                 <label><input type="radio" name="ageMode-${id}" value="manual" ${!p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Man</label>
@@ -1848,6 +1848,7 @@ async function generateDcDocx() {
         const gaDays = parseInt(document.getElementById(`ga-days-${id}`).value) || 0;
         const p = localPatients[id];
         const update = { gaWeeks, gaDays };
+        const cgaLabel = document.getElementById(`cga-label-${id}`);
 
         // Calculate CGA if patient has DOB/DOT
         if (gaWeeks > 0 && p && p.dob && p.dot) {
@@ -1861,12 +1862,32 @@ async function generateDcDocx() {
                 const cgaDays = totalCGADays % 7;
                 update.cgaWeeks = cgaWeeks;
                 update.cgaDays = cgaDays;
+
+                // Update DOM immediately
+                if (cgaLabel) {
+                    cgaLabel.innerText = ` (CGA: ${cgaWeeks}+${cgaDays})`;
+                }
+                // Update local cache
+                p.cgaWeeks = cgaWeeks;
+                p.cgaDays = cgaDays;
             }
         } else if (gaWeeks === 0) {
             // Clear CGA if GA is cleared
             update.cgaWeeks = null;
             update.cgaDays = null;
+
+            // Update DOM immediately
+            if (cgaLabel) {
+                cgaLabel.innerText = '';
+            }
+            // Update local cache
+            p.cgaWeeks = null;
+            p.cgaDays = null;
         }
+
+        // Update local cache for GA
+        p.gaWeeks = gaWeeks;
+        p.gaDays = gaDays;
 
         db.collection('patients').doc(id).update(update);
     }
