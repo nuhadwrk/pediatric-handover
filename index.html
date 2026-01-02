@@ -1799,7 +1799,20 @@ async function generateDcDocx() {
             const newRecent = formatLogsToHtml(p.logs || '', p.docId, true, false);
             if(recent.innerHTML !== newRecent) recent.innerHTML = newRecent;
         }
-        
+
+        // Update CGA label
+        const cgaLabel = c.querySelector(`#cga-label-${p.docId}`);
+        if (cgaLabel) {
+            const cgaText = p.cgaWeeks ? ` (CGA: ${p.cgaWeeks}+${p.cgaDays})` : '';
+            if (cgaLabel.innerText !== cgaText) cgaLabel.innerText = cgaText;
+        }
+
+        // Update GA input fields
+        const gaWeeksInput = document.getElementById(`ga-weeks-${p.docId}`);
+        const gaDaysInput = document.getElementById(`ga-days-${p.docId}`);
+        if (gaWeeksInput && document.activeElement !== gaWeeksInput) gaWeeksInput.value = p.gaWeeks || '';
+        if (gaDaysInput && document.activeElement !== gaDaysInput) gaDaysInput.value = p.gaDays || '';
+
         const planInput = document.getElementById(`new-plan-${p.docId}`);
         const logBtn = document.getElementById(`btn-log-${p.docId}`);
         
