@@ -911,7 +911,7 @@
           <button class="btn-sleek btn-warn" style="margin-left:5px;" onclick="resetDcForm()">Reset</button>
       </div>
       <div style="display:flex; gap:10px;">
-          <button onclick="closeDischargeSystem()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+          <button onclick="closeDischargeSystem()" style="background:none; border:none; font-size:32px; cursor:pointer; padding:10px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;">×</button>
       </div>
     </div>
     
@@ -2015,8 +2015,21 @@ async function generateDcDocx() {
     function openModal(id) {
        currentPatientId=id; const p=localPatients[id]; if(!p)return;
        document.getElementById('detailModal').classList.add('active'); document.getElementById('modalTitle').innerText=`${p.name} - Details`;
-       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
-       
+       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
+
+       // Handle HOPI with admission plan
+       const hopiEl = document.getElementById('det-hopi');
+       if(hopiEl) {
+           let hopiText = p.hopi || '';
+           if(p.admissionData && p.admissionData.plan) {
+               const admPlan = p.admissionData.plan.trim();
+               if(admPlan) {
+                   hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
+               }
+           }
+           hopiEl.innerText = hopiText;
+       }
+
        const hosp = document.getElementById('det-hosp');
        const nid = document.getElementById('det-nid');
        if(hosp) hosp.innerText = p.id || '';
@@ -2026,7 +2039,20 @@ async function generateDcDocx() {
     }
     function refreshModalIfOpen() {
        const p=localPatients[currentPatientId]; if(!p)return;
-       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues','hopi'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
+       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
+
+       // Handle HOPI with admission plan
+       const hopiEl = document.getElementById('det-hopi');
+       if(hopiEl && document.activeElement !== hopiEl) {
+           let hopiText = p.hopi || '';
+           if(p.admissionData && p.admissionData.plan) {
+               const admPlan = p.admissionData.plan.trim();
+               if(admPlan) {
+                   hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
+               }
+           }
+           hopiEl.innerText = hopiText;
+       }
        if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
        if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
        if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
