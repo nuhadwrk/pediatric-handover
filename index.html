@@ -545,25 +545,13 @@
               <div class="form-group"><label>Bed</label><input type="text" id="f-bed" oninput="updateVisualField('bed', this.value)"></div>
               
               <div class="form-group"><label>Age</label>
-                  <input type="text" id="f-age" placeholder="Enter age or select Auto" oninput="updateVisualField('age', this.value); calculateCGA();">
+                  <input type="text" id="f-age" placeholder="Enter age or select Auto" oninput="updateVisualField('age', this.value)">
                   <div class="age-toggle" id="adm-age-toggle" style="display:flex; gap:10px; align-items:center; margin-top:5px; border:none; padding:0; background:transparent;">
                     <label style="margin:0; font-weight:normal; text-transform:none;"><input type="radio" id="adm-radio-manual" name="admAgeMode" value="manual" checked onchange="toggleAdmAutoInputs()"> Manual</label>
                     <label style="margin:0; font-weight:normal; text-transform:none;"><input type="radio" id="adm-radio-auto" name="admAgeMode" value="auto" onchange="toggleAdmAutoInputs()"> Auto</label>
                     <div class="auto-age-inputs" id="adm-auto-age-inputs" style="display: none; margin-left:10px;">
-                      <input type="date" id="f-dob" placeholder="DOB" style="padding:4px; font-size:12px;" onchange="calculateCGA();">
-                      <input type="time" id="f-dot" placeholder="Time" style="padding:4px; font-size:12px;" onchange="calculateCGA();">
-                    </div>
-                  </div>
-                  <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ddd;">
-                    <label style="font-size:11px; font-weight:600; color:#555; display:block; margin-bottom:4px;">Gestational Age (GA) - For Neonates</label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                      <input type="number" id="f-ga-weeks" placeholder="Weeks" min="0" max="50" style="padding:4px; font-size:12px; width:70px;" oninput="calculateCGA();">
-                      <span style="font-size:11px;">weeks</span>
-                      <input type="number" id="f-ga-days" placeholder="Days" min="0" max="6" style="padding:4px; font-size:12px; width:60px;" oninput="calculateCGA();">
-                      <span style="font-size:11px;">days</span>
-                    </div>
-                    <div id="cga-display" style="margin-top:6px; font-size:11px; color:var(--primary); font-weight:600; display:none;">
-                      CGA: <span id="cga-value"></span>
+                      <input type="date" id="f-dob" placeholder="DOB" style="padding:4px; font-size:12px;">
+                      <input type="time" id="f-dot" placeholder="Time" style="padding:4px; font-size:12px;">
                     </div>
                   </div>
               </div>
@@ -1718,6 +1706,15 @@ async function generateDcDocx() {
                 <div class="auto-age-inputs" id="auto-age-${id}" style="display:${p.isAutoAge?'flex':'none'}">
                    <input type="date" id="dob-${id}" value="${p.dob||''}" onblur="saveAgeMode('${id}')"><input type="time" id="dot-${id}" value="${p.dot||''}" onblur="saveAgeMode('${id}')">
                 </div>
+                <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #ccc;">
+                   <label style="font-size:9px; font-weight:600; color:#555; display:block; margin-bottom:3px;">GA (Gestational Age)</label>
+                   <div style="display:flex; gap:4px; align-items:center;">
+                      <input type="number" id="ga-weeks-${id}" placeholder="Wks" min="0" max="50" value="${p.gaWeeks||''}" style="padding:2px; font-size:10px; width:40px;" onblur="saveGAData('${id}')">
+                      <span style="font-size:9px;">w</span>
+                      <input type="number" id="ga-days-${id}" placeholder="D" min="0" max="6" value="${p.gaDays||''}" style="padding:2px; font-size:10px; width:30px;" onblur="saveGAData('${id}')">
+                      <span style="font-size:9px;">d</span>
+                   </div>
+                </div>
              </div>
              
              <p class="inline-fields"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
@@ -1845,6 +1842,35 @@ async function generateDcDocx() {
     function toggleAgeMode(id) { const e=document.getElementById(`age-toggle-${id}`); e.style.display=e.style.display==='block'?'none':'block'; }
     function toggleAutoInputs(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked; document.getElementById(`auto-age-${id}`).style.display=a?'flex':'none'; document.getElementById(`age-disp-${id}`).contentEditable=!a; saveAgeMode(id); }
     function saveAgeMode(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked, dob=document.getElementById(`dob-${id}`).value, dot=document.getElementById(`dot-${id}`).value, u={isAutoAge:a,dob,dot}; if(a&&dob&&dot) u.age=calculateNeonatalAge(dob,dot).display; db.collection('patients').doc(id).update(u); }
+
+    function saveGAData(id) {
+        const gaWeeks = parseInt(document.getElementById(`ga-weeks-${id}`).value) || 0;
+        const gaDays = parseInt(document.getElementById(`ga-days-${id}`).value) || 0;
+        const p = localPatients[id];
+        const update = { gaWeeks, gaDays };
+
+        // Calculate CGA if patient has DOB/DOT
+        if (gaWeeks > 0 && p && p.dob && p.dot) {
+            const birthDate = new Date(`${p.dob}T${p.dot}:00`);
+            const now = new Date();
+            if (!isNaN(birthDate.getTime())) {
+                const chronoDays = Math.floor((now - birthDate) / (1000 * 60 * 60 * 24));
+                const totalGADays = (gaWeeks * 7) + gaDays;
+                const totalCGADays = totalGADays + chronoDays;
+                const cgaWeeks = Math.floor(totalCGADays / 7);
+                const cgaDays = totalCGADays % 7;
+                update.cgaWeeks = cgaWeeks;
+                update.cgaDays = cgaDays;
+            }
+        } else if (gaWeeks === 0) {
+            // Clear CGA if GA is cleared
+            update.cgaWeeks = null;
+            update.cgaDays = null;
+        }
+
+        db.collection('patients').doc(id).update(update);
+    }
+
     function changeWard(id,w) { const u={ward:w}; if(w==='Discharge') u.dischargeTimestamp=Date.now(); db.collection('patients').doc(id).update(u); }
     function toggleNew(id) { db.collection('patients').doc(id).get().then(d=>db.collection('patients').doc(id).update({isNew:!d.data().isNew})); }
     
@@ -1912,7 +1938,7 @@ async function generateDcDocx() {
            initialLogs += `• ${formatTimestamp(Date.now())}\n Initial Plan: ${initialPlan}\n\n`;
        }
 
-       const patientData = {
+       db.collection('patients').add({
          name:document.getElementById('name').value,
          id:document.getElementById('hno').value,
          nid:document.getElementById('nid').value,
@@ -1922,17 +1948,7 @@ async function generateDcDocx() {
          medications:document.getElementById('medications').value, issues:document.getElementById('issues').value, hopi:document.getElementById('hopi').value,
          ward:document.getElementById('ward').value, plan:initialPlan, isNew:document.getElementById('isNew').checked,
          timestamp:Date.now(), logs: initialLogs, lastLoggedPlan: initialPlan, labs:{dates:[],tests:{}}, images:[]
-       };
-
-       // Add GA/CGA data if present
-       if (window.currentPatientGA && window.currentPatientGA.gaWeeks) {
-           patientData.gaWeeks = window.currentPatientGA.gaWeeks;
-           patientData.gaDays = window.currentPatientGA.gaDays;
-           patientData.cgaWeeks = window.currentPatientGA.cgaWeeks;
-           patientData.cgaDays = window.currentPatientGA.cgaDays;
-       }
-
-       db.collection('patients').add(patientData).then(()=>document.getElementById('formSection').style.display='none');
+       }).then(()=>document.getElementById('formSection').style.display='none');
     }
     function toggleDarkMode() { const h=document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); }
 
@@ -2232,51 +2248,6 @@ Advice: ${nbValues['Text68']||'-'}`;
 
     function toggleAdmSidebar() { document.getElementById('admSidebar').classList.toggle('show'); }
     function toggleAdmAutoInputs() { const el = document.getElementById('adm-radio-auto'); const a = el ? el.checked : false; document.getElementById('adm-auto-age-inputs').style.display = a ? 'flex' : 'none'; }
-
-    function calculateCGA() {
-        const gaWeeks = parseInt(document.getElementById('f-ga-weeks')?.value) || 0;
-        const gaDays = parseInt(document.getElementById('f-ga-days')?.value) || 0;
-        const dobInput = document.getElementById('f-dob')?.value;
-        const dotInput = document.getElementById('f-dot')?.value;
-
-        // Only calculate CGA if GA is provided
-        if (gaWeeks === 0) {
-            document.getElementById('cga-display').style.display = 'none';
-            return;
-        }
-
-        // Calculate chronological age in days
-        let chronoDays = 0;
-        if (dobInput && dotInput) {
-            const birthDate = new Date(`${dobInput}T${dotInput}:00`);
-            const now = new Date();
-            if (!isNaN(birthDate.getTime())) {
-                chronoDays = Math.floor((now - birthDate) / (1000 * 60 * 60 * 24));
-            }
-        }
-
-        // Calculate CGA: GA + Chronological Age
-        const totalGADays = (gaWeeks * 7) + gaDays;
-        const totalCGADays = totalGADays + chronoDays;
-        const cgaWeeks = Math.floor(totalCGADays / 7);
-        const cgaDays = totalCGADays % 7;
-
-        // Display CGA
-        const cgaDisplay = document.getElementById('cga-display');
-        const cgaValue = document.getElementById('cga-value');
-        cgaValue.innerText = `${cgaWeeks}+${cgaDays} weeks`;
-        cgaDisplay.style.display = 'block';
-
-        // Store GA and CGA data for later use (in patient record)
-        if (window.currentPatientGA === undefined) window.currentPatientGA = {};
-        window.currentPatientGA = {
-            gaWeeks: gaWeeks,
-            gaDays: gaDays,
-            cgaWeeks: cgaWeeks,
-            cgaDays: cgaDays
-        };
-    }
-
     function updateVisualField(pdfKey, value) { pdfValues[pdfKey] = value; }
     function syncDx(val, fromBottom) { if (fromBottom) { document.getElementById('f-adm-dx').value = val; } else { document.getElementById('f-finaldx').value = val; } pdfValues['dx'] = val; }
 
@@ -2708,14 +2679,6 @@ Advice: ${nbValues['Text68']||'-'}`;
            p.dob = dob; p.dot = dot; p.isAutoAge = true;
        } else {
            p.age = rawAge;
-       }
-
-       // Save GA and CGA data if present
-       if (window.currentPatientGA && window.currentPatientGA.gaWeeks) {
-           p.gaWeeks = window.currentPatientGA.gaWeeks;
-           p.gaDays = window.currentPatientGA.gaDays;
-           p.cgaWeeks = window.currentPatientGA.cgaWeeks;
-           p.cgaDays = window.currentPatientGA.cgaDays;
        }
 
        pdfValues['age'] = p.age;
