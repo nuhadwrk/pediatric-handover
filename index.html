@@ -2198,8 +2198,13 @@ async function generateDcDocx() {
        const gest = document.getElementById('nb-gest-sel').value || ''; const sexVal = document.getElementById('nb-sex-combo').value || '';
        const size = document.getElementById('nb-size-sel').value || ''; const mode = document.getElementById('nb-b-mode').value || ''; const ind = (document.getElementById('nb-b-ind').value || '').trim();
        let sexShort = 'M'; if(sexVal === 'Female') sexShort = 'F'; if(sexVal === 'Ambiguous') sexShort = 'Amb';
+
+       // Abbreviate "Term" to "T", keep "Preterm" and "Postterm" full
+       let gestShort = gest;
+       if(gest === 'Term') gestShort = 'T';
+
        let modeStr = mode; if(mode !== 'SVD' && ind !== '' && mode !== '') { modeStr += ` for ${ind}`; } else if (mode === 'SVD' && ind !== '') { modeStr += ` for ${ind}`; }
-       const parts = ['S/L']; if(gest) parts.push(gest); if(sexVal) parts.push(sexShort); if(size) parts.push(size); if(modeStr) parts.push(modeStr);
+       const parts = ['S/L']; if(gestShort) parts.push(gestShort); if(sexVal) parts.push(sexShort); if(size) parts.push(size); if(modeStr) parts.push(modeStr);
        const dx = parts.join('/') + " for observation";
        document.getElementById('nb-generated-dx').value = dx;
        document.getElementById('nb-f-adm-dx').value = dx;
