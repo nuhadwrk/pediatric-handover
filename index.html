@@ -1707,12 +1707,12 @@ async function generateDcDocx() {
                    <input type="date" id="dob-${id}" value="${p.dob||''}" onblur="saveAgeMode('${id}')"><input type="time" id="dot-${id}" value="${p.dot||''}" onblur="saveAgeMode('${id}')">
                 </div>
                 <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #ccc;">
-                   <label style="font-size:9px; font-weight:600; color:#555; display:block; margin-bottom:3px;">GA (Gestational Age)</label>
-                   <div style="display:flex; gap:4px; align-items:center;">
-                      <input type="number" id="ga-weeks-${id}" placeholder="Wks" min="0" max="50" value="${p.gaWeeks||''}" style="padding:2px; font-size:10px; width:40px;" onblur="saveGAData('${id}')">
-                      <span style="font-size:9px;">w</span>
-                      <input type="number" id="ga-days-${id}" placeholder="D" min="0" max="6" value="${p.gaDays||''}" style="padding:2px; font-size:10px; width:30px;" onblur="saveGAData('${id}')">
-                      <span style="font-size:9px;">d</span>
+                   <label style="font-weight:600; display:block; margin-bottom:4px;">GA (Gestational Age)</label>
+                   <div style="display:flex; gap:6px; align-items:center;">
+                      <input type="number" id="ga-weeks-${id}" placeholder="Weeks" min="0" max="50" value="${p.gaWeeks||''}" style="padding:4px; width:60px;" onblur="saveGAData('${id}')">
+                      <span>weeks</span>
+                      <input type="number" id="ga-days-${id}" placeholder="Days" min="0" max="6" value="${p.gaDays||''}" style="padding:4px; width:50px;" onblur="saveGAData('${id}')">
+                      <span>days</span>
                    </div>
                 </div>
              </div>
