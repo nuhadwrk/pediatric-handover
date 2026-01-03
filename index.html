@@ -1126,6 +1126,21 @@ HR:   RR:   SpO2:   `,
     }
 
     function formatTimestamp(ts) { const d=new Date(ts); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+
+    // Extract first logged plan from patient logs (excluding admission note)
+    function getFirstLoggedPlan(logs) {
+        if(!logs) return '';
+        // Split by bullet points
+        const entries = logs.split('•').filter(e => e.trim());
+        // Find first entry that contains "Plan:" (case insensitive)
+        for(const entry of entries) {
+            const planMatch = entry.match(/(?:Initial )?Plan:\s*(.+?)$/mis);
+            if(planMatch && planMatch[1]) {
+                return planMatch[1].trim();
+            }
+        }
+        return '';
+    }
     function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
     function getCurrentShift() { const h = new Date().getHours(); if (h>=8 && h<16) return "Morning"; if (h>=16) return "Evening"; return "Night"; }
 
@@ -1373,7 +1388,8 @@ HR:   RR:   SpO2:   `,
         const admGeneralExamOnly = p.admissionData?.ge || p.general_exam || "";
         const examParts = [{ l: 'G/E', v: p.general_exam }, { l: 'CVS', v: p.cvs }, { l: 'RS', v: p.rs }, { l: 'Abd', v: p.abdomen }, { l: 'CNS', v: p.cns }];
         const admExamFull = examParts.filter(part => (part.v || '').trim() !== '').map(part => `${part.l}: ${part.v.trim()}`).join('\n');
-        const admissionCourse = `In ER:\n${(p.treatment_history||'').trim()}\n\nAfter Admission:`;
+        const firstLoggedPlan = getFirstLoggedPlan(p.logs);
+        const admissionCourse = `In ER:\n${(p.treatment_history||'').trim()}\n\nAfter Admission:\n${firstLoggedPlan}`;
 
         const map = {
             'dc-name': data.name || nameWithNid, 'dc-age': data.age || ageDisplay, 'dc-sex': data.sex || p.sex, 'dc-weight': data.weight || p.weight,
@@ -2043,9 +2059,9 @@ async function generateDcDocx() {
        const hopiEl = document.getElementById('det-hopi');
        if(hopiEl) {
            let hopiText = p.hopi || '';
-           // Add admission plan directly from patient data
-           const admPlan = p.plan || p.lastLoggedPlan || '';
-           if(admPlan.trim()) {
+           // Get first logged plan from logs
+           const admPlan = getFirstLoggedPlan(p.logs);
+           if(admPlan) {
                hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
            }
            hopiEl.innerText = hopiText;
@@ -2066,9 +2082,9 @@ async function generateDcDocx() {
        const hopiEl = document.getElementById('det-hopi');
        if(hopiEl && document.activeElement !== hopiEl) {
            let hopiText = p.hopi || '';
-           // Add admission plan directly from patient data
-           const admPlan = p.plan || p.lastLoggedPlan || '';
-           if(admPlan.trim()) {
+           // Get first logged plan from logs
+           const admPlan = getFirstLoggedPlan(p.logs);
+           if(admPlan) {
                hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
            }
            hopiEl.innerText = hopiText;
