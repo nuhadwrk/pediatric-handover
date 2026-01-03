@@ -1208,7 +1208,12 @@ HR:   RR:   SpO2:   `,
         if(lines.length <= 1) return planEntry.trim();
 
         // Skip first line (timestamp) and return rest
-        return lines.slice(1).join('\n').trim();
+        let planText = lines.slice(1).join('\n').trim();
+
+        // Remove any plan label prefixes (PLAN:, Initial Plan:, Admission Plan:)
+        planText = planText.replace(/^\s*(PLAN|Initial Plan|Admission Plan)\s*:\s*/i, '').trim();
+
+        return planText;
     }
     function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
     function getCurrentShift() { const h = new Date().getHours(); if (h>=8 && h<16) return "Morning"; if (h>=16) return "Evening"; return "Night"; }
