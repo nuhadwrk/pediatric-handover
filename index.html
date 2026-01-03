@@ -1132,9 +1132,10 @@ HR:   RR:   SpO2:   `,
         if(!logs) return '';
         // Split by bullet points
         const entries = logs.split('•').filter(e => e.trim());
-        // Find first entry that contains "Admission Plan:"
+        // Find first entry that contains any plan format (backward compatible)
+        // Matches: "Admission Plan:", "Initial Plan:", or "PLAN:"
         for(const entry of entries) {
-            const planMatch = entry.match(/Admission Plan:\s*(.+)/is);
+            const planMatch = entry.match(/(?:Admission Plan|Initial Plan|PLAN):\s*(.+)/is);
             if(planMatch && planMatch[1]) {
                 return planMatch[1].trim();
             }
