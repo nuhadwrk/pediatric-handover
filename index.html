@@ -1183,20 +1183,32 @@ HR:   RR:   SpO2:   `,
 
     function formatTimestamp(ts) { const d=new Date(ts); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 
-    // Extract first logged plan from patient logs (excluding admission note)
+    // Extract first logged plan from patient logs
+    // Rule: Plan is always the second log entry (after "Admission Record Created")
+    //       OR first entry if no admission record text
     function getFirstLoggedPlan(logs) {
         if(!logs) return '';
-        // Split by bullet points
+
+        // Split by bullet points and filter empty
         const entries = logs.split('•').filter(e => e.trim());
-        // Find first entry that contains any plan format (backward compatible)
-        // Matches: "Admission Plan:", "Initial Plan:", or "PLAN:"
-        for(const entry of entries) {
-            const planMatch = entry.match(/(?:Admission Plan|Initial Plan|PLAN):\s*(.+)/is);
-            if(planMatch && planMatch[1]) {
-                return planMatch[1].trim();
-            }
-        }
-        return '';
+        if(entries.length === 0) return '';
+
+        // Check if first entry is admission record/note (not a plan)
+        const firstEntry = entries[0].toLowerCase();
+        const isAdmissionRecord = firstEntry.includes('admission') ||
+                                  firstEntry.includes('admitted') ||
+                                  firstEntry.includes('record created');
+
+        // If first entry is admission record, plan is second entry
+        // Otherwise, plan is first entry
+        const planEntry = isAdmissionRecord && entries.length > 1 ? entries[1] : entries[0];
+
+        // Remove timestamp (first line) and return plan text
+        const lines = planEntry.split('\n').filter(l => l.trim());
+        if(lines.length <= 1) return planEntry.trim();
+
+        // Skip first line (timestamp) and return rest
+        return lines.slice(1).join('\n').trim();
     }
     function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
     function getCurrentShift() { const h = new Date().getHours(); if (h>=8 && h<16) return "Morning"; if (h>=16) return "Evening"; return "Night"; }
