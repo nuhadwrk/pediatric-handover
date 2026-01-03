@@ -2179,7 +2179,17 @@ async function generateDcDocx() {
            renderLabMatrix();
        }
     }
-    function updateFromDetail(f,v) { if(currentPatientId) db.collection('patients').doc(currentPatientId).update({[f]:v}); }
+    function updateFromDetail(f,v) {
+        if(!currentPatientId) return;
+
+        // Special handling for HOPI - strip admission plan before saving
+        if(f === 'hopi') {
+            // Remove "Admission Plan:" section (everything after it)
+            v = v.split(/\n\s*Admission Plan\s*:/i)[0].trim();
+        }
+
+        db.collection('patients').doc(currentPatientId).update({[f]:v});
+    }
     
     function updateIdFromDetail() {
         if(!currentPatientId) return;
