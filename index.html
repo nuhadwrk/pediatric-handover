@@ -1134,7 +1134,7 @@ HR:   RR:   SpO2:   `,
         const entries = logs.split('•').filter(e => e.trim());
         // Find first entry that contains "Plan:" (case insensitive)
         for(const entry of entries) {
-            const planMatch = entry.match(/(?:Initial )?Plan:\s*(.+?)$/mis);
+            const planMatch = entry.match(/(?:Initial )?Plan:\s*(.+)/is);
             if(planMatch && planMatch[1]) {
                 return planMatch[1].trim();
             }
