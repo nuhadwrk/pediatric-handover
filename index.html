@@ -382,10 +382,10 @@
         }
 
         /* Discharge center mobile layout */
-        #dc-header { flex-direction: column; align-items: stretch; padding: 10px; }
-        .dc-header-content { flex-direction: column; align-items: stretch; gap: 10px; }
-        #dc-header h2 { font-size: 16px; text-align: center; }
-        .dc-close-btn { position: absolute; top: 10px; right: 10px; }
+        #dc-header { flex-direction: column; align-items: stretch; padding: 10px; position: relative; }
+        .dc-header-content { flex-direction: column; align-items: stretch; gap: 10px; padding-right: 50px; }
+        #dc-header h2 { font-size: 16px; text-align: center; margin-right: 0; }
+        .dc-close-btn { position: absolute; top: 10px; right: 10px; z-index: 10; }
         .dc-selects { flex-direction: column; width: 100%; }
         .dc-selector { min-width: auto; width: 100%; font-size: 14px; }
         .dc-buttons { width: 100%; justify-content: flex-end; }
@@ -2039,19 +2039,14 @@ async function generateDcDocx() {
        document.getElementById('detailModal').classList.add('active'); document.getElementById('modalTitle').innerText=`${p.name} - Details`;
        ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
 
-       // Handle HOPI with admission plan from logs
+       // Handle HOPI with admission plan
        const hopiEl = document.getElementById('det-hopi');
        if(hopiEl) {
            let hopiText = p.hopi || '';
-           // Extract Initial Plan from logs - capture until next entry or end
-           if(p.logs) {
-               const initialPlanMatch = p.logs.match(/Initial Plan:\s*(.+?)(?=\n\n•|$)/s);
-               if(initialPlanMatch && initialPlanMatch[1]) {
-                   const admPlan = initialPlanMatch[1].trim();
-                   if(admPlan) {
-                       hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
-                   }
-               }
+           // Add admission plan directly from patient data
+           const admPlan = p.plan || p.lastLoggedPlan || '';
+           if(admPlan.trim()) {
+               hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
            }
            hopiEl.innerText = hopiText;
        }
@@ -2067,19 +2062,14 @@ async function generateDcDocx() {
        const p=localPatients[currentPatientId]; if(!p)return;
        ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
 
-       // Handle HOPI with admission plan from logs
+       // Handle HOPI with admission plan
        const hopiEl = document.getElementById('det-hopi');
        if(hopiEl && document.activeElement !== hopiEl) {
            let hopiText = p.hopi || '';
-           // Extract Initial Plan from logs - capture until next entry or end
-           if(p.logs) {
-               const initialPlanMatch = p.logs.match(/Initial Plan:\s*(.+?)(?=\n\n•|$)/s);
-               if(initialPlanMatch && initialPlanMatch[1]) {
-                   const admPlan = initialPlanMatch[1].trim();
-                   if(admPlan) {
-                       hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
-                   }
-               }
+           // Add admission plan directly from patient data
+           const admPlan = p.plan || p.lastLoggedPlan || '';
+           if(admPlan.trim()) {
+               hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
            }
            hopiEl.innerText = hopiText;
        }
