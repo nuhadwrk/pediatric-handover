@@ -2105,7 +2105,7 @@ async function generateDcDocx() {
        let age=document.getElementById('age').value; if(a&&dob&&dot) age=calculateNeonatalAge(dob,dot).display;
 
        const initialPlan = document.getElementById('plan').value;
-       let initialLogs = `• ${formatTimestamp(Date.now())}\n Admission Note: Patient admitted.\n\n`;
+       let initialLogs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
        if(initialPlan) {
            initialLogs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${initialPlan}\n\n`;
        }
