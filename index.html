@@ -300,6 +300,10 @@
     #discharge-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
     #dc-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; min-height: 60px; flex-wrap: wrap; }
     .dc-selector { font-size: 16px; padding: 5px; min-width: 300px; }
+    .dc-header-content { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex: 1; }
+    .dc-selects { display: flex; gap: 10px; flex-wrap: wrap; }
+    .dc-buttons { display: flex; gap: 5px; }
+    .dc-close-btn { display: flex; gap: 10px; }
 
     #dc-body { flex: 1; display: flex; overflow: hidden; position: relative; }
     .dc-split-view { display: flex; width: 100%; height: 100%; }
@@ -377,10 +381,16 @@
             justify-content: center;
         }
 
-        /* Discharge center improvements for mobile */
-        #dc-header h2 { font-size: 16px; }
-        .dc-selector { min-width: 200px; font-size: 14px; }
-        .btn-sleek { font-size: 12px; padding: 6px 12px; }
+        /* Discharge center mobile layout */
+        #dc-header { flex-direction: column; align-items: stretch; padding: 10px; }
+        .dc-header-content { flex-direction: column; align-items: stretch; gap: 10px; }
+        #dc-header h2 { font-size: 16px; text-align: center; }
+        .dc-close-btn { position: absolute; top: 10px; right: 10px; }
+        .dc-selects { flex-direction: column; width: 100%; }
+        .dc-selector { min-width: auto; width: 100%; font-size: 14px; }
+        .dc-buttons { width: 100%; justify-content: flex-end; }
+        .btn-sleek { font-size: 12px; padding: 8px 16px; flex: 1; max-width: 48%; }
+        .btn-sleek.btn-warn { margin-left: 0; }
     }
   </style>
 </head>
@@ -902,23 +912,27 @@
 
   <div id="discharge-system">
     <div id="dc-header">
-      <div style="display:flex; align-items:center; gap: 15px;">
+      <div class="dc-header-content">
           <h2 style="margin:0; font-size:18px;">Discharge Center</h2>
-          
-          <select id="dc-template-type" class="dc-selector" style="min-width: 150px;" onchange="updateDcTemplate()">
-              <option value="pediatric">Template: Pediatric</option>
-              <option value="neonate">Template: Neonate</option>
-              <option value="neonate_hx">Template: Neonate with Hx</option>
-          </select>
 
-          <select id="dc-patient-select" class="dc-selector" onchange="selectDcPatient(this.value)">
-              <option value="">-- Select Patient to Discharge --</option>
-          </select>
+          <div class="dc-selects">
+              <select id="dc-template-type" class="dc-selector" style="min-width: 150px;" onchange="updateDcTemplate()">
+                  <option value="pediatric">Template: Pediatric</option>
+                  <option value="neonate">Template: Neonate</option>
+                  <option value="neonate_hx">Template: Neonate with Hx</option>
+              </select>
 
-          <button class="btn-sleek" onclick="generateDcDocx()">Download .docx</button>
-          <button class="btn-sleek btn-warn" style="margin-left:5px;" onclick="resetDcForm()">Reset</button>
+              <select id="dc-patient-select" class="dc-selector" onchange="selectDcPatient(this.value)">
+                  <option value="">-- Select Patient to Discharge --</option>
+              </select>
+          </div>
+
+          <div class="dc-buttons">
+              <button class="btn-sleek" onclick="generateDcDocx()">Download .docx</button>
+              <button class="btn-sleek btn-warn" onclick="resetDcForm()">Reset</button>
+          </div>
       </div>
-      <div style="display:flex; gap:10px;">
+      <div class="dc-close-btn">
           <button onclick="closeDischargeSystem()" style="background:none; border:none; font-size:32px; cursor:pointer; padding:10px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;">×</button>
       </div>
     </div>
@@ -2029,9 +2043,9 @@ async function generateDcDocx() {
        const hopiEl = document.getElementById('det-hopi');
        if(hopiEl) {
            let hopiText = p.hopi || '';
-           // Extract Initial Plan from logs
+           // Extract Initial Plan from logs - capture until next entry or end
            if(p.logs) {
-               const initialPlanMatch = p.logs.match(/Initial Plan:\s*([^\n•]+)/);
+               const initialPlanMatch = p.logs.match(/Initial Plan:\s*(.+?)(?=\n\n•|$)/s);
                if(initialPlanMatch && initialPlanMatch[1]) {
                    const admPlan = initialPlanMatch[1].trim();
                    if(admPlan) {
@@ -2057,9 +2071,9 @@ async function generateDcDocx() {
        const hopiEl = document.getElementById('det-hopi');
        if(hopiEl && document.activeElement !== hopiEl) {
            let hopiText = p.hopi || '';
-           // Extract Initial Plan from logs
+           // Extract Initial Plan from logs - capture until next entry or end
            if(p.logs) {
-               const initialPlanMatch = p.logs.match(/Initial Plan:\s*([^\n•]+)/);
+               const initialPlanMatch = p.logs.match(/Initial Plan:\s*(.+?)(?=\n\n•|$)/s);
                if(initialPlanMatch && initialPlanMatch[1]) {
                    const admPlan = initialPlanMatch[1].trim();
                    if(admPlan) {
