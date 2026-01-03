@@ -1132,9 +1132,9 @@ HR:   RR:   SpO2:   `,
         if(!logs) return '';
         // Split by bullet points
         const entries = logs.split('•').filter(e => e.trim());
-        // Find first entry that contains "Plan:" (case insensitive)
+        // Find first entry that contains "Admission Plan:"
         for(const entry of entries) {
-            const planMatch = entry.match(/(?:Initial )?Plan:\s*(.+)/is);
+            const planMatch = entry.match(/Admission Plan:\s*(.+)/is);
             if(planMatch && planMatch[1]) {
                 return planMatch[1].trim();
             }
@@ -2032,7 +2032,7 @@ async function generateDcDocx() {
        const initialPlan = document.getElementById('plan').value;
        let initialLogs = `• ${formatTimestamp(Date.now())}\n Admission Note: Patient admitted.\n\n`;
        if(initialPlan) {
-           initialLogs += `• ${formatTimestamp(Date.now())}\n Initial Plan: ${initialPlan}\n\n`;
+           initialLogs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${initialPlan}\n\n`;
        }
 
        db.collection('patients').add({
@@ -2775,8 +2775,9 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        if (currentMode === 'newborn') { saveAndAddNewborn(printWin); return; }
 
-       if (currentMode === 'pdf') { syncPdfToForm(); } else { syncFormToPdf(); }
-       
+       // Always sync from form to capture user input, regardless of mode
+       syncFormToPdf();
+
        const p = { timestamp: Date.now(), isNew: true, logs: '', lastLoggedPlan: '', labs: {dates:[], tests:{}}, images: [] };
        
        const rawName = document.getElementById('f-name').value || "Unknown"; 
@@ -2829,7 +2830,7 @@ Advice: ${nbValues['Text68']||'-'}`;
        p.plan = aggregated.plan;
        
        let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
-       if(aggregated.plan) { logs += `• ${formatTimestamp(Date.now())}\n PLAN:\n${aggregated.plan}\n\n`; }
+       if(aggregated.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${aggregated.plan}\n\n`; }
        p.logs = logs;
 
        try { await db.collection('patients').add(JSON.parse(JSON.stringify(p))); } 
