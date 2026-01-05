@@ -2699,6 +2699,7 @@ Advice: ${nbValues['Text68']||'-'}`;
 
         try {
             await db.collection('patients').add(p);
+            await ensurePDFLib(); // Ensure PDF-lib is loaded
             const bytes = await fetch(NEWBORN_URL).then(r => r.arrayBuffer());
             const pdf = await PDFLib.PDFDocument.load(bytes);
             const form = pdf.getForm();
@@ -2722,6 +2723,7 @@ Advice: ${nbValues['Text68']||'-'}`;
        
        if (currentMode === 'newborn') {
            try {
+               await ensurePDFLib(); // Ensure PDF-lib is loaded
                nbValues['Text29'] = document.getElementById('nb-f-hosp-no').value;
                nbValues['Text42'] = document.getElementById('nb-f-nid-no').value;
                
