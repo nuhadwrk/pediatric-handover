@@ -2766,6 +2766,7 @@ Advice: ${nbValues['Text68']||'-'}`;
             if(!printWin) { alert("Popups needed."); return; }
             printWin.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;"><h2>Request PDF...</h2></body></html>');
             try {
+                await ensurePDFLib(); // Ensure PDF-lib is loaded
                 const bytes = await fetch(REQUEST_URL).then(r => r.arrayBuffer());
                 const pdf = await PDFLib.PDFDocument.load(bytes);
                 const form = pdf.getForm();
@@ -2793,6 +2794,7 @@ Advice: ${nbValues['Text68']||'-'}`;
         printWin.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Filling Admission Request...</h2></body></html>');
         
         try {
+            await ensurePDFLib(); // Ensure PDF-lib is loaded
             const bytes = await fetch(REQUEST_URL).then(r => r.arrayBuffer());
             const pdf = await PDFLib.PDFDocument.load(bytes);
             const form = pdf.getForm();
