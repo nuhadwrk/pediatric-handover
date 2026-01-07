@@ -2387,6 +2387,7 @@ async function generateDcDocx() {
     let currentMode = 'form';
     let pdfFontSize = 13;
     let pdfLineHeight = 1.3;
+    let visualScaleFactor = 0.62;
     let storedScaleFit = null; 
 
     function updateNbField(key, val) { nbValues[key] = val; }
@@ -2743,7 +2744,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                 const box = document.createElement('div'); box.className = 'pdf-box';
                 if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
                 box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
-                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (pdfFontSize * storedScaleFit) + 'px'; box.style.lineHeight = pdfLineHeight;
+                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (pdfFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = pdfLineHeight;
                 box.innerText = pdfValues[a.name] || '';
                 if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; }; }
                 wrapper.appendChild(box);
