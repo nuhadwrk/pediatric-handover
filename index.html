@@ -2387,7 +2387,7 @@ async function generateDcDocx() {
     let currentMode = 'form';
     let pdfFontSize = 13;
     let pdfLineHeight = 1.3;
-    let visualScaleFactor = 0.62; 
+    let storedScaleFit = null; 
 
     function updateNbField(key, val) { nbValues[key] = val; }
     function updateNbTicks(group, val) {
@@ -2728,17 +2728,22 @@ Advice: ${nbValues['Text68']||'-'}`;
 
     async function renderPdfVisual() {
        const stage = document.getElementById('pdf-stage'); stage.innerHTML = ''; const container = document.getElementById('view-pdf');
+
+       // Calculate scale once and store it (prevents font size changes on window resize)
+       if (storedScaleFit === null) {
+          storedScaleFit = (container.clientWidth - 40) / 595;
+       }
+
        const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
        for(let i=1; i<=4; i++) {
-          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page'; 
+          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page';
           wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`; wrapper.style.backgroundSize = '100% 100%'; wrapper.style.backgroundRepeat = 'no-repeat'; wrapper.style.width = '100%'; wrapper.style.aspectRatio = '0.7071'; wrapper.style.position = 'relative';
           if(anchors[i]) {
              anchors[i].forEach(a => {
-                const box = document.createElement('div'); box.className = 'pdf-box'; 
+                const box = document.createElement('div'); box.className = 'pdf-box';
                 if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
-                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%'; 
-                const scaleFit = (container.clientWidth - 40) / 595; 
-                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (pdfFontSize * scaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = pdfLineHeight;
+                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
+                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (pdfFontSize * storedScaleFit) + 'px'; box.style.lineHeight = pdfLineHeight;
                 box.innerText = pdfValues[a.name] || '';
                 if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; }; }
                 wrapper.appendChild(box);
