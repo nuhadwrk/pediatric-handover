@@ -225,7 +225,7 @@
     .history-text { white-space: pre-wrap; font-size: 14px; }
     .btn-sm { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; background: var(--primary); color: white; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .form-control { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-    
+
     /* ADMISSION SYSTEM STYLES */
     #admission-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
     #adm-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; height: 50px; }
@@ -595,7 +595,21 @@
     </div>
   </div>
 <div id="lightbox" class="lightbox"><span class="lightbox-close" onclick="closeLightbox()">&times;</span><img class="lightbox-content" id="lightbox-img"></div>
-  
+
+  <!-- Patient Action Modal (Discharge/Delete) -->
+  <div id="patientActionModal" class="modal-overlay">
+    <div class="modal-content" style="width: 420px; height: auto; max-width: 90%;">
+      <div class="modal-header">
+        <h2>Select Action</h2>
+        <button class="close-modal" onclick="closePatientActionModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 25px; display: flex; gap: 10px;">
+        <button class="btn-sleek" style="flex: 1; background: var(--discharge-btn);" onclick="handleDischargeAction()">Discharge</button>
+        <button class="btn-sleek" style="flex: 1; background: #e63946;" onclick="handleDeleteAction()">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <div id="admission-system">
     <div id="adm-header">
       <div style="display:flex; align-items:center;">
@@ -751,20 +765,20 @@
             </div>
          </div>
          <div class="form-grid">
-            <div class="form-group"><label>Para / Gravida</label><input type="text" value="" oninput="updateNbField('Text7', this.value)"></div>
-            <div class="form-group"><label>Prev. Still Birth</label><input type="text" value="-" oninput="updateNbField('Text8', this.value)"></div>
+            <div class="form-group"><label>Para / Gravida</label><input id="nb-para-gravida" type="text" value="" oninput="updateNbField('Text7', this.value)"></div>
+            <div class="form-group"><label>Prev. Still Birth</label><input id="nb-prev-still-birth" type="text" value="-" oninput="updateNbField('Text8', this.value)"></div>
          </div>
-         <div class="form-group"><label>Weight / BMI</label><input type="text" value="Kg/m2" oninput="updateNbField('Text9', this.value)"></div>
+         <div class="form-group"><label>Weight / BMI</label><input id="nb-weight-bmi" type="text" value="Kg/m2" oninput="updateNbField('Text9', this.value)"></div>
       </div>
 
       <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Antenatal Labs</h4>
          <div class="form-grid">
-            <div class="form-group"><label>LMP</label><input type="text" placeholder="DD/MM/YYYY" oninput="updateNbField('Text10', this.value)"></div>
-            <div class="form-group"><label>EDD</label><input type="text" placeholder="DD/MM/YYYY" oninput="updateNbField('Text11', this.value)"></div>
+            <div class="form-group"><label>LMP</label><input id="nb-lmp" type="text" placeholder="DD/MM/YYYY" oninput="updateNbField('Text10', this.value)"></div>
+            <div class="form-group"><label>EDD</label><input id="nb-edd" type="text" placeholder="DD/MM/YYYY" oninput="updateNbField('Text11', this.value)"></div>
          </div>
          <div class="form-grid">
-            <div class="form-group"><label>Hb (g/dL)</label><input type="text" value="g/dL" oninput="updateNbField('Text12', this.value)"></div>
+            <div class="form-group"><label>Hb (g/dL)</label><input id="nb-hb" type="text" value="g/dL" oninput="updateNbField('Text12', this.value)"></div>
             <div class="form-group">
                 <label>Blood Group</label>
                 <input list="lst-bg" value="" placeholder="Select..." onfocus="this.select()" oninput="updateNbField('Text13', this.value)">
@@ -786,20 +800,20 @@
       <div style="background:#fff0f0; padding:15px; border-radius:8px; border:1px solid #f5c6cb;">
          <h4 style="margin:0 0 15px; color:#d32f2f; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #f5c6cb; padding-bottom:5px;">Risk Factors & Labor</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Toxemia</label><input type="text" value="-" oninput="updateNbField('Text16', this.value)"></div>
-            <div class="form-group"><label>Hydramnios</label><input type="text" value="-" oninput="updateNbField('Text17', this.value)"></div>
+            <div class="form-group"><label>Toxemia</label><input id="nb-toxemia" type="text" value="-" oninput="updateNbField('Text16', this.value)"></div>
+            <div class="form-group"><label>Hydramnios</label><input id="nb-hydramnios" type="text" value="-" oninput="updateNbField('Text17', this.value)"></div>
          </div>
          <div class="form-grid">
-            <div class="form-group"><label>PIH</label><input type="text" value="-" oninput="updateNbField('Text18', this.value)"></div>
-            <div class="form-group"><label>APH</label><input type="text" value="-" oninput="updateNbField('Text19', this.value)"></div>
+            <div class="form-group"><label>PIH</label><input id="nb-pih" type="text" value="-" oninput="updateNbField('Text18', this.value)"></div>
+            <div class="form-group"><label>APH</label><input id="nb-aph" type="text" value="-" oninput="updateNbField('Text19', this.value)"></div>
          </div>
-         <div class="form-group"><label>Any Other Illness</label><input type="text" oninput="updateNbField('Text20', this.value)"></div>
+         <div class="form-group"><label>Any Other Illness</label><input id="nb-any-other-illness" type="text" oninput="updateNbField('Text20', this.value)"></div>
          <div class="form-grid">
             <div class="form-group"><label>Presentation</label>
                 <input list="lst-presentation" value="" placeholder="Select..." onfocus="this.select()" oninput="updateNbField('Text21', this.value)">
                 <datalist id="lst-presentation"><option value="Cephalic"></datalist>
             </div>
-            <div class="form-group"><label>Time of ROM</label><input type="text" value="-" oninput="updateNbField('Text22', this.value)"></div>
+            <div class="form-group"><label>Time of ROM</label><input id="nb-time-rom" type="text" value="-" oninput="updateNbField('Text22', this.value)"></div>
          </div>
          <div class="form-grid">
             <div class="form-group"><label>Liquor Quality</label>
@@ -812,11 +826,11 @@
             </div>
          </div>
          <div class="form-grid">
-            <div class="form-group"><label>Drugs Given</label><input type="text" value="-" oninput="updateNbField('Text25', this.value)"></div>
-            <div class="form-group"><label>Fetal Distress</label><input type="text" value="-" oninput="updateNbField('Text26', this.value)"></div>
+            <div class="form-group"><label>Drugs Given</label><input id="nb-drugs-given" type="text" value="-" oninput="updateNbField('Text25', this.value)"></div>
+            <div class="form-group"><label>Fetal Distress</label><input id="nb-fetal-distress" type="text" value="-" oninput="updateNbField('Text26', this.value)"></div>
          </div>
          <div class="form-group"><label>Thalassemia Status</label>
-            <textarea rows="2" oninput="updateNbField('Text27', this.value)">Mother: &#10;Father: </textarea>
+            <textarea id="nb-thalassemia" rows="2" oninput="updateNbField('Text27', this.value)">Mother: &#10;Father: </textarea>
          </div>
       </div>
    </div>
@@ -839,17 +853,17 @@
          <div style="margin-bottom:15px; border-top:1px dashed #ccc; padding-top:10px;">
              <label style="display:block; font-weight:bold; margin-bottom:5px;">APGAR Score</label>
              <div style="display:flex; gap:10px;">
-                <input type="text" value="/10" placeholder="1 min" oninput="updateNbField('Text32', this.value)">
-                <input type="text" value="/10" placeholder="5 min" oninput="updateNbField('Text33', this.value)">
-                <input type="text" value="/10" placeholder="10 min" oninput="updateNbField('Text34', this.value)">
+                <input id="nb-apgar-1min" type="text" value="/10" placeholder="1 min" oninput="updateNbField('Text32', this.value)">
+                <input id="nb-apgar-5min" type="text" value="/10" placeholder="5 min" oninput="updateNbField('Text33', this.value)">
+                <input id="nb-apgar-10min" type="text" value="/10" placeholder="10 min" oninput="updateNbField('Text34', this.value)">
              </div>
          </div>
 
          <div class="form-grid">
-            <div class="form-group"><label>Resuscitation</label><input type="text" value="Dry stimulation" oninput="updateNbField('Text36', this.value)"></div>
-            <div class="form-group"><label>Intubation</label><input type="text" value="-" oninput="updateNbField('Text37', this.value)"></div>
+            <div class="form-group"><label>Resuscitation</label><input id="nb-resuscitation" type="text" value="Dry stimulation" oninput="updateNbField('Text36', this.value)"></div>
+            <div class="form-group"><label>Intubation</label><input id="nb-intubation" type="text" value="-" oninput="updateNbField('Text37', this.value)"></div>
          </div>
-         <div class="form-group"><label>Bicarbonate / Lethedron</label><input type="text" value="-" oninput="updateNbField('Text38', this.value)"></div>
+         <div class="form-group"><label>Bicarbonate / Lethedron</label><input id="nb-bicarbonate" type="text" value="-" oninput="updateNbField('Text38', this.value)"></div>
 
          <div class="form-grid">
             <div class="form-group">
@@ -904,36 +918,36 @@
             </div>
          </div>
          <div class="form-grid">
-            <div class="form-group"><label>Resp. Distress</label><input type="text" value="-" oninput="updateNbField('Text46', this.value)"></div>
-            <div class="form-group"><label>Cynosis/Pallor/Jaundice</label><input type="text" value="-" oninput="updateNbField('Text47', this.value)"></div>
+            <div class="form-group"><label>Resp. Distress</label><input id="nb-resp-distress" type="text" value="-" oninput="updateNbField('Text46', this.value)"></div>
+            <div class="form-group"><label>Cynosis/Pallor/Jaundice</label><input id="nb-cyanosis" type="text" value="-" oninput="updateNbField('Text47', this.value)"></div>
          </div>
-         <div class="form-group"><label>Any other (Baby)</label><input type="text" value="-" oninput="updateNbField('Text48', this.value)"></div>
-         <div class="form-group"><label>Investigations</label><input type="text" value="Hb, PCV, Blood Grouping" oninput="updateNbField('Text50', this.value)"></div>
+         <div class="form-group"><label>Any other (Baby)</label><input id="nb-any-other-baby" type="text" value="-" oninput="updateNbField('Text48', this.value)"></div>
+         <div class="form-group"><label>Investigations</label><input id="nb-investigations" type="text" value="Hb, PCV, Blood Grouping" oninput="updateNbField('Text50', this.value)"></div>
          <div class="form-grid">
-            <div class="form-group"><label>Gastric Aspirate</label><input type="text" value="-" oninput="updateNbField('Text51', this.value)"></div>
-            <div class="form-group"><label>Culture</label><input type="text" value="-" oninput="updateNbField('Text52', this.value)"></div>
+            <div class="form-group"><label>Gastric Aspirate</label><input id="nb-gastric-aspirate" type="text" value="-" oninput="updateNbField('Text51', this.value)"></div>
+            <div class="form-group"><label>Culture</label><input id="nb-culture" type="text" value="-" oninput="updateNbField('Text52', this.value)"></div>
          </div>
-         <div class="form-group"><label>Any other (Inv)</label><input type="text" value="-" oninput="updateNbField('Text53', this.value)"></div>
+         <div class="form-group"><label>Any other (Inv)</label><input id="nb-any-other-inv" type="text" value="-" oninput="updateNbField('Text53', this.value)"></div>
       </div>
    </div>
    <div class="nb-bottom-span" style="background:#e8f5e9; padding:15px; border-radius:8px; border:1px solid #c3e6cb;">
        <h4 style="margin:0 0 15px; color:#2e7d32; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #c3e6cb; padding-bottom:5px;">Assessment & Plan</h4>
        <div class="form-group"><label>Condition</label>
-           <textarea rows="2" oninput="updateNbField('Text66', this.value)">Baby born vigorous, cried immediately after birth</textarea>
+           <textarea id="nb-condition" rows="2" oninput="updateNbField('Text66', this.value)">Baby born vigorous, cried immediately after birth</textarea>
        </div>
        <div class="form-group">
           <label>Examination</label>
-          <textarea style="min-height:150px;" oninput="updateNbField('Text67', this.value)">Tone and cry:            Normal&#10;Reflex and Activity:  Normal&#10;&#10;RS: B/L EAE, CLEAR&#10;No LCR, UCR, XR, NF or Grunting&#10;&#10;CVS: S1 S2 M0&#10;&#10;Umbilical Vessels: 2A +1V&#10;&#10;HR , RR , SpO2 % in RA&#10;&#10;-</textarea>
+          <textarea id="nb-examination" style="min-height:150px;" oninput="updateNbField('Text67', this.value)">Tone and cry:            Normal&#10;Reflex and Activity:  Normal&#10;&#10;RS: B/L EAE, CLEAR&#10;No LCR, UCR, XR, NF or Grunting&#10;&#10;CVS: S1 S2 M0&#10;&#10;Umbilical Vessels: 2A +1V&#10;&#10;HR , RR , SpO2 % in RA&#10;&#10;-</textarea>
        </div>
        <div class="form-group"><label>Advice</label>
-           <textarea style="min-height:100px;" oninput="updateNbField('Text68', this.value)">-Routine newborn care&#10;-Exclusive breast feeding as early as possible then every 2hrly&#10;-Immunization as protocol&#10;-CCHD >24HOL, NMS >72HOL&#10;-W/F Tachypnea, Poor feeding, Lethargy</textarea>
+           <textarea id="nb-advice" style="min-height:100px;" oninput="updateNbField('Text68', this.value)">-Routine newborn care&#10;-Exclusive breast feeding as early as possible then every 2hrly&#10;-Immunization as protocol&#10;-CCHD >24HOL, NMS >72HOL&#10;-W/F Tachypnea, Poor feeding, Lethargy</textarea>
        </div>
        <div class="form-group">
           <label>Diagnosis (Auto-Generated)</label>
           <textarea id="nb-generated-dx" oninput="updateNbField('Text69', this.value)" style="background:#f0f0f0; min-height:40px;"></textarea>
        </div>
        <div class="form-group"><label>Attended By</label>
-           <textarea rows="3" oninput="updateNbField('Text70', this.value)">Attended By:&#10;Dr. &#10;Dr. (MO)</textarea>
+           <textarea id="nb-attended-by" rows="3" oninput="updateNbField('Text70', this.value)">Attended By:&#10;Dr. &#10;Dr. (MO)</textarea>
        </div>
    </div>
 </div>
@@ -2045,14 +2059,47 @@ async function generateDcDocx() {
     function changeWard(id,w) { const u={ward:w}; if(w==='Discharge') u.dischargeTimestamp=Date.now(); db.collection('patients').doc(id).update(u); }
     function toggleNew(id) { db.collection('patients').doc(id).get().then(d=>db.collection('patients').doc(id).update({isNew:!d.data().isNew})); }
     
+    // Global variable to store patient ID for action modal
+    let pendingActionPatientId = null;
+
+    // Open patient action modal (Discharge or Delete)
     function deletePatient(id) {
-       if(confirm("Discharge? OK to discharge, Cancel to DELETE PERMANENTLY.")) changeWard(id,'Discharge');
-       else if(confirm("WARNING: Permanently delete record AND X-RAYS?")) {
+       pendingActionPatientId = id;
+       document.getElementById('patientActionModal').classList.add('active');
+    }
+
+    function closePatientActionModal() {
+       document.getElementById('patientActionModal').classList.remove('active');
+    }
+
+    function handleDischargeAction() {
+       if(!pendingActionPatientId) return;
+
+       // Discharge the patient automatically (no shift selection for now)
+       changeWard(pendingActionPatientId, 'Discharge');
+       closePatientActionModal();
+       pendingActionPatientId = null;
+    }
+
+    function handleDeleteAction() {
+       if(!pendingActionPatientId) return;
+       closePatientActionModal();
+
+       if(confirm("WARNING: Permanently delete record AND X-RAYS?")) {
+         const id = pendingActionPatientId;
+         pendingActionPatientId = null;
+
          db.collection('patients').doc(id).get().then(d=>{
-             if(d.exists) { const i=d.data().images||[], ps=i.map(x=>(x.url&&x.url.includes('firebasestorage'))?storage.refFromURL(x.url).delete().catch(e=>console.warn(e)):Promise.resolve());
-             Promise.all(ps).finally(()=>db.collection('patients').doc(id).delete()); }
-             else db.collection('patients').doc(id).delete();
+             if(d.exists) {
+               const i=d.data().images||[];
+               const ps=i.map(x=>(x.url&&x.url.includes('firebasestorage'))?storage.refFromURL(x.url).delete().catch(e=>console.warn(e)):Promise.resolve());
+               Promise.all(ps).finally(()=>db.collection('patients').doc(id).delete());
+             } else {
+               db.collection('patients').doc(id).delete();
+             }
          });
+       } else {
+         pendingActionPatientId = null;
        }
     }
     
@@ -2168,7 +2215,7 @@ async function generateDcDocx() {
        if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
     }
     function closeModal() { document.getElementById('detailModal').classList.remove('active'); currentPatientId=null; }
-    window.onclick = function(e) { if(e.target==document.getElementById('detailModal'))closeModal(); if(e.target==document.getElementById('admissionModal'))closeAdmissionModal(); if(e.target==document.getElementById('lightbox'))closeLightbox(); }
+    window.onclick = function(e) { if(e.target==document.getElementById('detailModal'))closeModal(); if(e.target==document.getElementById('admissionModal'))closeAdmissionModal(); if(e.target==document.getElementById('lightbox'))closeLightbox(); if(e.target==document.getElementById('patientActionModal'))closePatientActionModal(); }
     async function switchTab(id) {
        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
        const btn=Array.from(document.querySelectorAll('.tab-btn')).find(b=>b.getAttribute('onclick').includes(id)); if(btn)btn.classList.add('active');
@@ -2348,6 +2395,205 @@ async function generateDcDocx() {
         if(group === 'size') { nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = ''; if(val === 'AGA') nbValues['Text62'] = '____'; if(val === 'SGA') nbValues['Text63'] = '____'; if(val === 'LGA') nbValues['Text64'] = '____'; }
     }
 
+    // Sync ALL form field values into nbValues before saving
+    function syncAllNbFieldsToValues() {
+        // Direct ID mappings
+        const fieldMap = {
+            'nb-m-name': 'Text1',
+            'nb-m-age': 'Text2',
+            'nb-m-mrd': 'Text3',
+            'nb-para-gravida': 'Text7',
+            'nb-prev-still-birth': 'Text8',
+            'nb-weight-bmi': 'Text9',
+            'nb-lmp': 'Text10',
+            'nb-edd': 'Text11',
+            'nb-hb': 'Text12',
+            'nb-toxemia': 'Text16',
+            'nb-hydramnios': 'Text17',
+            'nb-pih': 'Text18',
+            'nb-aph': 'Text19',
+            'nb-any-other-illness': 'Text20',
+            'nb-time-rom': 'Text22',
+            'nb-drugs-given': 'Text25',
+            'nb-fetal-distress': 'Text26',
+            'nb-thalassemia': 'Text27',
+            'nb-f-hosp-no': 'Text29',
+            'nb-b-mode': 'Text30',
+            'nb-b-ind': 'Text31',
+            'nb-apgar-1min': 'Text32',
+            'nb-apgar-5min': 'Text33',
+            'nb-apgar-10min': 'Text34',
+            'nb-resuscitation': 'Text36',
+            'nb-intubation': 'Text37',
+            'nb-bicarbonate': 'Text38',
+            'nb-sex-combo': 'Text39',
+            'nb-b-mat': 'Text40',
+            'nb-f-nid-no': 'Text42',
+            'nb-resp-distress': 'Text46',
+            'nb-cyanosis': 'Text47',
+            'nb-any-other-baby': 'Text48',
+            'nb-investigations': 'Text50',
+            'nb-gastric-aspirate': 'Text51',
+            'nb-culture': 'Text52',
+            'nb-any-other-inv': 'Text53',
+            'nb-condition': 'Text66',
+            'nb-examination': 'Text67',
+            'nb-advice': 'Text68',
+            'nb-generated-dx': 'Text69',
+            'nb-attended-by': 'Text70',
+            'nb-gest-sel': 'gest_val',
+            'nb-size-sel': 'size_val'
+        };
+
+        // Read all fields with IDs
+        Object.keys(fieldMap).forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                nbValues[fieldMap[id]] = el.value;
+            }
+        });
+
+        // Special handling for weight (adds ' kg')
+        const weightEl = document.getElementById('nb-b-wt');
+        if(weightEl && weightEl.value) {
+            nbValues['Text41'] = weightEl.value + ' kg';
+        }
+
+        // Special handling for birth datetime
+        const dobEl = document.getElementById('nb-b-datetime');
+        if(dobEl && dobEl.value) {
+            nbValues['Text35'] = dobEl.value.replace('T', ' ');
+        }
+
+        // Fields with datalists (use querySelector for inputs with list attribute)
+        const listFields = [
+            {list: 'lst-consang', key: 'Text4'},
+            {list: 'lst-booking', key: 'Text5'},
+            {list: 'lst-imm', key: 'Text6'},
+            {list: 'lst-bg', key: 'Text13'},
+            {list: 'lst-vdrl', key: 'Text14'},
+            {list: 'lst-other-tests', key: 'Text15'},
+            {list: 'lst-presentation', key: 'Text21'},
+            {list: 'lst-liq-qual', key: 'Text23'},
+            {list: 'lst-liq-quan', key: 'Text24'},
+            {list: 'lst-cong-anom', key: 'Text43'},
+            {list: 'lst-anal', key: 'Text44'},
+            {list: 'lst-eso', key: 'Text45'},
+            {list: 'lst-cord', key: 'Text49'}
+        ];
+
+        listFields.forEach(({list, key}) => {
+            const input = document.querySelector(`input[list="${list}"]`);
+            if(input) {
+                nbValues[key] = input.value;
+            }
+        });
+
+        console.log('✓ Synced all newborn fields to nbValues');
+    }
+
+    // Load ALL nbValues back into form fields (reverse of syncAllNbFieldsToValues)
+    function loadAllNbFieldsFromValues() {
+        // Use the same mapping
+        const fieldMap = {
+            'nb-m-name': 'Text1',
+            'nb-m-age': 'Text2',
+            'nb-m-mrd': 'Text3',
+            'nb-para-gravida': 'Text7',
+            'nb-prev-still-birth': 'Text8',
+            'nb-weight-bmi': 'Text9',
+            'nb-lmp': 'Text10',
+            'nb-edd': 'Text11',
+            'nb-hb': 'Text12',
+            'nb-toxemia': 'Text16',
+            'nb-hydramnios': 'Text17',
+            'nb-pih': 'Text18',
+            'nb-aph': 'Text19',
+            'nb-any-other-illness': 'Text20',
+            'nb-time-rom': 'Text22',
+            'nb-drugs-given': 'Text25',
+            'nb-fetal-distress': 'Text26',
+            'nb-thalassemia': 'Text27',
+            'nb-f-hosp-no': 'Text29',
+            'nb-b-mode': 'Text30',
+            'nb-b-ind': 'Text31',
+            'nb-apgar-1min': 'Text32',
+            'nb-apgar-5min': 'Text33',
+            'nb-apgar-10min': 'Text34',
+            'nb-resuscitation': 'Text36',
+            'nb-intubation': 'Text37',
+            'nb-bicarbonate': 'Text38',
+            'nb-sex-combo': 'Text39',
+            'nb-b-mat': 'Text40',
+            'nb-f-nid-no': 'Text42',
+            'nb-resp-distress': 'Text46',
+            'nb-cyanosis': 'Text47',
+            'nb-any-other-baby': 'Text48',
+            'nb-investigations': 'Text50',
+            'nb-gastric-aspirate': 'Text51',
+            'nb-culture': 'Text52',
+            'nb-any-other-inv': 'Text53',
+            'nb-condition': 'Text66',
+            'nb-examination': 'Text67',
+            'nb-advice': 'Text68',
+            'nb-generated-dx': 'Text69',
+            'nb-attended-by': 'Text70',
+            'nb-gest-sel': 'gest_val',
+            'nb-size-sel': 'size_val'
+        };
+
+        // Write all values from nbValues to form fields
+        Object.keys(fieldMap).forEach(id => {
+            const el = document.getElementById(id);
+            const textKey = fieldMap[id];
+            if(el && nbValues[textKey] !== undefined && nbValues[textKey] !== null) {
+                el.value = nbValues[textKey];
+            }
+        });
+
+        // Special handling for weight (remove ' kg' suffix)
+        if(nbValues['Text41']) {
+            const weightEl = document.getElementById('nb-b-wt');
+            if(weightEl) {
+                weightEl.value = parseFloat(nbValues['Text41']) || '';
+            }
+        }
+
+        // Special handling for birth datetime (convert space to T)
+        if(nbValues['Text35']) {
+            const dobEl = document.getElementById('nb-b-datetime');
+            if(dobEl) {
+                dobEl.value = nbValues['Text35'].replace(' ', 'T');
+            }
+        }
+
+        // Fields with datalists
+        const listFields = [
+            {list: 'lst-consang', key: 'Text4'},
+            {list: 'lst-booking', key: 'Text5'},
+            {list: 'lst-imm', key: 'Text6'},
+            {list: 'lst-bg', key: 'Text13'},
+            {list: 'lst-vdrl', key: 'Text14'},
+            {list: 'lst-other-tests', key: 'Text15'},
+            {list: 'lst-presentation', key: 'Text21'},
+            {list: 'lst-liq-qual', key: 'Text23'},
+            {list: 'lst-liq-quan', key: 'Text24'},
+            {list: 'lst-cong-anom', key: 'Text43'},
+            {list: 'lst-anal', key: 'Text44'},
+            {list: 'lst-eso', key: 'Text45'},
+            {list: 'lst-cord', key: 'Text49'}
+        ];
+
+        listFields.forEach(({list, key}) => {
+            const input = document.querySelector(`input[list="${list}"]`);
+            if(input && nbValues[key]) {
+                input.value = nbValues[key];
+            }
+        });
+
+        console.log('✓ Loaded all newborn fields from nbValues');
+    }
+
     // --- SYNC FUNCTIONS ---
     function syncBirthWeight(val) { updateVisualField('weight', val); }
     function syncBirthDate(dateTimeVal) {
@@ -2516,20 +2762,19 @@ Advice: ${nbValues['Text68']||'-'}`;
         if(p.newbornData) {
             setMode('newborn');
             nbValues = { ...p.newbornData };
-            document.getElementById('nb-f-name').value = p.name || ''; document.getElementById('nb-f-hosp-no').value = p.id || ''; document.getElementById('nb-f-nid-no').value = p.nid || '';
-            document.getElementById('nb-f-ward').value = p.ward || 'NICU'; document.getElementById('nb-f-bed').value = p.bed || ''; document.getElementById('nb-f-shift').value = p.shift || 'Morning';
-            document.getElementById('nb-f-doa').value = p.doa || ''; document.getElementById('nb-f-adm-dx').value = p.diagnosis || '';
 
-            const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
-            setVal('nb-m-name', nbValues['Text1']); setVal('nb-m-age', nbValues['Text2']); setVal('nb-m-mrd', nbValues['Text3']);
-            setVal('nb-b-mode', nbValues['Text30']); setVal('nb-b-ind', nbValues['Text31']); setVal('nb-sex-combo', nbValues['Text39']);
-            setVal('nb-gest-sel', p.newbornData['gest_val'] || ''); setVal('nb-size-sel', p.newbornData['size_val'] || ''); 
-            if(nbValues['Text35']) document.getElementById('nb-b-datetime').value = nbValues['Text35'].replace(' ', 'T');
-            setVal('nb-b-wt', parseFloat(nbValues['Text41']) || ''); setVal('nb-b-mat', nbValues['Text40']);
-            document.getElementById('nb-generated-dx').value = nbValues['Text69'] || '';
-            
-            const listInputs = [ {id: 'lst-consang', k:'Text4'}, {id: 'lst-booking', k:'Text5'}, {id: 'lst-imm', k:'Text6'}, {id: 'lst-bg', k:'Text13'}, {id: 'lst-vdrl', k:'Text14'}, {id: 'lst-other-tests', k:'Text15'}, {id: 'lst-presentation', k:'Text21'}, {id: 'lst-liq-qual', k:'Text23'}, {id: 'lst-liq-quan', k:'Text24'}, {id: 'lst-cong-anom', k:'Text43'}, {id: 'lst-cord', k:'Text49'}, {id: 'lst-anal', k:'Text44'}, {id: 'lst-eso', k:'Text45'} ];
-            listInputs.forEach(x => { const input = document.querySelector(`input[list="${x.id}"]`); if(input) input.value = nbValues[x.k] || ''; });
+            // Set patient detail fields
+            document.getElementById('nb-f-name').value = p.name || '';
+            document.getElementById('nb-f-hosp-no').value = p.id || '';
+            document.getElementById('nb-f-nid-no').value = p.nid || '';
+            document.getElementById('nb-f-ward').value = p.ward || 'NICU';
+            document.getElementById('nb-f-bed').value = p.bed || '';
+            document.getElementById('nb-f-shift').value = p.shift || 'Morning';
+            document.getElementById('nb-f-doa').value = p.doa || '';
+            document.getElementById('nb-f-adm-dx').value = p.diagnosis || '';
+
+            // Load ALL 50+ fields from nbValues using our comprehensive function
+            loadAllNbFieldsFromValues();
 
         } else if (p.admissionData) {
             pdfValues = { ...p.admissionData }; if(p.age) pdfValues['age'] = p.age; 
@@ -2581,6 +2826,9 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        if (currentMode === 'newborn') {
            // --- NEWBORN MODE SAVE ---
+           // Sync ALL form fields into nbValues before saving
+           syncAllNbFieldsToValues();
+
            updates.name = document.getElementById('nb-f-name').value;
            updates.id = document.getElementById('nb-f-hosp-no').value;
            updates.nid = document.getElementById('nb-f-nid-no').value;
@@ -2683,15 +2931,21 @@ Advice: ${nbValues['Text68']||'-'}`;
         p.doa = document.getElementById('nb-f-doa').value || getLocalISODate();
         p.shift = document.getElementById('nb-f-shift').value;
         p.diagnosis = document.getElementById('nb-f-adm-dx').value;
-        p.plan = "Routine Newborn Care";
-        
+
+        // Use advice field (Text68) as admission plan
+        const adviceText = document.getElementById('nb-advice').value || "Routine Newborn Care";
+        p.plan = adviceText;
+
         nbValues['gest_val'] = document.getElementById('nb-gest-sel').value;
         nbValues['size_val'] = document.getElementById('nb-size-sel').value;
-        
+
         p.newbornData = { ...nbValues };
         p.hopi = getNewbornHopiText();
-        
-        p.logs = `• ${formatTimestamp(Date.now())}\n Newborn Admission.\n Mother: ${nbValues['Text1']}\n Mode: ${nbValues['Text30']}\n\n`;
+
+        // Create logs in same format as standard admissions
+        let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
+        if(p.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${p.plan}\n\n`; }
+        p.logs = logs;
         
         if(nbValues['Text41'] && !nbValues['Text41'].toLowerCase().includes('kg')) {
             nbValues['Text41'] += ' Kg';
