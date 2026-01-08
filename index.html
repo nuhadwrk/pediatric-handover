@@ -959,7 +959,7 @@
     <div id="adm-toolbar">
        <span id="pdf-controls" style="display:none; gap:10px; align-items:center; border-right:1px solid #ddd; padding-right:10px; margin-right:10px;">
          <label style="font-size:12px;">Size:</label>
-         <select onchange="changePdfFont(this.value)">
+         <select id="sel-pdf-font" onchange="changePdfFont(this.value)">
             <option value="9">9</option>
             <option value="10">10</option>
             <option value="11">11</option>
@@ -971,7 +971,18 @@
             <option value="18">18</option>
           </select>
           <label style="font-size:12px;">Ln:</label>
-          <select onchange="changePdfLineHeight(this.value)"><option value="1.0">1.0</option><option value="1.3" selected>1.3</option><option value="1.6">1.6</option></select>
+          <select id="sel-pdf-line" onchange="changePdfLineHeight(this.value)">
+            <option value="1.0">1.0</option>
+            <option value="1.1">1.1</option>
+            <option value="1.2">1.2</option>
+            <option value="1.3" selected>1.3</option>
+            <option value="1.4">1.4</option>
+            <option value="1.5">1.5</option>
+          </select>
+          <label style="font-size:12px; display:flex; align-items:center; gap:4px;">
+            <input type="checkbox" id="chk-auto-fit" onchange="toggleAutoFit(this.checked)" style="cursor:pointer;">
+            Auto-fit
+          </label>
        </span>
        <button class="tool-btn" onclick="printOnly()">Print Only</button>
        <button class="tool-btn" id="btn-save-edits" style="display:none; background:#ffc107; color:black; border:none;" onclick="saveEdits()">Save Edits</button>
@@ -2387,7 +2398,11 @@ async function generateDcDocx() {
     let currentMode = 'form';
     let pdfFontSize = 13;
     let pdfLineHeight = 1.3;
-    let visualScaleFactor = 0.62; 
+    let visualScaleFactor = 0.62;
+    let visualLineHeightFactor = 1.0769; // Visual 1.4 ≈ Print 1.3 (1.4/1.3)
+    let storedScaleFit = null;
+    let isAutoFit = false;
+    let calculatedFontSize = 13; 
 
     function updateNbField(key, val) { nbValues[key] = val; }
     function updateNbTicks(group, val) {
@@ -2693,7 +2708,7 @@ Advice: ${nbValues['Text68']||'-'}`;
        document.getElementById('pdf-controls').style.display = mode==='pdf'?'flex':'none';
        
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
-       if(mode==='pdf') renderPdfVisual();
+       if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
 
        if(mode === 'newborn') {
            document.getElementById('adm-std-details').style.display = 'none';
@@ -2728,17 +2743,25 @@ Advice: ${nbValues['Text68']||'-'}`;
 
     async function renderPdfVisual() {
        const stage = document.getElementById('pdf-stage'); stage.innerHTML = ''; const container = document.getElementById('view-pdf');
+
+       // Calculate scale once and store it (prevents font size changes on window resize)
+       if (storedScaleFit === null) {
+          storedScaleFit = (container.clientWidth - 40) / 595;
+       }
+
+       // Use calculated font size if auto-fit is enabled, otherwise use manual selection
+       const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+
        const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
        for(let i=1; i<=4; i++) {
-          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page'; 
+          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page';
           wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`; wrapper.style.backgroundSize = '100% 100%'; wrapper.style.backgroundRepeat = 'no-repeat'; wrapper.style.width = '100%'; wrapper.style.aspectRatio = '0.7071'; wrapper.style.position = 'relative';
           if(anchors[i]) {
              anchors[i].forEach(a => {
-                const box = document.createElement('div'); box.className = 'pdf-box'; 
+                const box = document.createElement('div'); box.className = 'pdf-box';
                 if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
-                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%'; 
-                const scaleFit = (container.clientWidth - 40) / 595; 
-                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (pdfFontSize * scaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = pdfLineHeight;
+                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
+                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
                 box.innerText = pdfValues[a.name] || '';
                 if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; }; }
                 wrapper.appendChild(box);
@@ -2749,7 +2772,56 @@ Advice: ${nbValues['Text68']||'-'}`;
     }
     
     function changePdfFont(val) { pdfFontSize = parseInt(val); renderPdfVisual(); }
-    function changePdfLineHeight(val) { pdfLineHeight = parseFloat(val); renderPdfVisual(); }
+    function changePdfLineHeight(val) {
+        // User sets visual line height, convert to print line height
+        pdfLineHeight = parseFloat(val) / visualLineHeightFactor;
+        renderPdfVisual();
+    }
+
+    function toggleAutoFit(enabled) {
+        isAutoFit = enabled;
+        const fontSel = document.getElementById('sel-pdf-font');
+
+        if (enabled) {
+            // Calculate optimal font size
+            calculatedFontSize = calculateOptimalFontSize(9, 14);
+            if (fontSel) {
+                fontSel.disabled = true;
+                fontSel.value = calculatedFontSize;
+            }
+        } else {
+            // Restore manual control
+            if (fontSel) {
+                fontSel.disabled = false;
+                fontSel.value = pdfFontSize;
+            }
+        }
+
+        renderPdfVisual();
+    }
+
+    function syncPdfControls() {
+        const fontSel = document.getElementById('sel-pdf-font');
+        const lineSel = document.getElementById('sel-pdf-line');
+        const autoFitChk = document.getElementById('chk-auto-fit');
+
+        if (autoFitChk) autoFitChk.checked = isAutoFit;
+
+        if (isAutoFit) {
+            if (fontSel) {
+                fontSel.disabled = true;
+                fontSel.value = calculatedFontSize;
+            }
+        } else {
+            if (fontSel) {
+                fontSel.disabled = false;
+                fontSel.value = pdfFontSize;
+            }
+        }
+
+        // Display the visual line height value (what user sees on screen)
+        if (lineSel) lineSel.value = (pdfLineHeight * visualLineHeightFactor).toFixed(1);
+    }
 
     function syncFormToPdf() { Object.keys(MAP_FORM_PDF).forEach(fid => { const el = document.getElementById(fid); if(el) { pdfValues[MAP_FORM_PDF[fid]] = el.value || ''; } }); }
     function syncPdfToForm() { Object.keys(MAP_FORM_PDF).forEach(fid => { const pdfKey = MAP_FORM_PDF[fid]; if (pdfValues[pdfKey] !== undefined) { const el = document.getElementById(fid); if(el) el.value = pdfValues[pdfKey]; } }); }
@@ -3076,10 +3148,16 @@ Advice: ${nbValues['Text68']||'-'}`;
            const pdf = await PDFLib.PDFDocument.load(bytes);
            const font = await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
            const pages = pdf.getPages();
-           
+
+           // Use isAutoFit state or autoFit parameter
+           const shouldAutoFit = isAutoFit || autoFit;
            let useFontSize = pdfFontSize;
-           if(autoFit) { useFontSize = calculateOptimalFontSize(9, 14); }
-           
+
+           if(shouldAutoFit) {
+               // Reuse already calculated font size if available, otherwise calculate
+               useFontSize = isAutoFit ? calculatedFontSize : calculateOptimalFontSize(9, 14);
+           }
+
            Object.keys(anchors).forEach(pNum => {
               if(!pages[pNum-1]) return;
               const page = pages[pNum-1];
@@ -3088,9 +3166,9 @@ Advice: ${nbValues['Text68']||'-'}`;
                  let rawVal = pdfValues[a.name];
                  if (a.name === 'age') { const sex = document.getElementById('f-sex').value || (pdfValues['sex'] || ''); rawVal = (rawVal || '') + " / " + sex; }
                  let text = (rawVal === null || rawVal === undefined) ? '' : String(rawVal).trim();
-                 text = text.replace(/[\u2010-\u2015]/g, "-").replace(/[^\x00-\x7F]/g, ""); 
-                 if(!text) return; 
-                 let fs = autoFit ? useFontSize : pdfFontSize;
+                 text = text.replace(/[\u2010-\u2015]/g, "-").replace(/[^\x00-\x7F]/g, "");
+                 if(!text) return;
+                 let fs = shouldAutoFit ? useFontSize : pdfFontSize;
                  page.drawText(text, { x: a.x * width + 2, y: height - (a.y * height) - fs, size: fs, font: font, maxWidth: (a.w * width) - 4, lineHeight: fs * pdfLineHeight });
               });
            });
