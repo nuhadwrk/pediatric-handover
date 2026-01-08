@@ -979,8 +979,6 @@
             <option value="1.4">1.4</option>
             <option value="1.5">1.5</option>
           </select>
-          <label style="font-size:12px;">Scale:</label>
-          <input id="sel-visual-scale" type="number" step="0.01" min="0.3" max="1.0" value="0.62" onchange="changeVisualScale(this.value)" style="width:55px; padding:3px; font-size:12px;">
        </span>
        <button class="tool-btn" onclick="printOnly()">Print Only</button>
        <button class="tool-btn" id="btn-save-edits" style="display:none; background:#ffc107; color:black; border:none;" onclick="saveEdits()">Save Edits</button>
@@ -2770,16 +2768,13 @@ Advice: ${nbValues['Text68']||'-'}`;
         pdfLineHeight = parseFloat(val) / visualLineHeightFactor;
         renderPdfVisual();
     }
-    function changeVisualScale(val) { visualScaleFactor = parseFloat(val); renderPdfVisual(); }
 
     function syncPdfControls() {
         const fontSel = document.getElementById('sel-pdf-font');
         const lineSel = document.getElementById('sel-pdf-line');
-        const scaleSel = document.getElementById('sel-visual-scale');
         if (fontSel) fontSel.value = pdfFontSize;
         // Display the visual line height value (what user sees on screen)
         if (lineSel) lineSel.value = (pdfLineHeight * visualLineHeightFactor).toFixed(1);
-        if (scaleSel) scaleSel.value = visualScaleFactor;
     }
 
     function syncFormToPdf() { Object.keys(MAP_FORM_PDF).forEach(fid => { const el = document.getElementById(fid); if(el) { pdfValues[MAP_FORM_PDF[fid]] = el.value || ''; } }); }
