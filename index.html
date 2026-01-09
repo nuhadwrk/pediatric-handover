@@ -2824,6 +2824,7 @@ Advice: ${nbValues['Text68']||'-'}`;
     }
 
     async function renderNbVisual() {
+       console.log('renderNbVisual called');
        const stage = document.getElementById('nb-visual-stage');
        stage.innerHTML = '';
        const container = document.getElementById('view-newborn-visual');
@@ -2833,15 +2834,20 @@ Advice: ${nbValues['Text68']||'-'}`;
           storedScaleFit = (container.clientWidth - 40) / 595;
        }
 
+       console.log('Container width:', container.clientWidth, 'storedScaleFit:', storedScaleFit);
+
        // Use calculated font size if auto-fit is enabled
        const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
 
        // Load newborn anchors if not loaded
        if(Object.keys(nbAnchors).length === 0) {
+           console.log('Loading newborn anchors...');
            try {
                const response = await fetch(NB_ANCHORS_URL);
                nbAnchors = await response.json();
+               console.log('Newborn anchors loaded:', Object.keys(nbAnchors).length, 'pages');
            } catch(e) {
+               console.error('Failed to load anchors:', e);
                stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
                return;
            }
@@ -2849,6 +2855,7 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        const imgUrl = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.jpg';
        const numPages = Object.keys(nbAnchors).length || 1;
+       console.log('Rendering', numPages, 'page(s) with image:', imgUrl);
 
        for(let i=1; i<=numPages; i++) {
           const wrapper = document.createElement('div');
@@ -2859,6 +2866,8 @@ Advice: ${nbValues['Text68']||'-'}`;
           wrapper.style.width = '100%';
           wrapper.style.aspectRatio = '0.7071';
           wrapper.style.position = 'relative';
+
+          console.log('Created wrapper for page', i, 'with', nbAnchors[i] ? nbAnchors[i].length : 0, 'fields');
 
           if(nbAnchors[i]) {
              nbAnchors[i].forEach(a => {
