@@ -703,7 +703,7 @@
               
               <div class="form-group"><label>DOA</label><input type="text" id="nb-f-doa"></div>
               <div class="form-group"><label>Shift</label><select id="nb-f-shift"><option>Morning</option><option>Evening</option><option>Night</option></select></div>
-              <div class="form-group"><label>Ward</label><select id="nb-f-ward"><option>NICU</option><option>PW</option><option>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>ER</option></select></div>
+              <div class="form-group"><label>Ward</label><select id="nb-f-ward"><option>NICU</option><option>PW</option><option selected>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>ER</option></select></div>
               <div class="form-group"><label>Bed</label><input type="text" id="nb-f-bed"></div>
               
               <div class="form-group">
@@ -2473,8 +2473,8 @@ async function generateDcDocx() {
 
     // Sync individual field to visual form in real-time
     function syncNbVisualField(fieldName, value) {
-        const viewMode = document.getElementById('view-mode-selector').value;
-        if(viewMode !== 'newborn-visual') return; // Only sync when in visual mode
+        // Only sync when in newborn visual mode
+        if(currentMode !== 'newborn') return;
 
         // Find the visual field element and update it
         const stage = document.getElementById('nb-visual-stage');
@@ -3214,7 +3214,7 @@ Advice: ${nbValues['Text68']||'-'}`;
             document.getElementById('nb-f-name').value = p.name || '';
             document.getElementById('nb-f-hosp-no').value = p.id || '';
             document.getElementById('nb-f-nid-no').value = p.nid || '';
-            document.getElementById('nb-f-ward').value = p.ward || 'NICU';
+            document.getElementById('nb-f-ward').value = p.ward || 'GW';
             document.getElementById('nb-f-bed').value = p.bed || '';
             document.getElementById('nb-f-shift').value = p.shift || 'Morning';
             document.getElementById('nb-f-doa').value = p.doa || '';
@@ -3361,7 +3361,7 @@ Advice: ${nbValues['Text68']||'-'}`;
         p.name = document.getElementById('nb-f-name').value || "Baby of " + (nbValues['Text1'] || "Unknown");
         p.id = document.getElementById('nb-f-hosp-no').value;
         p.nid = document.getElementById('nb-f-nid-no').value;
-        p.ward = document.getElementById('nb-f-ward').value || "NICU";
+        p.ward = document.getElementById('nb-f-ward').value || "GW";
         p.bed = document.getElementById('nb-f-bed').value;
         p.sex = document.getElementById('nb-sex-combo').value;
         p.weight = document.getElementById('nb-b-wt').value + ' kg';
