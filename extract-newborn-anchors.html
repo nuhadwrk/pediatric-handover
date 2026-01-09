@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extract Newborn PDF Anchors</title>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+    <h1>Newborn PDF Anchor Extractor</h1>
+    <input type="file" id="pdfFile" accept=".pdf">
+    <button onclick="extractAnchors()">Extract Anchors</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function extractAnchors() {
+            const fileInput = document.getElementById('pdfFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a PDF file');
+                return;
+            }
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
+            const form = pdf.getForm();
+            const fields = form.getFields();
+
+            const pages = pdf.getPages();
+            const anchorsByPage = {};
+
+            fields.forEach(field => {
+                const widgets = field.acroField.getWidgets();
+
+                widgets.forEach(widget => {
+                    const rect = widget.getRectangle();
+                    const pageRef = widget.P();
+
+                    // Find which page number this widget is on
+                    let pageNum = 1;
+                    for (let i = 0; i < pages.length; i++) {
+                        if (pages[i].ref === pageRef) {
+                            pageNum = i + 1;
+                            break;
+                        }
+                    }
+
+                    const page = pages[pageNum - 1];
+                    const { width, height } = page.getSize();
+
+                    // Convert to normalized coordinates (0-1)
+                    const anchor = {
+                        name: field.getName(),
+                        x: rect.x / width,
+                        y: (height - rect.y - rect.height) / height, // Flip Y coordinate
+                        w: rect.width / width,
+                        h: rect.height / height
+                    };
+
+                    if (!anchorsByPage[pageNum]) {
+                        anchorsByPage[pageNum] = [];
+                    }
+                    anchorsByPage[pageNum].push(anchor);
+                });
+            });
+
+            // Display the output
+            const output = document.getElementById('output');
+            output.textContent = JSON.stringify(anchorsByPage, null, 2);
+
+            console.log('Anchors extracted! Copy from console or the page.');
+            console.log(JSON.stringify(anchorsByPage, null, 2));
+        }
+    </script>
+</body>
+</html>

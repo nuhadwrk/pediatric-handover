@@ -954,6 +954,9 @@
         <div id="view-pdf">
            <div id="pdf-stage"></div>
         </div>
+        <div id="view-newborn-visual" style="display:none; flex-direction:column; gap:20px; padding:20px; overflow-y:auto;">
+           <div id="nb-visual-stage"></div>
+        </div>
       </div>
     </div>
     <div id="adm-toolbar">
@@ -1143,6 +1146,7 @@
     const REQUEST_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/AdmissionRequest.pdf';
     const NEWBORN_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.pdf';
     const ANCHORS_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/anchors.json';
+    const NB_ANCHORS_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/newborn-anchors.json';
 
     // *** TEMPLATE URLs ***
     const DOCX_URL_PED = "https://raw.githubusercontent.com/nuhadwrk/admission/main/discharge_template.docx"; 
@@ -2393,6 +2397,7 @@ async function generateDcDocx() {
 
     let pdfDoc = null;
     let anchors = {};
+    let nbAnchors = {};
     let pdfValues = {};
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
@@ -2402,7 +2407,44 @@ async function generateDcDocx() {
     let visualLineHeightFactor = 1.0769; // Visual 1.4 ≈ Print 1.3 (1.4/1.3)
     let storedScaleFit = null;
     let isAutoFit = false;
-    let calculatedFontSize = 13; 
+    let calculatedFontSize = 13;
+
+    // Newborn field type mappings
+    const NB_FIELD_TYPES = {
+        'Text35': 'datetime',  // Birth date & time
+        'Text30': 'select',    // Delivery mode
+        'Text39': 'select',    // Sex
+        'Text59': 'checkbox',  // Term
+        'Text60': 'checkbox',  // Preterm
+        'Text61': 'checkbox',  // Postterm
+        'Text62': 'checkbox',  // AGA
+        'Text63': 'checkbox',  // SGA
+        'Text64': 'checkbox',  // LGA
+        'Text41': 'number',    // Weight
+        // Rest are text/textarea inputs
+    };
+
+    const NB_SELECT_OPTIONS = {
+        'Text30': ['SVD', 'Em LSCS', 'El LSCS', 'Instrumental'],  // Delivery mode
+        'Text39': ['Male', 'Female'],  // Sex
+    };
+
+    const NB_DATALIST_FIELDS = {
+        'Text1': 'nb-m-name',
+        'Text4': 'lst-consang',
+        'Text5': 'lst-booking',
+        'Text6': 'lst-imm',
+        'Text13': 'lst-bg',
+        'Text14': 'lst-vdrl',
+        'Text15': 'lst-other-tests',
+        'Text21': 'lst-presentation',
+        'Text23': 'lst-liq-qual',
+        'Text24': 'lst-liq-quan',
+        'Text43': 'lst-cong-anom',
+        'Text44': 'lst-anal',
+        'Text45': 'lst-eso',
+        'Text49': 'lst-cord',
+    }; 
 
     function updateNbField(key, val) { nbValues[key] = val; }
     function updateNbTicks(group, val) {
@@ -2704,11 +2746,13 @@ Advice: ${nbValues['Text68']||'-'}`;
        
        document.getElementById('view-form').style.display = mode==='form'?'block':'none';
        document.getElementById('view-pdf').style.display = mode==='pdf'?'flex':'none';
-       document.getElementById('view-newborn').style.display = mode==='newborn'?'block':'none';
-       document.getElementById('pdf-controls').style.display = mode==='pdf'?'flex':'none';
-       
+       document.getElementById('view-newborn').style.display = 'none'; // Hidden - using visual mode instead
+       document.getElementById('view-newborn-visual').style.display = mode==='newborn'?'flex':'none';
+       document.getElementById('pdf-controls').style.display = (mode==='pdf' || mode==='newborn')?'flex':'none';
+
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
        if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
+       if(mode==='newborn') { renderNbVisual(); syncPdfControls(); }
 
        if(mode === 'newborn') {
            document.getElementById('adm-std-details').style.display = 'none';
@@ -2770,12 +2814,119 @@ Advice: ${nbValues['Text68']||'-'}`;
           stage.appendChild(wrapper);
        }
     }
-    
-    function changePdfFont(val) { pdfFontSize = parseInt(val); renderPdfVisual(); }
+
+    async function renderNbVisual() {
+       const stage = document.getElementById('nb-visual-stage');
+       stage.innerHTML = '';
+       const container = document.getElementById('view-newborn-visual');
+
+       // Calculate scale once and store it
+       if (storedScaleFit === null) {
+          storedScaleFit = (container.clientWidth - 40) / 595;
+       }
+
+       // Use calculated font size if auto-fit is enabled
+       const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+
+       // Load newborn anchors if not loaded
+       if(Object.keys(nbAnchors).length === 0) {
+           try {
+               const response = await fetch(NB_ANCHORS_URL);
+               nbAnchors = await response.json();
+           } catch(e) {
+               stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
+               return;
+           }
+       }
+
+       const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newbornp';
+       const numPages = Object.keys(nbAnchors).length || 4;
+
+       for(let i=1; i<=numPages; i++) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'pdf-page';
+          wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`;
+          wrapper.style.backgroundSize = '100% 100%';
+          wrapper.style.backgroundRepeat = 'no-repeat';
+          wrapper.style.width = '100%';
+          wrapper.style.aspectRatio = '0.7071';
+          wrapper.style.position = 'relative';
+
+          if(nbAnchors[i]) {
+             nbAnchors[i].forEach(a => {
+                const fieldType = NB_FIELD_TYPES[a.name];
+                let box;
+
+                // Create appropriate control based on field type
+                if (fieldType === 'select') {
+                    box = document.createElement('select');
+                    box.className = 'nb-pdf-select';
+                    const options = NB_SELECT_OPTIONS[a.name] || [];
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        box.appendChild(option);
+                    });
+                    box.value = nbValues[a.name] || '';
+                    box.onchange = (e) => { nbValues[a.name] = e.target.value; };
+                } else if (fieldType === 'datetime') {
+                    box = document.createElement('input');
+                    box.type = 'datetime-local';
+                    box.className = 'nb-pdf-datetime';
+                    box.value = nbValues[a.name] || '';
+                    box.onchange = (e) => { nbValues[a.name] = e.target.value; };
+                } else if (fieldType === 'number') {
+                    box = document.createElement('input');
+                    box.type = 'number';
+                    box.className = 'nb-pdf-number';
+                    box.value = nbValues[a.name] || '';
+                    box.oninput = (e) => { nbValues[a.name] = e.target.value; };
+                } else if (fieldType === 'checkbox') {
+                    box = document.createElement('div');
+                    box.className = 'nb-pdf-checkbox';
+                    box.contentEditable = false;
+                    box.innerText = nbValues[a.name] || '';
+                    box.style.textAlign = 'center';
+                } else {
+                    // Default: contenteditable text box
+                    box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    box.contentEditable = true;
+                    box.innerText = nbValues[a.name] || '';
+                    box.oninput = (e) => { nbValues[a.name] = e.target.innerText; };
+                }
+
+                // Common styling
+                box.style.position = 'absolute';
+                box.style.left = (a.x * 100) + '%';
+                box.style.top = (a.y * 100) + '%';
+                box.style.width = (a.w * 100) + '%';
+                box.style.height = (a.h * 100) + '%';
+                box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px';
+                box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+                box.style.padding = '2px';
+                box.style.boxSizing = 'border-box';
+                box.style.border = '1px solid rgba(0,0,0,0.1)';
+                box.style.background = 'rgba(255,255,255,0.8)';
+
+                wrapper.appendChild(box);
+             });
+          }
+          stage.appendChild(wrapper);
+       }
+    }
+
+    function changePdfFont(val) {
+        pdfFontSize = parseInt(val);
+        if(currentMode === 'pdf') renderPdfVisual();
+        if(currentMode === 'newborn') renderNbVisual();
+    }
     function changePdfLineHeight(val) {
         // User sets visual line height, convert to print line height
         pdfLineHeight = parseFloat(val) / visualLineHeightFactor;
-        renderPdfVisual();
+        if(currentMode === 'pdf') renderPdfVisual();
+        if(currentMode === 'newborn') renderNbVisual();
     }
 
     function toggleAutoFit(enabled) {
@@ -2783,7 +2934,8 @@ Advice: ${nbValues['Text68']||'-'}`;
         const fontSel = document.getElementById('sel-pdf-font');
 
         if (enabled) {
-            // Calculate optimal font size
+            // Calculate optimal font size (use appropriate values based on mode)
+            const values = currentMode === 'newborn' ? nbValues : pdfValues;
             calculatedFontSize = calculateOptimalFontSize(9, 14);
             if (fontSel) {
                 fontSel.disabled = true;
@@ -2797,7 +2949,8 @@ Advice: ${nbValues['Text68']||'-'}`;
             }
         }
 
-        renderPdfVisual();
+        if(currentMode === 'pdf') renderPdfVisual();
+        if(currentMode === 'newborn') renderNbVisual();
     }
 
     function syncPdfControls() {
