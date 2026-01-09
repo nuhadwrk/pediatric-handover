@@ -2839,13 +2839,13 @@ Advice: ${nbValues['Text68']||'-'}`;
            }
        }
 
-       const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newbornp';
-       const numPages = Object.keys(nbAnchors).length || 4;
+       const imgUrl = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/newborn.jpg';
+       const numPages = Object.keys(nbAnchors).length || 1;
 
        for(let i=1; i<=numPages; i++) {
           const wrapper = document.createElement('div');
           wrapper.className = 'pdf-page';
-          wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`;
+          wrapper.style.backgroundImage = `url('${imgUrl}')`;
           wrapper.style.backgroundSize = '100% 100%';
           wrapper.style.backgroundRepeat = 'no-repeat';
           wrapper.style.width = '100%';
