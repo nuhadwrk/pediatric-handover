@@ -2410,6 +2410,7 @@ async function generateDcDocx() {
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
     let pdfFontSize = 13;
+    let nbFontSize = 8;  // Default font size for newborn
     let pdfLineHeight = 1.3;
     let visualScaleFactor = 0.62;
     let visualLineHeightFactor = 1.0769; // Visual 1.4 ≈ Print 1.3 (1.4/1.3)
@@ -2420,38 +2421,47 @@ async function generateDcDocx() {
     // Newborn field type mappings
     const NB_FIELD_TYPES = {
         'Text35': 'datetime',  // Birth date & time
-        'Text30': 'select',    // Delivery mode
-        'Text39': 'select',    // Sex
-        'Text59': 'checkbox',  // Term
-        'Text60': 'checkbox',  // Preterm
-        'Text61': 'checkbox',  // Postterm
-        'Text62': 'checkbox',  // AGA
-        'Text63': 'checkbox',  // SGA
-        'Text64': 'checkbox',  // LGA
+        'Text30': 'datalist',  // Delivery mode
+        'Text39': 'datalist',  // Sex
+        'Text59': 'clickable', // Term
+        'Text60': 'clickable', // Preterm
+        'Text61': 'clickable', // Postterm
+        'Text62': 'clickable', // AGA
+        'Text63': 'clickable', // SGA
+        'Text64': 'clickable', // LGA
         'Text41': 'number',    // Weight
+        'Text4': 'datalist',   // Consanguinity
+        'Text5': 'datalist',   // Booking Status
+        'Text6': 'datalist',   // Immunization
+        'Text13': 'datalist',  // Blood Group
+        'Text14': 'datalist',  // VDRL
+        'Text15': 'datalist',  // Other Tests
+        'Text21': 'datalist',  // Presentation
+        'Text23': 'datalist',  // Liquor Quality
+        'Text24': 'datalist',  // Liquor Quantity
+        'Text43': 'datalist',  // Cong. Anomalies
+        'Text44': 'datalist',  // Anal Patency
+        'Text45': 'datalist',  // Esophageal Patency
+        'Text49': 'datalist',  // Cord Blood
         // Rest are text/textarea inputs
     };
 
-    const NB_SELECT_OPTIONS = {
-        'Text30': ['SVD', 'Em LSCS', 'El LSCS', 'Instrumental'],  // Delivery mode
-        'Text39': ['Male', 'Female'],  // Sex
-    };
-
-    const NB_DATALIST_FIELDS = {
-        'Text1': 'nb-m-name',
-        'Text4': 'lst-consang',
-        'Text5': 'lst-booking',
-        'Text6': 'lst-imm',
-        'Text13': 'lst-bg',
-        'Text14': 'lst-vdrl',
-        'Text15': 'lst-other-tests',
-        'Text21': 'lst-presentation',
-        'Text23': 'lst-liq-qual',
-        'Text24': 'lst-liq-quan',
-        'Text43': 'lst-cong-anom',
-        'Text44': 'lst-anal',
-        'Text45': 'lst-eso',
-        'Text49': 'lst-cord',
+    const NB_DATALIST_OPTIONS = {
+        'Text30': ['SVD', 'Em LSCS', 'El LSCS', 'Instrumental'],
+        'Text39': ['Male', 'Female'],
+        'Text4': ['Non-consanguineous', 'Consanguineous'],
+        'Text5': ['Booked', 'Unbooked'],
+        'Text6': ['Immunized', 'Un-immunized'],
+        'Text13': ['O+ve', 'O-ve', 'A+ve', 'A-ve', 'B+ve', 'B-ve', 'AB+ve', 'AB-ve'],
+        'Text14': ['Negative, G6PD: Normal'],
+        'Text15': ['HIV: -ve, HbsAg: -ve, HCV: -ve'],
+        'Text21': ['Cephalic'],
+        'Text23': ['Clear'],
+        'Text24': ['Adequate'],
+        'Text43': ['No gross anomaly'],
+        'Text44': ['Patent'],
+        'Text45': ['To be established'],
+        'Text49': ['Collected', 'Not Collected'],
     }; 
 
     function updateNbField(key, val) { nbValues[key] = val; }
@@ -2836,8 +2846,14 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        console.log('Container width:', container.clientWidth, 'storedScaleFit:', storedScaleFit);
 
-       // Use calculated font size if auto-fit is enabled
-       const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+       // Sync hospital number and NID from patient details
+       const hospNo = document.getElementById('nb-f-hosp-no').value;
+       const nidNo = document.getElementById('nb-f-nid-no').value;
+       if(hospNo) nbValues['Text29'] = hospNo;
+       if(nidNo) nbValues['Text42'] = nidNo;
+
+       // Use calculated font size if auto-fit is enabled, otherwise use newborn font size
+       const activeFontSize = isAutoFit ? calculatedFontSize : nbFontSize;
 
        // Load newborn anchors if not loaded
        if(Object.keys(nbAnchors).length === 0) {
@@ -2874,19 +2890,44 @@ Advice: ${nbValues['Text68']||'-'}`;
                 const fieldType = NB_FIELD_TYPES[a.name];
                 let box;
 
+                // Special handling for Text27 - add "Thalassemia status:" label
+                if (a.name === 'Text27') {
+                    box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    box.contentEditable = true;
+                    const currentValue = nbValues[a.name] || 'Mother: \nFather: ';
+                    if (!currentValue.includes('Thalassemia status:')) {
+                        nbValues[a.name] = 'Thalassemia status:\nMother: \nFather: ';
+                    }
+                    box.innerText = nbValues[a.name];
+                    box.oninput = (e) => { nbValues[a.name] = e.target.innerText; };
+                }
                 // Create appropriate control based on field type
-                if (fieldType === 'select') {
-                    box = document.createElement('select');
-                    box.className = 'nb-pdf-select';
-                    const options = NB_SELECT_OPTIONS[a.name] || [];
+                else if (fieldType === 'datalist') {
+                    box = document.createElement('input');
+                    box.type = 'text';
+                    box.className = 'nb-pdf-datalist';
+                    box.value = nbValues[a.name] || '';
+                    box.setAttribute('list', 'dl-' + a.name);
+
+                    // Create datalist
+                    const datalist = document.createElement('datalist');
+                    datalist.id = 'dl-' + a.name;
+                    const options = NB_DATALIST_OPTIONS[a.name] || [];
                     options.forEach(opt => {
                         const option = document.createElement('option');
                         option.value = opt;
-                        option.textContent = opt;
-                        box.appendChild(option);
+                        datalist.appendChild(option);
                     });
-                    box.value = nbValues[a.name] || '';
-                    box.onchange = (e) => { nbValues[a.name] = e.target.value; };
+                    wrapper.appendChild(datalist);
+
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        // Trigger diagnosis generation for delivery mode and sex
+                        if (a.name === 'Text30' || a.name === 'Text39') {
+                            generateNbDiagnosis();
+                        }
+                    };
                 } else if (fieldType === 'datetime') {
                     box = document.createElement('input');
                     box.type = 'datetime-local';
@@ -2899,19 +2940,55 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.className = 'nb-pdf-number';
                     box.value = nbValues[a.name] || '';
                     box.oninput = (e) => { nbValues[a.name] = e.target.value; };
-                } else if (fieldType === 'checkbox') {
+                } else if (fieldType === 'clickable') {
+                    // For Term/Preterm/AGA/SGA - clickable underline
                     box = document.createElement('div');
-                    box.className = 'nb-pdf-checkbox';
+                    box.className = 'nb-pdf-clickable';
                     box.contentEditable = false;
                     box.innerText = nbValues[a.name] || '';
                     box.style.textAlign = 'center';
+                    box.style.cursor = 'pointer';
+                    box.style.textDecoration = nbValues[a.name] === '____' ? 'underline' : 'none';
+                    box.onclick = (e) => {
+                        // Toggle selection
+                        if (nbValues[a.name] === '____') {
+                            nbValues[a.name] = '';
+                            e.target.style.textDecoration = 'none';
+                        } else {
+                            // Clear group selections
+                            if (['Text59', 'Text60', 'Text61'].includes(a.name)) {
+                                nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = '';
+                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                    if (el.dataset.group === 'gest') el.style.textDecoration = 'none';
+                                });
+                            }
+                            if (['Text62', 'Text63', 'Text64'].includes(a.name)) {
+                                nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = '';
+                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                    if (el.dataset.group === 'size') el.style.textDecoration = 'none';
+                                });
+                            }
+                            nbValues[a.name] = '____';
+                            e.target.style.textDecoration = 'underline';
+                        }
+                        generateNbDiagnosis();
+                    };
+                    // Set group data attribute
+                    if (['Text59', 'Text60', 'Text61'].includes(a.name)) box.dataset.group = 'gest';
+                    if (['Text62', 'Text63', 'Text64'].includes(a.name)) box.dataset.group = 'size';
                 } else {
                     // Default: contenteditable text box
                     box = document.createElement('div');
                     box.className = 'pdf-box';
                     box.contentEditable = true;
                     box.innerText = nbValues[a.name] || '';
-                    box.oninput = (e) => { nbValues[a.name] = e.target.innerText; };
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.innerText;
+                        // Auto-generate diagnosis if this is Text31 (indication)
+                        if (a.name === 'Text31') {
+                            generateNbDiagnosis();
+                        }
+                    };
                 }
 
                 // Common styling
@@ -2934,10 +3011,60 @@ Advice: ${nbValues['Text68']||'-'}`;
        }
     }
 
+    function generateNbDiagnosis() {
+       // Get values from nbValues instead of form elements
+       let gest = '';
+       if (nbValues['Text59'] === '____') gest = 'Term';
+       if (nbValues['Text60'] === '____') gest = 'Preterm';
+       if (nbValues['Text61'] === '____') gest = 'Postterm';
+
+       let size = '';
+       if (nbValues['Text62'] === '____') size = 'AGA';
+       if (nbValues['Text63'] === '____') size = 'SGA';
+       if (nbValues['Text64'] === '____') size = 'LGA';
+
+       const sexVal = nbValues['Text39'] || '';
+       const mode = nbValues['Text30'] || '';
+       const ind = (nbValues['Text31'] || '').trim();
+
+       let sexShort = 'M';
+       if(sexVal === 'Female') sexShort = 'F';
+       if(sexVal === 'Ambiguous') sexShort = 'Amb';
+
+       // Abbreviate "Term" to "T", keep "Preterm" and "Postterm" full
+       let gestShort = gest;
+       if(gest === 'Term') gestShort = 'T';
+
+       let modeStr = mode;
+       if(mode !== 'SVD' && ind !== '' && mode !== '') {
+           modeStr += ` for ${ind}`;
+       } else if (mode === 'SVD' && ind !== '') {
+           modeStr += ` for ${ind}`;
+       }
+
+       const parts = ['S/L'];
+       if(gestShort) parts.push(gestShort);
+       if(sexVal) parts.push(sexShort);
+       if(size) parts.push(size);
+       if(modeStr) parts.push(modeStr);
+
+       const dx = parts.join('/') + " for observation";
+
+       // Update nbValues and form fields
+       nbValues['Text69'] = dx;
+       document.getElementById('nb-generated-dx').value = dx;
+       document.getElementById('nb-f-adm-dx').value = dx;
+    }
+
     function changePdfFont(val) {
-        pdfFontSize = parseInt(val);
-        if(currentMode === 'pdf') renderPdfVisual();
-        if(currentMode === 'newborn') renderNbVisual();
+        const newSize = parseInt(val);
+        if(currentMode === 'newborn') {
+            nbFontSize = newSize;
+            renderNbVisual();
+        } else {
+            pdfFontSize = newSize;
+            renderPdfVisual();
+        }
     }
     function changePdfLineHeight(val) {
         // User sets visual line height, convert to print line height
