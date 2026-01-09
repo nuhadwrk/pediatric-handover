@@ -262,8 +262,8 @@
     .pdf-box:focus { background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary); outline: none; z-index: 10; }
 
     /* Newborn Visual Mode Controls */
-    .nb-pdf-select, .nb-pdf-datetime, .nb-pdf-number { position: absolute; font-family: Helvetica, sans-serif; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(60, 130, 246, 0.4); color: #000; padding: 2px; box-sizing: border-box; }
-    .nb-pdf-select:focus, .nb-pdf-datetime:focus, .nb-pdf-number:focus { background: rgba(255, 255, 255, 1); border: 2px solid var(--primary); outline: none; z-index: 10; }
+    .nb-pdf-select, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-datalist { position: absolute; font-family: Helvetica, sans-serif; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(60, 130, 246, 0.4); color: #000; padding: 2px; box-sizing: border-box; }
+    .nb-pdf-select:focus, .nb-pdf-datetime:focus, .nb-pdf-number:focus, .nb-pdf-text:focus, .nb-pdf-datalist:focus { background: rgba(255, 255, 255, 1); border: 2px solid var(--primary); outline: none; z-index: 10; }
     .nb-pdf-checkbox { position: absolute; background: rgba(255, 255, 200, 0.3); border: 1px solid rgba(255, 200, 0, 0.4); font-family: Helvetica, sans-serif; color: #000; }
 
     .warning-text { color: #d32f2f; font-size: 12px; margin-top: 4px; display: none; font-weight: bold; }
@@ -2410,7 +2410,8 @@ async function generateDcDocx() {
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
     let pdfFontSize = 13;
-    let nbFontSize = 8;  // Default font size for newborn
+    let nbFontSize = 8;  // Default font size for newborn (fixed)
+    let nbLineHeight = 1.2;  // Default line height for newborn (fixed)
     let pdfLineHeight = 1.3;
     let visualScaleFactor = 0.62;
     let visualLineHeightFactor = 1.0769; // Visual 1.4 ≈ Print 1.3 (1.4/1.3)
@@ -2429,7 +2430,7 @@ async function generateDcDocx() {
         'Text62': 'clickable', // AGA
         'Text63': 'clickable', // SGA
         'Text64': 'clickable', // LGA
-        'Text41': 'number',    // Weight
+        'Text41': 'text',      // Weight (text field with "kg" default)
         'Text4': 'datalist',   // Consanguinity
         'Text5': 'datalist',   // Booking Status
         'Text6': 'datalist',   // Immunization
@@ -2480,17 +2481,42 @@ async function generateDcDocx() {
         if(!stage) return;
 
         // Find all input/div elements and update matching field
-        const allFields = stage.querySelectorAll('.pdf-box, .nb-pdf-datalist, .nb-pdf-datetime, .nb-pdf-number');
+        const allFields = stage.querySelectorAll('.pdf-box, .nb-pdf-datalist, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-clickable');
         allFields.forEach(el => {
             const fieldId = el.getAttribute('data-field');
             if(fieldId === fieldName) {
                 if(el.tagName === 'INPUT') {
                     el.value = value;
+                } else if(el.classList.contains('nb-pdf-clickable')) {
+                    // For clickable fields, update text and underline
+                    el.innerText = value;
+                    el.style.textDecoration = value === '____' ? 'underline' : 'none';
                 } else {
                     el.innerText = value;
                 }
             }
         });
+    }
+
+    // Sync from visual form back to sidebar form
+    function syncFromVisualToForm(fieldName, value) {
+        nbValues[fieldName] = value;
+
+        // Map visual fields back to form fields
+        const visualToFormMap = {
+            'Text29': 'nb-f-hosp-no',
+            'Text42': 'nb-f-nid-no',
+            'Text1': 'nb-m-name',
+            'Text21': 'nb-m-name',  // Mother's name also maps to Text1
+        };
+
+        const formFieldId = visualToFormMap[fieldName];
+        if(formFieldId) {
+            const formField = document.getElementById(formFieldId);
+            if(formField && formField.value !== value) {
+                formField.value = value;
+            }
+        }
     }
 
     // Sync ALL form field values into nbValues before saving
@@ -2789,7 +2815,8 @@ Advice: ${nbValues['Text68']||'-'}`;
        document.getElementById('view-pdf').style.display = mode==='pdf'?'flex':'none';
        document.getElementById('view-newborn').style.display = 'none'; // Hidden - using visual mode instead
        document.getElementById('view-newborn-visual').style.display = mode==='newborn'?'flex':'none';
-       document.getElementById('pdf-controls').style.display = (mode==='pdf' || mode==='newborn')?'flex':'none';
+       // Only show font controls for admission PDF, not for newborn (newborn has fixed size/line height)
+       document.getElementById('pdf-controls').style.display = mode==='pdf'?'flex':'none';
 
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
        if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
@@ -2948,6 +2975,7 @@ Advice: ${nbValues['Text68']||'-'}`;
 
                     box.oninput = (e) => {
                         nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
                         // Trigger diagnosis generation for delivery mode and sex
                         if (a.name === 'Text30' || a.name === 'Text39') {
                             generateNbDiagnosis();
@@ -2959,14 +2987,31 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.className = 'nb-pdf-datetime';
                     box.dataset.field = a.name;
                     box.value = nbValues[a.name] || '';
-                    box.onchange = (e) => { nbValues[a.name] = e.target.value; };
+                    box.onchange = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                    };
+                } else if (fieldType === 'text') {
+                    // Text input field (like weight with "kg" default)
+                    box = document.createElement('input');
+                    box.type = 'text';
+                    box.className = 'nb-pdf-text';
+                    box.dataset.field = a.name;
+                    box.value = nbValues[a.name] || '';
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                    };
                 } else if (fieldType === 'number') {
                     box = document.createElement('input');
                     box.type = 'number';
                     box.className = 'nb-pdf-number';
                     box.dataset.field = a.name;
                     box.value = nbValues[a.name] || '';
-                    box.oninput = (e) => { nbValues[a.name] = e.target.value; };
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                    };
                 } else if (fieldType === 'clickable') {
                     // For Term/Preterm/AGA/SGA - clickable underline
                     box = document.createElement('div');
@@ -3013,6 +3058,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.innerText = nbValues[a.name] || '';
                     box.oninput = (e) => {
                         nbValues[a.name] = e.target.innerText;
+                        syncFromVisualToForm(a.name, e.target.innerText);
                         // Auto-generate diagnosis if this is Text31 (indication)
                         if (a.name === 'Text31') {
                             generateNbDiagnosis();
@@ -3027,7 +3073,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                 box.style.width = (a.w * 100) + '%';
                 box.style.height = (a.h * 100) + '%';
                 box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px';
-                box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+                box.style.lineHeight = nbLineHeight;
                 box.style.padding = '2px';
                 box.style.boxSizing = 'border-box';
                 box.style.border = '1px solid rgba(0,0,0,0.1)';
