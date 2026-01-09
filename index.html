@@ -698,8 +698,8 @@
                   <input type="text" id="nb-f-name">
               </div>
               
-              <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no"></div>
-              <div class="form-group"><label>NID No.</label><input type="text" id="nb-f-nid-no"></div>
+              <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no" oninput="updateNbField('Text29', this.value); syncNbVisualField('Text29', this.value);"></div>
+              <div class="form-group"><label>NID No.</label><input type="text" id="nb-f-nid-no" oninput="updateNbField('Text42', this.value); syncNbVisualField('Text42', this.value);"></div>
               
               <div class="form-group"><label>DOA</label><input type="text" id="nb-f-doa"></div>
               <div class="form-group"><label>Shift</label><select id="nb-f-shift"><option>Morning</option><option>Evening</option><option>Night</option></select></div>
@@ -749,7 +749,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); handleMotherNameChange(this.value);"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); handleMotherNameChange(this.value); syncNbVisualField('Text21', this.value);"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -2398,7 +2398,7 @@ async function generateDcDocx() {
     const MAP_PDF_DB = { 'name':'name', 'hid':'id', 'age':'age', 'sex':'sex', 'ward':'ward', 'bed':'bed', 'doa':'doa', 'management':'plan', 'complains':'complaint', 'hopi':'hopi', 'pasthx':'past_history', 'fhx':'family_history', 'txhx':'treatment_history', 'obs':'obs_history', 'personalhx':'personal_history', 'ge':'general_exam', 'cvs':'cvs', 'rs':'rs', 'pa':'abdomen', 'pelvis':'pelvis', 'cns':'cns', 'le':'local_exam', 'dx':'diagnosis' };
     
     // Newborn PDF Field Map (Required for PDF Generation)
-    const MAP_NB_PDF = { 'Text1': '', 'Text2': 'years', 'Text3': '', 'Text4': '', 'Text5': '', 'Text6': '', 'Text7': '', 'Text8': '-', 'Text9': 'Kg/m2', 'Text10': '', 'Text11': '', 'Text12': 'g/dL', 'Text13': '', 'Text14': '', 'Text15': '', 'Text16': '-', 'Text17': '-', 'Text18': '-', 'Text19': '-', 'Text20': '', 'Text21': '', 'Text22': '-', 'Text23': '', 'Text24': '', 'Text25': '-', 'Text26': '-', 'Text27': 'Mother: \nFather: ', 'Text29': '', 'Text30': '', 'Text31': '', 'Text32': '/10', 'Text33': '/10', 'Text34': '/10', 'Text35': '', 'Text36': 'Dry stimulation', 'Text37': '-', 'Text38': '-', 'Text39': '', 'Text40': '', 'Text41': 'Kg', 'Text42': '', 'Text43': '', 'Text44': '', 'Text45': '', 'Text46': '-', 'Text47': '-', 'Text48': '-', 'Text49': 'Collected', 'Text50': 'Hb, PCV, Blood Grouping', 'Text51': '-', 'Text52': '-', 'Text53': '-', 'Text59': '____', 'Text60': '', 'Text61': '', 'Text62': '____', 'Text63': '', 'Text64': '', 'Text66': 'Baby born vigorous, cried immediately after birth', 'Text67': 'Tone and cry:            Normal\nReflex and Activity:  Normal\n\nRS: B/L EAE, CLEAR\nNo LCR, UCR, XR, NF or Grunting\n\nCVS: S1 S2 M0\n\nUmbilical Vessels: 2A +1V\n\nHR , RR , SpO2 % in RA\n\n-', 'Text68': '-Routine newborn care\n-Exclusive breast feeding as early as possible then every 2hrly\n-Immunization as protocol\n-CCHD >24HOL, NMS >72HOL\n-W/F Tachypnea, Poor feeding, Lethargy', 'Text69': '', 'Text70': 'Attended By:\nDr. \nDr. (MO)' };
+    const MAP_NB_PDF = { 'Text1': '', 'Text2': 'years', 'Text3': '', 'Text4': '', 'Text5': '', 'Text6': '', 'Text7': '', 'Text8': '-', 'Text9': 'Kg/m2', 'Text10': '', 'Text11': '', 'Text12': 'g/dL', 'Text13': '', 'Text14': '', 'Text15': '', 'Text16': '-', 'Text17': '-', 'Text18': '-', 'Text19': '-', 'Text20': '', 'Text21': '', 'Text22': '-', 'Text23': '', 'Text24': '', 'Text25': '-', 'Text26': '-', 'Text27': 'Mother: \nFather: ', 'Text29': '', 'Text30': '', 'Text31': '', 'Text32': '/10', 'Text33': '/10', 'Text34': '/10', 'Text35': '', 'Text36': 'Dry stimulation', 'Text37': '-', 'Text38': '-', 'Text39': '', 'Text40': '', 'Text41': 'Kg', 'Text42': '', 'Text43': '', 'Text44': '', 'Text45': '', 'Text46': '-', 'Text47': '-', 'Text48': '-', 'Text49': 'Collected', 'Text50': 'Hb, PCV, Blood Grouping', 'Text51': '-', 'Text52': '-', 'Text53': '-', 'Text59': '', 'Text60': '', 'Text61': '', 'Text62': '', 'Text63': '', 'Text64': '', 'Text66': 'Baby born vigorous, cried immediately after birth', 'Text67': 'Tone and cry:            Normal\nReflex and Activity:  Normal\n\nRS: B/L EAE, CLEAR\nNo LCR, UCR, XR, NF or Grunting\n\nCVS: S1 S2 M0\n\nUmbilical Vessels: 2A +1V\n\nHR , RR , SpO2 % in RA\n\n-', 'Text68': '-Routine newborn care\n-Exclusive breast feeding as early as possible then every 2hrly\n-Immunization as protocol\n-CCHD >24HOL, NMS >72HOL\n-W/F Tachypnea, Poor feeding, Lethargy', 'Text69': '', 'Text70': 'Attended By:\nDr. \nDr. (MO)' };
 
     const ALLOWED_EDIT_PDF = [ 'dx', 'management', 'complains', 'hopi', 'pasthx', 'fhx', 'txhx', 'obs', 'personalhx', 'ge', 'cvs', 'rs', 'pa', 'pelvis', 'cns', 'le' ];
     const FIELD_MAX_LINES = { 'f-hopi': 9, 'f-complaints': 3, 'f-past': 6, 'f-personal': 6, 'f-family': 6, 'f-treatment': 6, 'f-obs': 6, 'f-ge': 5, 'f-cvs': 5, 'f-rs': 5, 'f-abd': 5, 'f-pelvis': 5, 'f-cns': 5, 'f-le': 5, 'f-plan': 8 };
@@ -2468,6 +2468,29 @@ async function generateDcDocx() {
     function updateNbTicks(group, val) {
         if(group === 'gest') { nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = ''; if(val === 'Term') nbValues['Text59'] = '____'; if(val === 'Preterm') nbValues['Text60'] = '____'; if(val === 'Postterm') nbValues['Text61'] = '____'; }
         if(group === 'size') { nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = ''; if(val === 'AGA') nbValues['Text62'] = '____'; if(val === 'SGA') nbValues['Text63'] = '____'; if(val === 'LGA') nbValues['Text64'] = '____'; }
+    }
+
+    // Sync individual field to visual form in real-time
+    function syncNbVisualField(fieldName, value) {
+        const viewMode = document.getElementById('view-mode-selector').value;
+        if(viewMode !== 'newborn-visual') return; // Only sync when in visual mode
+
+        // Find the visual field element and update it
+        const stage = document.getElementById('nb-visual-stage');
+        if(!stage) return;
+
+        // Find all input/div elements and update matching field
+        const allFields = stage.querySelectorAll('.pdf-box, .nb-pdf-datalist, .nb-pdf-datetime, .nb-pdf-number');
+        allFields.forEach(el => {
+            const fieldId = el.getAttribute('data-field');
+            if(fieldId === fieldName) {
+                if(el.tagName === 'INPUT') {
+                    el.value = value;
+                } else {
+                    el.innerText = value;
+                }
+            }
+        });
     }
 
     // Sync ALL form field values into nbValues before saving
@@ -2895,6 +2918,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box = document.createElement('div');
                     box.className = 'pdf-box';
                     box.contentEditable = true;
+                    box.dataset.field = a.name;
                     const currentValue = nbValues[a.name] || 'Mother: \nFather: ';
                     if (!currentValue.includes('Thalassemia status:')) {
                         nbValues[a.name] = 'Thalassemia status:\nMother: \nFather: ';
@@ -2907,6 +2931,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box = document.createElement('input');
                     box.type = 'text';
                     box.className = 'nb-pdf-datalist';
+                    box.dataset.field = a.name;
                     box.value = nbValues[a.name] || '';
                     box.setAttribute('list', 'dl-' + a.name);
 
@@ -2932,12 +2957,14 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box = document.createElement('input');
                     box.type = 'datetime-local';
                     box.className = 'nb-pdf-datetime';
+                    box.dataset.field = a.name;
                     box.value = nbValues[a.name] || '';
                     box.onchange = (e) => { nbValues[a.name] = e.target.value; };
                 } else if (fieldType === 'number') {
                     box = document.createElement('input');
                     box.type = 'number';
                     box.className = 'nb-pdf-number';
+                    box.dataset.field = a.name;
                     box.value = nbValues[a.name] || '';
                     box.oninput = (e) => { nbValues[a.name] = e.target.value; };
                 } else if (fieldType === 'clickable') {
@@ -2945,6 +2972,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box = document.createElement('div');
                     box.className = 'nb-pdf-clickable';
                     box.contentEditable = false;
+                    box.dataset.field = a.name;
                     box.innerText = nbValues[a.name] || '';
                     box.style.textAlign = 'center';
                     box.style.cursor = 'pointer';
@@ -2981,6 +3009,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box = document.createElement('div');
                     box.className = 'pdf-box';
                     box.contentEditable = true;
+                    box.dataset.field = a.name;
                     box.innerText = nbValues[a.name] || '';
                     box.oninput = (e) => {
                         nbValues[a.name] = e.target.innerText;
@@ -3054,6 +3083,9 @@ Advice: ${nbValues['Text68']||'-'}`;
        nbValues['Text69'] = dx;
        document.getElementById('nb-generated-dx').value = dx;
        document.getElementById('nb-f-adm-dx').value = dx;
+
+       // Sync to visual form if in visual mode
+       syncNbVisualField('Text69', dx);
     }
 
     function changePdfFont(val) {
