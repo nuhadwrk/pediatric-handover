@@ -691,7 +691,9 @@
               <div class="form-group">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
                       <label>Name</label>
-                      <button type="button" onclick="generateBabyNameFromMother()" style="font-size:10px; padding:2px 8px; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer;">↻ Generate from Mother</button>
+                      <label style="font-weight:normal; font-size:10px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                          <input type="checkbox" id="nb-auto-name" onchange="toggleAutoName()" checked> Auto
+                      </label>
                   </div>
                   <input type="text" id="nb-f-name" oninput="updateNbField('Text21', this.value); syncNbVisualField('Text21', this.value);">
               </div>
@@ -747,7 +749,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value);"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncBabyName(); syncNbVisualField('Text1', this.value);"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -2408,7 +2410,7 @@ async function generateDcDocx() {
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
     let pdfFontSize = 13;
-    let nbFontSize = 8;  // Default font size for newborn (fixed)
+    let nbFontSize = 10;  // Default font size for newborn (fixed)
     let nbLineHeight = 1.2;  // Default line height for newborn (fixed)
     let pdfLineHeight = 1.3;
     let visualScaleFactor = 0.62;
@@ -2501,36 +2503,44 @@ async function generateDcDocx() {
         isSyncing = false;
     }
 
-    // Sync from visual form back to sidebar form
-    function syncFromVisualToForm(fieldName, value) {
-        // Prevent infinite loops
-        if(isSyncing) return;
+// Sync from visual form back to sidebar form
+function syncFromVisualToForm(fieldName, value) {
+    // Prevent infinite loops
+    if(isSyncing) return;
 
-        isSyncing = true;
-        nbValues[fieldName] = value;
+    isSyncing = true;
+    nbValues[fieldName] = value;
 
-        // Map visual fields back to form fields
-        const visualToFormMap = {
-            'Text29': 'nb-f-hosp-no',
-            'Text42': 'nb-f-nid-no',
-            'Text1': 'nb-m-name',       // Mother's name
-            'Text21': 'nb-f-name',      // Baby name
-            'Text69': 'nb-generated-dx', // Diagnosis
-        };
+    // Map visual fields back to form fields
+    const visualToFormMap = {
+        'Text29': 'nb-f-hosp-no',
+        'Text42': 'nb-f-nid-no',
+        'Text1': 'nb-m-name',       // Mother's name
+        'Text21': 'nb-f-name',      // Baby name
+        'Text69': 'nb-generated-dx', // Diagnosis
+    };
 
-        const formFieldId = visualToFormMap[fieldName];
-        if(formFieldId) {
-            const formField = document.getElementById(formFieldId);
-            if(formField && formField.value !== value) {
-                formField.value = value;
-                // Also sync diagnosis to patient details diagnosis field
-                if(fieldName === 'Text69') {
-                    document.getElementById('nb-f-adm-dx').value = value;
-                }
+    const formFieldId = visualToFormMap[fieldName];
+    if(formFieldId) {
+        const formField = document.getElementById(formFieldId);
+        if(formField && formField.value !== value) {
+            formField.value = value;
+            
+            // --- FIX STARTS HERE ---
+            // If we just updated Mother's Name (Text1), we must manually trigger the baby name sync
+            if (fieldName === 'Text1') {
+                syncBabyName();
+            }
+            // --- FIX ENDS HERE ---
+
+            // Also sync diagnosis to patient details diagnosis field
+            if(fieldName === 'Text69') {
+                document.getElementById('nb-f-adm-dx').value = value;
             }
         }
-        isSyncing = false;
     }
+    isSyncing = false;
+}
 
     // Sync ALL form field values into nbValues before saving
     function syncAllNbFieldsToValues() {
@@ -2729,6 +2739,11 @@ async function generateDcDocx() {
         });
 
         console.log('✓ Loaded all newborn fields from nbValues');
+
+        // Auto-sync baby name after loading data
+        if (document.getElementById('nb-auto-name')?.checked) {
+            syncBabyName();
+        }
     }
 
     // --- SYNC FUNCTIONS ---
@@ -2737,19 +2752,23 @@ async function generateDcDocx() {
         if (!dateTimeVal) return; const [datePart, timePart] = dateTimeVal.split('T');
         document.getElementById('nb-f-doa').value = datePart;
     }
-    function generateBabyNameFromMother() {
+    function syncBabyName() {
+        const autoChecked = document.getElementById('nb-auto-name').checked;
+        if(!autoChecked) return;
+
         // Read from nbValues instead of DOM to avoid timing issues
         const motherName = nbValues['Text1'] || '';
-        if(!motherName.trim()) {
-            alert('Please enter mother\'s name first');
-            return;
-        }
-
         const babyName = 'BO ' + motherName;
 
         document.getElementById('nb-f-name').value = babyName;
         updateNbField('Text21', babyName);
         syncNbVisualField('Text21', babyName);
+    }
+
+    function toggleAutoName() {
+        if (document.getElementById('nb-auto-name').checked) {
+            syncBabyName();
+        }
     }
 
     function generateDiagnosis() {
@@ -2804,7 +2823,12 @@ Advice: ${nbValues['Text68']||'-'}`;
        document.getElementById('admission-system').style.display='flex';
        if(clearData) {
            document.querySelectorAll('#admission-system input, #admission-system textarea').forEach(e => { if(e.type === 'checkbox') e.checked = false; else e.value = e.defaultValue || ''; });
-           document.querySelectorAll('#admission-system select').forEach(e => e.selectedIndex = 0);
+           document.querySelectorAll('#admission-system select').forEach(e => {
+    // If the select has a defaultSelected option, revert to it. Otherwise index 0.
+    const options = Array.from(e.options);
+    const defaultOption = options.find(opt => opt.defaultSelected);
+    e.selectedIndex = defaultOption ? defaultOption.index : 0;
+});
            document.getElementById('f-doa').value = getLocalISODate(); document.getElementById('nb-f-doa').value = getLocalISODate();
            document.getElementById('f-shift').value = getCurrentShift(); document.getElementById('nb-f-shift').value = getCurrentShift();
            pdfValues = {}; nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF)); currentPatientId = null;
@@ -2837,7 +2861,16 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
        if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
-       if(mode==='newborn') { renderNbVisual(); syncPdfControls(); }
+       if(mode==='newborn') {
+           renderNbVisual();
+           syncPdfControls();
+           // Auto-sync baby name when entering newborn mode
+           setTimeout(() => {
+               if (document.getElementById('nb-auto-name')?.checked) {
+                   syncBabyName();
+               }
+           }, 100);
+       }
 
        if(mode === 'newborn') {
            document.getElementById('adm-std-details').style.display = 'none';
@@ -3696,9 +3729,18 @@ Advice: ${nbValues['Text68']||'-'}`;
        p.diagnosis = aggregated.diagnosis;
        p.plan = aggregated.plan;
        
-       let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
-       if(aggregated.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${aggregated.plan}\n\n`; }
-       p.logs = logs;
+       // --- FIX STARTS HERE ---
+    // Force read from the DOM element to ensure we catch exactly what is on screen
+    const rawPlanInput = document.getElementById('f-plan').value || aggregated.plan || "";
+
+    let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
+    
+    // Check rawPlanInput instead of aggregated.plan
+    if(rawPlanInput && rawPlanInput.trim().length > 0) { 
+        logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${rawPlanInput.trim()}\n\n`; 
+    }
+    p.logs = logs;
+    // --- FIX ENDS HERE ---
 
        try { await db.collection('patients').add(JSON.parse(JSON.stringify(p))); } 
        catch (dbError) { alert("CRITICAL ERROR: " + dbError.message); if(printWin) printWin.close(); return; }
