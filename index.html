@@ -691,9 +691,7 @@
               <div class="form-group">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
                       <label>Name</label>
-                      <label style="font-weight:normal; font-size:10px; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                          <input type="checkbox" id="nb-auto-name" onchange="toggleAutoName()" checked> Auto
-                      </label>
+                      <button type="button" onclick="generateBabyNameFromMother()" style="font-size:10px; padding:2px 8px; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer;">↻ Generate from Mother</button>
                   </div>
                   <input type="text" id="nb-f-name" oninput="updateNbField('Text21', this.value); syncNbVisualField('Text21', this.value);">
               </div>
@@ -749,7 +747,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncBabyName(); syncNbVisualField('Text1', this.value);"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value);"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -2731,11 +2729,6 @@ async function generateDcDocx() {
         });
 
         console.log('✓ Loaded all newborn fields from nbValues');
-
-        // Auto-sync baby name after loading data
-        if (document.getElementById('nb-auto-name')?.checked) {
-            syncBabyName();
-        }
     }
 
     // --- SYNC FUNCTIONS ---
@@ -2744,23 +2737,19 @@ async function generateDcDocx() {
         if (!dateTimeVal) return; const [datePart, timePart] = dateTimeVal.split('T');
         document.getElementById('nb-f-doa').value = datePart;
     }
-    function syncBabyName() {
-        const autoChecked = document.getElementById('nb-auto-name').checked;
-        if(!autoChecked) return;
-
+    function generateBabyNameFromMother() {
         // Read from nbValues instead of DOM to avoid timing issues
         const motherName = nbValues['Text1'] || '';
+        if(!motherName.trim()) {
+            alert('Please enter mother\'s name first');
+            return;
+        }
+
         const babyName = 'BO ' + motherName;
 
         document.getElementById('nb-f-name').value = babyName;
         updateNbField('Text21', babyName);
         syncNbVisualField('Text21', babyName);
-    }
-
-    function toggleAutoName() {
-        if (document.getElementById('nb-auto-name').checked) {
-            syncBabyName();
-        }
     }
 
     function generateDiagnosis() {
@@ -2848,16 +2837,7 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
        if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
-       if(mode==='newborn') {
-           renderNbVisual();
-           syncPdfControls();
-           // Auto-sync baby name when entering newborn mode
-           setTimeout(() => {
-               if (document.getElementById('nb-auto-name')?.checked) {
-                   syncBabyName();
-               }
-           }, 100);
-       }
+       if(mode==='newborn') { renderNbVisual(); syncPdfControls(); }
 
        if(mode === 'newborn') {
            document.getElementById('adm-std-details').style.display = 'none';
