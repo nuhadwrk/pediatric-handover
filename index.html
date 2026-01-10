@@ -2731,6 +2731,11 @@ async function generateDcDocx() {
         });
 
         console.log('✓ Loaded all newborn fields from nbValues');
+
+        // Auto-sync baby name after loading data
+        if (document.getElementById('nb-auto-name')?.checked) {
+            syncBabyName();
+        }
     }
 
     // --- SYNC FUNCTIONS ---
@@ -2752,7 +2757,9 @@ async function generateDcDocx() {
     }
 
     function toggleAutoName() {
-        syncBabyName();
+        if (document.getElementById('nb-auto-name').checked) {
+            syncBabyName();
+        }
     }
 
     function generateDiagnosis() {
@@ -2840,7 +2847,16 @@ Advice: ${nbValues['Text68']||'-'}`;
 
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
        if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
-       if(mode==='newborn') { renderNbVisual(); syncPdfControls(); }
+       if(mode==='newborn') {
+           renderNbVisual();
+           syncPdfControls();
+           // Auto-sync baby name when entering newborn mode
+           setTimeout(() => {
+               if (document.getElementById('nb-auto-name')?.checked) {
+                   syncBabyName();
+               }
+           }, 100);
+       }
 
        if(mode === 'newborn') {
            document.getElementById('adm-std-details').style.display = 'none';
