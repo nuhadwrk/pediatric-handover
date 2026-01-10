@@ -2748,7 +2748,8 @@ async function generateDcDocx() {
         const autoChecked = document.getElementById('nb-auto-name').checked;
         if(!autoChecked) return;
 
-        const motherName = document.getElementById('nb-m-name').value;
+        // Read from nbValues instead of DOM to avoid timing issues
+        const motherName = nbValues['Text1'] || '';
         const babyName = 'BO ' + motherName;
 
         document.getElementById('nb-f-name').value = babyName;
