@@ -695,7 +695,7 @@
                           <input type="checkbox" id="nb-auto-name" onchange="toggleAutoName()" checked> Auto
                       </label>
                   </div>
-                  <input type="text" id="nb-f-name" oninput="syncNbVisualField('Text21', this.value);">
+                  <input type="text" id="nb-f-name" oninput="updateNbField('Text21', this.value); syncNbVisualField('Text21', this.value);">
               </div>
 
               <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no" oninput="updateNbField('Text29', this.value); syncNbVisualField('Text29', this.value);"></div>
@@ -749,7 +749,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value); if(document.getElementById('nb-auto-name').checked && this.value.trim() !== '') { const autoName = 'BO ' + this.value; document.getElementById('nb-f-name').value = autoName; updateNbField('Text21', autoName); syncNbVisualField('Text21', autoName); }"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value); generateNbName();"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -2740,23 +2740,23 @@ async function generateDcDocx() {
         document.getElementById('nb-f-doa').value = datePart;
     }
     function toggleAutoName() {
-        const isAutoName = document.getElementById('nb-auto-name').checked;
-        if(isAutoName) { const motherName = document.getElementById('nb-m-name').value; handleMotherNameChange(motherName); }
+        generateNbName();
     }
-    function handleMotherNameChange(val) {
-        const isAutoName = document.getElementById('nb-auto-name').checked;
-        if(isAutoName && val.trim() !== '') {
-            const autoName = "BO " + val;
-            const babyNameField = document.getElementById('nb-f-name');
-            if(babyNameField) {
-                babyNameField.value = autoName;
-                // Update nbValues
-                nbValues['Text21'] = autoName;
-                // Sync to visual form immediately
-                syncNbVisualField('Text21', autoName);
-            }
-        }
+
+    function generateNbName() {
+        if (!document.getElementById('nb-auto-name').checked) return;
+
+        const mother = document.getElementById('nb-m-name').value.trim();
+        if (!mother) return;
+
+        const babyName = "BO " + mother;
+        document.getElementById('nb-f-name').value = babyName;
+
+        // Sync to nbValues + visual
+        updateNbField('Text21', babyName);
+        syncNbVisualField('Text21', babyName);
     }
+
     function generateDiagnosis() {
        const gest = document.getElementById('nb-gest-sel').value || ''; const sexVal = document.getElementById('nb-sex-combo').value || '';
        const size = document.getElementById('nb-size-sel').value || ''; const mode = document.getElementById('nb-b-mode').value || ''; const ind = (document.getElementById('nb-b-ind').value || '').trim();
