@@ -749,7 +749,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value); if(document.getElementById('nb-auto-name').checked && this.value.trim() !== '') { const autoName = 'BO ' + this.value; document.getElementById('nb-f-name').value = autoName; nbValues['Text21'] = autoName; syncNbVisualField('Text21', autoName); }"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value); if(document.getElementById('nb-auto-name').checked && this.value.trim() !== '') { const autoName = 'BO ' + this.value; document.getElementById('nb-f-name').value = autoName; updateNbField('Text21', autoName); syncNbVisualField('Text21', autoName); }"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
