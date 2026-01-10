@@ -695,9 +695,9 @@
                           <input type="checkbox" id="nb-auto-name" onchange="toggleAutoName()" checked> Auto
                       </label>
                   </div>
-                  <input type="text" id="nb-f-name">
+                  <input type="text" id="nb-f-name" oninput="syncNbVisualField('Text21', this.value);">
               </div>
-              
+
               <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no" oninput="updateNbField('Text29', this.value); syncNbVisualField('Text29', this.value);"></div>
               <div class="form-group"><label>NID No.</label><input type="text" id="nb-f-nid-no" oninput="updateNbField('Text42', this.value); syncNbVisualField('Text42', this.value);"></div>
               
@@ -2733,6 +2733,8 @@ async function generateDcDocx() {
         if(isAutoName && val.trim() !== '') {
             const autoName = "BO " + val;
             document.getElementById('nb-f-name').value = autoName;
+            // Sync to visual form immediately
+            syncNbVisualField('Text21', autoName);
         }
     }
     function generateDiagnosis() {
@@ -2838,7 +2840,35 @@ Advice: ${nbValues['Text68']||'-'}`;
     function toggleAdmSidebar() { document.getElementById('admSidebar').classList.toggle('show'); }
     function toggleAdmAutoInputs() { const el = document.getElementById('adm-radio-auto'); const a = el ? el.checked : false; document.getElementById('adm-auto-age-inputs').style.display = a ? 'flex' : 'none'; }
     function updateVisualField(pdfKey, value) { pdfValues[pdfKey] = value; }
-    function syncDx(val, fromBottom) { if (fromBottom) { document.getElementById('f-adm-dx').value = val; } else { document.getElementById('f-finaldx').value = val; } pdfValues['dx'] = val; }
+
+    // Sync field to standard visual mode PDF in real-time
+    function syncPdfVisualField(fieldName, value) {
+        // Only sync when in PDF visual mode
+        if(currentMode !== 'pdf') return;
+
+        const stage = document.getElementById('pdf-stage');
+        if(!stage) return;
+
+        // Find and update matching field
+        const allFields = stage.querySelectorAll('.pdf-box');
+        allFields.forEach(el => {
+            const fieldId = el.getAttribute('data-field');
+            if(fieldId === fieldName) {
+                el.innerText = value;
+            }
+        });
+    }
+
+    function syncDx(val, fromBottom) {
+        if (fromBottom) {
+            document.getElementById('f-adm-dx').value = val;
+        } else {
+            document.getElementById('f-finaldx').value = val;
+        }
+        pdfValues['dx'] = val;
+        // Sync to visual form immediately
+        syncPdfVisualField('dx', val);
+    }
 
     function checkOverflow(fieldId) {
         if (fieldId !== 'f-hopi') return; const pdfKey = MAP_FORM_PDF[fieldId]; if(!pdfKey) return;
@@ -2871,11 +2901,12 @@ Advice: ${nbValues['Text68']||'-'}`;
           if(anchors[i]) {
              anchors[i].forEach(a => {
                 const box = document.createElement('div'); box.className = 'pdf-box';
+                box.dataset.field = a.name;
                 if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
                 box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
                 box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
                 box.innerText = pdfValues[a.name] || '';
-                if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; }; }
+                if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; syncPdfToForm(); }; }
                 wrapper.appendChild(box);
              });
           }
@@ -3026,22 +3057,30 @@ Advice: ${nbValues['Text68']||'-'}`;
                         // Toggle selection
                         if (nbValues[a.name] === '____') {
                             nbValues[a.name] = '';
+                            e.target.innerText = '';
                             e.target.style.textDecoration = 'none';
                         } else {
                             // Clear group selections
                             if (['Text59', 'Text60', 'Text61'].includes(a.name)) {
                                 nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = '';
                                 wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
-                                    if (el.dataset.group === 'gest') el.style.textDecoration = 'none';
+                                    if (el.dataset.group === 'gest') {
+                                        el.innerText = '';
+                                        el.style.textDecoration = 'none';
+                                    }
                                 });
                             }
                             if (['Text62', 'Text63', 'Text64'].includes(a.name)) {
                                 nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = '';
                                 wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
-                                    if (el.dataset.group === 'size') el.style.textDecoration = 'none';
+                                    if (el.dataset.group === 'size') {
+                                        el.innerText = '';
+                                        el.style.textDecoration = 'none';
+                                    }
                                 });
                             }
                             nbValues[a.name] = '____';
+                            e.target.innerText = '____';
                             e.target.style.textDecoration = 'underline';
                         }
                         generateNbDiagnosis();
