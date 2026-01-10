@@ -749,7 +749,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value); if(document.getElementById('nb-auto-name').checked) { const babyName = 'BO ' + this.value; document.getElementById('nb-f-name').value = babyName; updateNbField('Text21', babyName); syncNbVisualField('Text21', babyName); }"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncNbVisualField('Text1', this.value); syncBabyName();"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -2739,17 +2739,20 @@ async function generateDcDocx() {
         if (!dateTimeVal) return; const [datePart, timePart] = dateTimeVal.split('T');
         document.getElementById('nb-f-doa').value = datePart;
     }
+    function syncBabyName() {
+        const autoChecked = document.getElementById('nb-auto-name').checked;
+        if(!autoChecked) return;
+
+        const motherName = document.getElementById('nb-m-name').value;
+        const babyName = 'BO ' + motherName;
+
+        document.getElementById('nb-f-name').value = babyName;
+        updateNbField('Text21', babyName);
+        syncNbVisualField('Text21', babyName);
+    }
+
     function toggleAutoName() {
-        const isChecked = document.getElementById('nb-auto-name').checked;
-        if(isChecked) {
-            const mother = document.getElementById('nb-m-name').value;
-            if(mother.trim() !== '') {
-                const babyName = 'BO ' + mother;
-                document.getElementById('nb-f-name').value = babyName;
-                updateNbField('Text21', babyName);
-                syncNbVisualField('Text21', babyName);
-            }
-        }
+        syncBabyName();
     }
 
     function generateDiagnosis() {
