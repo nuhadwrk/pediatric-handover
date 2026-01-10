@@ -711,7 +711,7 @@
                     <label>Diagnosis</label>
                     <span style="font-size:10px; color:var(--primary); font-weight:bold;">(Auto)</span>
                   </div>
-                  <input type="text" id="nb-f-adm-dx">
+                  <input type="text" id="nb-f-adm-dx" oninput="updateNbField('Text69', this.value); document.getElementById('nb-generated-dx').value = this.value; syncNbVisualField('Text69', this.value);">
               </div>
            </div>
         </div>
@@ -2418,6 +2418,7 @@ async function generateDcDocx() {
     let storedScaleFit = null;
     let isAutoFit = false;
     let calculatedFontSize = 13;
+    let isSyncing = false; // Prevent infinite sync loops
 
     // Newborn field type mappings
     const NB_FIELD_TYPES = {
@@ -2475,11 +2476,14 @@ async function generateDcDocx() {
     function syncNbVisualField(fieldName, value) {
         // Only sync when in newborn visual mode
         if(currentMode !== 'newborn') return;
+        // Prevent infinite loops
+        if(isSyncing) return;
 
         // Find the visual field element and update it
         const stage = document.getElementById('nb-visual-stage');
         if(!stage) return;
 
+        isSyncing = true;
         // Find all input/div elements and update matching field
         const allFields = stage.querySelectorAll('.pdf-box, .nb-pdf-datalist, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-clickable');
         allFields.forEach(el => {
@@ -2496,10 +2500,15 @@ async function generateDcDocx() {
                 }
             }
         });
+        isSyncing = false;
     }
 
     // Sync from visual form back to sidebar form
     function syncFromVisualToForm(fieldName, value) {
+        // Prevent infinite loops
+        if(isSyncing) return;
+
+        isSyncing = true;
         nbValues[fieldName] = value;
 
         // Map visual fields back to form fields
@@ -2522,6 +2531,7 @@ async function generateDcDocx() {
                 }
             }
         }
+        isSyncing = false;
     }
 
     // Sync ALL form field values into nbValues before saving
@@ -2737,9 +2747,14 @@ async function generateDcDocx() {
         const isAutoName = document.getElementById('nb-auto-name').checked;
         if(isAutoName && val.trim() !== '') {
             const autoName = "BO " + val;
-            document.getElementById('nb-f-name').value = autoName;
-            // Sync to visual form immediately
-            syncNbVisualField('Text21', autoName);
+            const babyNameField = document.getElementById('nb-f-name');
+            if(babyNameField) {
+                babyNameField.value = autoName;
+                // Update nbValues
+                nbValues['Text21'] = autoName;
+                // Sync to visual form immediately
+                syncNbVisualField('Text21', autoName);
+            }
         }
     }
     function generateDiagnosis() {
