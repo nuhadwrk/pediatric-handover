@@ -749,7 +749,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); handleMotherNameChange(this.value); syncNbVisualField('Text21', this.value);"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); handleMotherNameChange(this.value); syncNbVisualField('Text1', this.value);"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -952,7 +952,7 @@
        </div>
        <div class="form-group">
           <label>Diagnosis (Auto-Generated)</label>
-          <textarea id="nb-generated-dx" oninput="updateNbField('Text69', this.value)" style="background:#f0f0f0; min-height:40px;"></textarea>
+          <textarea id="nb-generated-dx" oninput="updateNbField('Text69', this.value); syncNbVisualField('Text69', this.value);" style="background:#f0f0f0; min-height:40px;"></textarea>
        </div>
        <div class="form-group"><label>Attended By</label>
            <textarea id="nb-attended-by" rows="3" oninput="updateNbField('Text70', this.value)">Attended By:&#10;Dr. &#10;Dr. (MO)</textarea>
@@ -2506,8 +2506,9 @@ async function generateDcDocx() {
         const visualToFormMap = {
             'Text29': 'nb-f-hosp-no',
             'Text42': 'nb-f-nid-no',
-            'Text1': 'nb-m-name',
-            'Text21': 'nb-m-name',  // Mother's name also maps to Text1
+            'Text1': 'nb-m-name',       // Mother's name
+            'Text21': 'nb-f-name',      // Baby name
+            'Text69': 'nb-generated-dx', // Diagnosis
         };
 
         const formFieldId = visualToFormMap[fieldName];
@@ -2515,6 +2516,10 @@ async function generateDcDocx() {
             const formField = document.getElementById(formFieldId);
             if(formField && formField.value !== value) {
                 formField.value = value;
+                // Also sync diagnosis to patient details diagnosis field
+                if(fieldName === 'Text69') {
+                    document.getElementById('nb-f-adm-dx').value = value;
+                }
             }
         }
     }
@@ -2906,7 +2911,18 @@ Advice: ${nbValues['Text68']||'-'}`;
                 box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
                 box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
                 box.innerText = pdfValues[a.name] || '';
-                if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; syncPdfToForm(); }; }
+                if(box.contentEditable === "true") {
+                    box.oninput = (e) => {
+                        pdfValues[a.name] = e.target.innerText;
+                        // Sync back to form fields
+                        if(a.name === 'dx') {
+                            document.getElementById('f-finaldx').value = e.target.innerText;
+                            document.getElementById('f-adm-dx').value = e.target.innerText;
+                        } else {
+                            syncPdfToForm();
+                        }
+                    };
+                }
                 wrapper.appendChild(box);
              });
           }
