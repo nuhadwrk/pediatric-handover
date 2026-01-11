@@ -2205,7 +2205,7 @@ async function generateDcDocx() {
        const initialPlan = document.getElementById('plan').value;
        let initialLogs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
        if(initialPlan) {
-           initialLogs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${initialPlan}\n\n`;
+           initialLogs += `• ${formatTimestamp(Date.now())}\n Admission Plan:\n${initialPlan}\n\n`;
        }
 
        db.collection('patients').add({
@@ -3602,7 +3602,8 @@ ${blue(nbValues['Text67'])}
 
            if (oldPlan !== newPlan) {
                // Find and replace the first "Admission Plan:" entry in logs
-               const admPlanRegex = /(• [^\n]+\n Admission Plan: )[^\n•]+((?:\n(?!• )[^\n]+)*)/;
+               // Format: "Admission Plan:\n" followed by plan content on next line
+               const admPlanRegex = /(• [^\n]+\n Admission Plan:\n)[^\n•]+((?:\n(?!• )[^\n]+)*)/;
                if (admPlanRegex.test(p.logs)) {
                    updates.logs = p.logs.replace(admPlanRegex, `$1${newPlan}$2`);
                }
@@ -3664,7 +3665,7 @@ ${blue(nbValues['Text67'])}
 
         // Create logs in same format as standard admissions
         let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
-        if(p.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${p.plan}\n\n`; }
+        if(p.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan:\n${p.plan}\n\n`; }
         p.logs = logs;
         
         if(nbValues['Text41'] && !nbValues['Text41'].toLowerCase().includes('kg')) {
@@ -3916,8 +3917,8 @@ ${blue(nbValues['Text67'])}
     let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
     
     // Check rawPlanInput instead of aggregated.plan
-    if(rawPlanInput && rawPlanInput.trim().length > 0) { 
-        logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${rawPlanInput.trim()}\n\n`; 
+    if(rawPlanInput && rawPlanInput.trim().length > 0) {
+        logs += `• ${formatTimestamp(Date.now())}\n Admission Plan:\n${rawPlanInput.trim()}\n\n`;
     }
     p.logs = logs;
     // --- FIX ENDS HERE ---
