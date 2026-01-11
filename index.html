@@ -3045,15 +3045,8 @@ Advice: ${nbValues['Text68']||'-'}`;
     async function renderNbVisual() {
         const stage = document.getElementById('nb-visual-stage');
         stage.innerHTML = '';
-        const container = document.getElementById('view-newborn-visual');
 
-        // 1. VIRTUAL WIDTH
-        const VIRTUAL_WIDTH = 1200;
-        const currentWidth = container.clientWidth;
-        const scale = (currentWidth - 20) / VIRTUAL_WIDTH;
-
-        // Sync Vars
-        storedScaleFit = VIRTUAL_WIDTH / 595;
+        // Sync values from form
         const hospNo = document.getElementById('nb-f-hosp-no').value;
         const nidNo = document.getElementById('nb-f-nid-no').value;
         if(hospNo) nbValues['Text29'] = hospNo;
@@ -3079,26 +3072,29 @@ Advice: ${nbValues['Text68']||'-'}`;
         const numPages = Object.keys(nbAnchors).length || 1;
 
         for(let i=1; i<=numPages; i++) {
-            // WRAPPER
-            const outerWrapper = document.createElement('div');
-            const scaledHeight = (VIRTUAL_WIDTH * 1.4142) * scale;
-            outerWrapper.style.width = '100%';
-            outerWrapper.style.height = scaledHeight + 'px';
-            outerWrapper.style.marginBottom = '20px';
-            outerWrapper.style.display = 'flex';
-            outerWrapper.style.justifyContent = 'center'; // Center it
-            outerWrapper.style.overflow = 'hidden';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page';
 
-            // INNER PAGE
-            const innerPage = document.createElement('div');
-            innerPage.className = 'pdf-page';
-            innerPage.style.backgroundImage = `url('${imgUrl}')`;
-            innerPage.style.backgroundSize = '100% 100%';
+            // Use same dimensions as standard visual
+            wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
+            wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
+            wrapper.style.position = 'relative';
+            wrapper.style.margin = '30px auto';
+            wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+            wrapper.style.backgroundImage = `url('${imgUrl}')`;
+            wrapper.style.backgroundSize = '100% 100%';
+            wrapper.style.backgroundRepeat = 'no-repeat';
 
-            innerPage.style.width = VIRTUAL_WIDTH + 'px';
-            innerPage.style.height = (VIRTUAL_WIDTH * 1.4142) + 'px';
+            // Only constrain by width, allow vertical scrolling
+            const maxWidth = window.innerWidth - 60;
+            let scale = 1.0;
 
-            innerPage.style.transform = `scale(${scale})`;
+            if (PREVIEW_WIDTH_PX > maxWidth) {
+                scale = maxWidth / PREVIEW_WIDTH_PX;
+            }
+
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'top center';
 
           if(nbAnchors[i]) {
              nbAnchors[i].forEach(a => {
@@ -3136,7 +3132,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                         option.value = opt;
                         datalist.appendChild(option);
                     });
-                    innerPage.appendChild(datalist);
+                    wrapper.appendChild(datalist);
 
                     box.oninput = (e) => {
                         nbValues[a.name] = e.target.value;
@@ -3197,7 +3193,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                             // Clear group selections
                             if (['Text59', 'Text60', 'Text61'].includes(a.name)) {
                                 nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = '';
-                                innerPage.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
                                     if (el.dataset.group === 'gest') {
                                         el.innerText = '';
                                         el.style.textDecoration = 'none';
@@ -3206,7 +3202,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                             }
                             if (['Text62', 'Text63', 'Text64'].includes(a.name)) {
                                 nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = '';
-                                innerPage.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
                                     if (el.dataset.group === 'size') {
                                         el.innerText = '';
                                         el.style.textDecoration = 'none';
@@ -3239,24 +3235,23 @@ Advice: ${nbValues['Text68']||'-'}`;
                     };
                 }
 
-                // Common styling
+                // Common styling with pixel-based positioning
                 box.style.position = 'absolute';
-                box.style.left = (a.x * 100) + '%';
-                box.style.top = (a.y * 100) + '%';
-                box.style.width = (a.w * 100) + '%';
-                box.style.height = (a.h * 100) + '%';
-                box.style.fontSize = (activeFontSize * storedScaleFit * 0.64) + 'px';
+                box.style.left = `${a.x * PREVIEW_WIDTH_PX}px`;
+                box.style.top = `${a.y * PREVIEW_HEIGHT_PX}px`;
+                box.style.width = `${a.w * PREVIEW_WIDTH_PX}px`;
+                box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
+                box.style.fontSize = `${activeFontSize * PT_TO_PX}px`;
                 box.style.lineHeight = nbLineHeight;
                 box.style.padding = '2px';
                 box.style.boxSizing = 'border-box';
                 box.style.border = '1px solid rgba(0,0,0,0.1)';
                 box.style.background = 'rgba(255,255,255,0.8)';
 
-                innerPage.appendChild(box);
+                wrapper.appendChild(box);
             });
         }
-        outerWrapper.appendChild(innerPage);
-        stage.appendChild(outerWrapper);
+        stage.appendChild(wrapper);
        }
     }
 
