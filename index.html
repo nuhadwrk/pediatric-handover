@@ -2427,13 +2427,13 @@ async function generateDcDocx() {
     const PDF_PAGE_WIDTH_PT  = 595;   // points (8.26 in × 72)
     const PDF_PAGE_HEIGHT_PT = 775;   // points (10.76 in × 72)
 
-    // Screen conversion (standard web DPI = 96)
-    const DPI = 96;
-    const PT_TO_PX = DPI / 72;  // ≈ 1.3333 px per point
+    // Screen conversion — increase DPI to make base preview larger
+    const PREVIEW_DPI = 150;  // ← Change this value to control size (higher = larger)
+    const PT_TO_PX = PREVIEW_DPI / 72;  // ≈ 2.0833 px per point at 150 DPI
 
-    // Preview size in pixels (what the container should be)
-    const PREVIEW_WIDTH_PX  = Math.round(PDF_PAGE_WIDTH_PT  * PT_TO_PX);   // ≈ 794 px
-    const PREVIEW_HEIGHT_PX = Math.round(PDF_PAGE_HEIGHT_PT * PT_TO_PX);   // ≈ 1033 px
+    // Preview size in pixels (this is what controls how big it appears initially)
+    const PREVIEW_WIDTH_PX  = Math.round(PDF_PAGE_WIDTH_PT  * PT_TO_PX);   // ~1240 px at 150 dpi
+    const PREVIEW_HEIGHT_PX = Math.round(PDF_PAGE_HEIGHT_PT * PT_TO_PX);   // ~1615 px at 150 dpi
 
     // Newborn field type mappings
     const NB_FIELD_TYPES = {
@@ -2948,7 +2948,7 @@ Advice: ${nbValues['Text68']||'-'}`;
 
     async function renderPdfVisual() {
         const stage = document.getElementById('pdf-stage');
-        stage.innerHTML = ''; // clear previous content
+        stage.innerHTML = '';
 
         const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
 
@@ -2956,47 +2956,44 @@ Advice: ${nbValues['Text68']||'-'}`;
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page';
 
-            // Fixed REAL size in pixels (this is key!)
+            // Use the LARGER preview size we just calculated
             wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
             wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
             wrapper.style.position = 'relative';
             wrapper.style.margin = '20px auto';
-            wrapper.style.boxShadow = '0 4px 15px rgba(0,0,0,0.25)';
+            wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.25)';
             wrapper.style.backgroundImage = `url('https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp${i}.jpg')`;
-            wrapper.style.backgroundSize = '100% 100%'; // important: stretch exactly
+            wrapper.style.backgroundSize = '100% 100%';
             wrapper.style.backgroundRepeat = 'no-repeat';
 
-            // Optional: scale down only for screen fit (coordinates stay correct!)
+            // Automatically scale down if too big for screen (but keep coordinates perfect)
+            const maxScale = 1.0; // 1.0 = full size, 0.8 = 80%, etc.
             const scale = Math.min(
                 (window.innerWidth - 80) / PREVIEW_WIDTH_PX,
                 (window.innerHeight - 200) / PREVIEW_HEIGHT_PX,
-                1
+                maxScale
             );
             wrapper.style.transform = `scale(${scale})`;
             wrapper.style.transformOrigin = 'top left';
 
-            // Add editable fields with REAL point → pixel conversion
+            // Fields — positioned using the same large pixel size
             if (anchors[i]) {
                 anchors[i].forEach(a => {
                     const box = document.createElement('div');
                     box.className = 'pdf-box';
                     box.contentEditable = ALLOWED_EDIT_PDF.includes(a.name) ? 'true' : 'false';
 
-                    // Convert normalized anchors (0–1) to real pixels
                     box.style.left   = `${a.x * PREVIEW_WIDTH_PX}px`;
                     box.style.top    = `${a.y * PREVIEW_HEIGHT_PX}px`;
                     box.style.width  = `${a.w * PREVIEW_WIDTH_PX}px`;
                     box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
 
-                    // Font scaling matches print
                     box.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                    box.style.fontSize   = `${activeFontSize * PT_TO_PX}px`;
+                    box.style.fontSize   = `${activeFontSize * PT_TO_PX}px`; // font scales with DPI
                     box.style.lineHeight = pdfLineHeight;
 
-                    // Load current value
                     box.innerText = pdfValues[a.name] || '';
 
-                    // Save changes back to pdfValues
                     if (box.contentEditable === 'true') {
                         box.oninput = () => {
                             pdfValues[a.name] = box.innerText.trim();
