@@ -2932,54 +2932,110 @@ Advice: ${nbValues['Text68']||'-'}`;
     }
 
     async function renderPdfVisual() {
-       const stage = document.getElementById('pdf-stage'); stage.innerHTML = ''; const container = document.getElementById('view-pdf');
+        const stage = document.getElementById('pdf-stage');
+        stage.innerHTML = '';
+        const container = document.getElementById('view-pdf');
 
-       // Calculate scale once and store it (prevents font size changes on window resize)
-       if (storedScaleFit === null) {
-          storedScaleFit = (container.clientWidth - 40) / 595;
-       }
+        // 1. VIRTUAL RESOLUTION (The "High Quality" Source)
+        // We render internally at 1100px. This effectively sets a "Minimum Font Size" of ~14px
+        // for the browser's rendering engine, preventing rounding errors.
+        const VIRTUAL_WIDTH = 1100;
 
-       // Use calculated font size if auto-fit is enabled, otherwise use manual selection
-       const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+        // 2. ZOOM CALCULATION
+        // If your window is 500px, we scale by 0.45x. If 1920px, we scale by 1.0x (max).
+        const currentWidth = container.clientWidth;
+        const scale = Math.min(currentWidth / VIRTUAL_WIDTH, 1.0);
 
-       const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
-       for(let i=1; i<=4; i++) {
-          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page';
-          wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`; wrapper.style.backgroundSize = '100% 100%'; wrapper.style.backgroundRepeat = 'no-repeat'; wrapper.style.width = '100%'; wrapper.style.aspectRatio = '0.7071'; wrapper.style.position = 'relative';
-          if(anchors[i]) {
-             anchors[i].forEach(a => {
-                const box = document.createElement('div'); box.className = 'pdf-box';
-                box.dataset.field = a.name;
-                if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
-                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
-                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+        // 3. LOCK THE MATH
+        // We tell the layout engine: "Pretend we are on a 1100px screen"
+        // 595 is the PDF width. -40 is margin.
+        storedScaleFit = (VIRTUAL_WIDTH - 40) / 595;
 
-                // WYSIWYG: For read-only fields, pre-wrap text using PDF metrics to match printed output
-                if (!ALLOWED_EDIT_PDF.includes(a.name)) {
-                    const rawBoxWidth = (a.w * 595) - 4; // 595 = A4 width in PDF points, -4 = padding
-                    const wrappedText = getWrappedText(pdfValues[a.name] || '', rawBoxWidth, activeFontSize);
+        const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+        const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
+
+        for(let i=1; i<=4; i++) {
+            // --- A. THE WRAPPER (Reserves space on your real screen) ---
+            const outerWrapper = document.createElement('div');
+            outerWrapper.style.width = '100%';
+
+            // Calculate exact height needed for the SHRUNKEN page to prevent overlaps
+            const virtualHeight = (VIRTUAL_WIDTH - 40) * 1.4142; // A4 Ratio
+            outerWrapper.style.height = (virtualHeight * scale) + 'px';
+
+            outerWrapper.style.marginBottom = '20px';
+            outerWrapper.style.position = 'relative';
+            outerWrapper.style.overflow = 'hidden'; // Crops any tiny pixel overflows
+
+            // --- B. THE INNER PAGE (The High-Res Source) ---
+            const innerPage = document.createElement('div');
+            innerPage.className = 'pdf-page';
+            innerPage.style.backgroundImage = `url('${imgBase}${i}.jpg')`;
+            innerPage.style.backgroundSize = '100% 100%';
+            innerPage.style.backgroundRepeat = 'no-repeat';
+
+            // LOCK THE DIMENSIONS (This prevents the "Stretched Image" bug)
+            innerPage.style.width = (VIRTUAL_WIDTH - 40) + 'px';
+            innerPage.style.height = virtualHeight + 'px';
+
+            // APPLY THE ZOOM
+            innerPage.style.transform = `scale(${scale})`;
+            innerPage.style.transformOrigin = '0 0'; // Pin to Top-Left (Prevents centering bugs)
+            innerPage.style.position = 'absolute';
+            innerPage.style.top = '0';
+            innerPage.style.left = '0';
+
+            if(anchors[i]) {
+                anchors[i].forEach(a => {
+                    const box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    box.dataset.field = a.name;
+
+                    // Standard Editable Logic
+                    if(ALLOWED_EDIT_PDF.includes(a.name)) {
+                        box.contentEditable = true;
+                    } else {
+                        box.contentEditable = false;
+                        box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)';
+                        box.title = "Edit in Sidebar";
+                    }
+
+                    // Standard Positioning (Works perfectly because innerPage width is fixed)
+                    box.style.left = (a.x * 100) + '%';
+                    box.style.top = (a.y * 100) + '%';
+                    box.style.width = (a.w * 100) + '%';
+                    box.style.height = (a.h * 100) + '%';
+
+                    // FONT SIZE: Calculated relative to the massive 1100px page
+                    // It renders crisp (~14px), then gets visually shrunk by the transform
+                    box.style.fontSize = (activeFontSize * storedScaleFit * 0.62) + 'px';
+                    box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+
+                    // HARD WRAP: Use PDF metrics to guarantee breaks match print
+                    const rawPdfBoxWidth = (a.w * 595) - 4;
+                    const wrappedText = getWrappedText(pdfValues[a.name] || '', rawPdfBoxWidth, activeFontSize);
+
                     box.innerText = wrappedText;
-                    box.style.whiteSpace = 'pre-wrap'; // Respect \n characters
-                } else {
-                    box.innerText = pdfValues[a.name] || '';
-                }
-                if(box.contentEditable === "true") {
-                    box.oninput = (e) => {
-                        pdfValues[a.name] = e.target.innerText;
-                        // Sync back to form fields
-                        if(a.name === 'dx') {
-                            document.getElementById('f-finaldx').value = e.target.innerText;
-                            document.getElementById('f-adm-dx').value = e.target.innerText;
-                        } else {
-                            syncPdfToForm();
-                        }
-                    };
-                }
-                wrapper.appendChild(box);
-             });
-          }
-          stage.appendChild(wrapper);
-       }
+                    box.style.whiteSpace = 'pre-wrap';
+
+                    // Input Handler
+                    if(box.contentEditable === "true") {
+                        box.oninput = (e) => {
+                            pdfValues[a.name] = e.target.innerText;
+                            if(a.name === 'dx') {
+                                document.getElementById('f-finaldx').value = e.target.innerText;
+                                document.getElementById('f-adm-dx').value = e.target.innerText;
+                            } else {
+                                syncPdfToForm();
+                            }
+                        };
+                    }
+                    innerPage.appendChild(box);
+                });
+            }
+            outerWrapper.appendChild(innerPage);
+            stage.appendChild(outerWrapper);
+        }
     }
 
     async function renderNbVisual() {
@@ -3828,9 +3884,7 @@ Advice: ${nbValues['Text68']||'-'}`;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            // Reset the scale so it recalculates based on new window width
-            storedScaleFit = null;
-
+            // Scale and storedScaleFit recalculate automatically on each render
             if (currentMode === 'pdf') renderPdfVisual();
             if (currentMode === 'newborn') renderNbVisual();
         }, 100); // Small delay to improve performance
