@@ -2995,7 +2995,7 @@ ${blue(nbValues['Text67'])}
     }
 
     function checkOverflow(fieldId) {
-        if (fieldId !== 'f-hopi') return; const pdfKey = MAP_FORM_PDF[fieldId]; if(!pdfKey) return;
+        if (fieldId !== 'f-hopi' && fieldId !== 'f-past') return; const pdfKey = MAP_FORM_PDF[fieldId]; if(!pdfKey) return;
         let targetAnchor = null; Object.values(anchors).forEach(pageAnchors => { const found = pageAnchors.find(a => a.name === pdfKey); if(found) targetAnchor = found; }); if(!targetAnchor) return;
         const maxLines = FIELD_MAX_LINES[fieldId] || 9; const text = document.getElementById(fieldId).value; const warnEl = document.getElementById('warn-' + fieldId);
         const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const fontSize = 9; ctx.font = `${fontSize}px Helvetica`; 
