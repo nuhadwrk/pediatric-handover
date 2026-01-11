@@ -2932,265 +2932,333 @@ Advice: ${nbValues['Text68']||'-'}`;
     }
 
     async function renderPdfVisual() {
-       const stage = document.getElementById('pdf-stage'); stage.innerHTML = ''; const container = document.getElementById('view-pdf');
+        const stage = document.getElementById('pdf-stage');
+        stage.innerHTML = '';
+        const container = document.getElementById('view-pdf');
 
-       // Calculate scale once and store it (prevents font size changes on window resize)
-       if (storedScaleFit === null) {
-          storedScaleFit = (container.clientWidth - 40) / 595;
-       }
+        // 1. CONSTANTS - Fixed virtual width for high quality rendering
+        const VIRTUAL_WIDTH = 1200; // Render internally at high resolution (Crisp text)
+        const PDF_WIDTH_PTS = 595;  // Standard A4 PDF width
 
-       // Use calculated font size if auto-fit is enabled, otherwise use manual selection
-       const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+        // Calculate the 'Scale Factor' to fit the 1200px page into the current window
+        // We limit max width to VIRTUAL_WIDTH so it doesn't upscale and get blurry
+        const containerWidth = container.clientWidth;
+        const scale = Math.min(containerWidth / VIRTUAL_WIDTH, 1.0);
 
-       const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
-       for(let i=1; i<=4; i++) {
-          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page';
-          wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`; wrapper.style.backgroundSize = '100% 100%'; wrapper.style.backgroundRepeat = 'no-repeat'; wrapper.style.width = '100%'; wrapper.style.aspectRatio = '0.7071'; wrapper.style.position = 'relative';
-          if(anchors[i]) {
-             anchors[i].forEach(a => {
-                const box = document.createElement('div'); box.className = 'pdf-box';
-                box.dataset.field = a.name;
-                if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
-                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
-                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+        const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
 
-                // WYSIWYG: For read-only fields, pre-wrap text using PDF metrics to match printed output
-                if (!ALLOWED_EDIT_PDF.includes(a.name)) {
-                    const rawBoxWidth = (a.w * 595) - 4; // 595 = A4 width in PDF points, -4 = padding
-                    const wrappedText = getWrappedText(pdfValues[a.name] || '', rawBoxWidth, activeFontSize);
+        // 2. CALCULATE FONT SIZE FOR THE VIRTUAL PAGE
+        // If PDF font is 13pt on 595pt width, how big is it on 1200px width?
+        // Formula: (TargetWidth / PdfWidth) * UserFontSize
+        const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+        const virtualFontSize = (VIRTUAL_WIDTH / PDF_WIDTH_PTS) * activeFontSize;
+        const fontScaleFactor = 0.95; // Fine-tuned calibration factor
+
+        for(let i=1; i<=4; i++) {
+            // Create a wrapper to handle the scaling
+            const scaleWrapper = document.createElement('div');
+            scaleWrapper.style.width = '100%';
+            // A4 Aspect Ratio is 1.414. Height = Width * scale * 1.414
+            scaleWrapper.style.height = (containerWidth * 1.414) + 'px';
+            scaleWrapper.style.position = 'relative';
+            scaleWrapper.style.overflow = 'hidden';
+            scaleWrapper.style.marginBottom = '20px';
+
+            const page = document.createElement('div');
+            page.className = 'pdf-page';
+            page.style.backgroundImage = `url('${imgBase}${i}.jpg')`;
+            page.style.backgroundSize = '100% 100%';
+            page.style.backgroundRepeat = 'no-repeat';
+
+            // LOCK THE PAGE SIZE
+            page.style.width = `${VIRTUAL_WIDTH}px`;
+            page.style.height = `${VIRTUAL_WIDTH * 1.4142}px`; // A4 Ratio
+            page.style.position = 'absolute';
+
+            // APPLY THE ZOOM (TRANSFORM)
+            page.style.transform = `scale(${scale})`;
+            page.style.transformOrigin = 'top left';
+
+            if(anchors[i]) {
+                anchors[i].forEach(a => {
+                    const box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    box.dataset.field = a.name;
+
+                    // Content Editable logic
+                    if(ALLOWED_EDIT_PDF.includes(a.name)) {
+                        box.contentEditable = true;
+                    } else {
+                        box.contentEditable = false;
+                        box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)';
+                        box.title = "Edit in Sidebar";
+                    }
+
+                    // Positioning using percentages (works perfectly on fixed VIRTUAL_WIDTH)
+                    box.style.left = (a.x * 100) + '%';
+                    box.style.top = (a.y * 100) + '%';
+                    box.style.width = (a.w * 100) + '%';
+                    box.style.height = (a.h * 100) + '%';
+
+                    // Font Styling
+                    box.style.fontSize = (virtualFontSize * fontScaleFactor) + 'px';
+                    box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+
+                    // WYSIWYG: HARD WRAP LOGIC
+                    // Calculate wrapping based on the VIRTUAL dimensions
+                    const rawText = pdfValues[a.name] || '';
+                    const virtualBoxWidth = (a.w * VIRTUAL_WIDTH) - (4 * (VIRTUAL_WIDTH/PDF_WIDTH_PTS)); // Scaling padding
+                    const wrappedText = getWrappedText(rawText, virtualBoxWidth, virtualFontSize * fontScaleFactor);
+
                     box.innerText = wrappedText;
-                    box.style.whiteSpace = 'pre-wrap'; // Respect \n characters
-                } else {
-                    box.innerText = pdfValues[a.name] || '';
-                }
-                if(box.contentEditable === "true") {
-                    box.oninput = (e) => {
-                        pdfValues[a.name] = e.target.innerText;
-                        // Sync back to form fields
-                        if(a.name === 'dx') {
-                            document.getElementById('f-finaldx').value = e.target.innerText;
-                            document.getElementById('f-adm-dx').value = e.target.innerText;
-                        } else {
-                            syncPdfToForm();
-                        }
-                    };
-                }
-                wrapper.appendChild(box);
-             });
-          }
-          stage.appendChild(wrapper);
-       }
+                    box.style.whiteSpace = 'pre-wrap';
+
+                    // Input Handler
+                    if(box.contentEditable === "true") {
+                        box.oninput = (e) => {
+                            pdfValues[a.name] = e.target.innerText;
+                            if(a.name === 'dx') {
+                                document.getElementById('f-finaldx').value = e.target.innerText;
+                                document.getElementById('f-adm-dx').value = e.target.innerText;
+                            } else {
+                                syncPdfToForm();
+                            }
+                        };
+                    }
+                    page.appendChild(box);
+                });
+            }
+            scaleWrapper.appendChild(page);
+            stage.appendChild(scaleWrapper);
+        }
     }
 
     async function renderNbVisual() {
-       console.log('renderNbVisual called');
-       const stage = document.getElementById('nb-visual-stage');
-       stage.innerHTML = '';
-       const container = document.getElementById('view-newborn-visual');
+        console.log('renderNbVisual called');
+        const stage = document.getElementById('nb-visual-stage');
+        stage.innerHTML = '';
+        const container = document.getElementById('view-newborn-visual');
 
-       // Calculate scale once and store it
-       if (storedScaleFit === null) {
-          storedScaleFit = (container.clientWidth - 40) / 595;
-       }
+        // 1. CONSTANTS - Fixed virtual width for high quality rendering
+        const VIRTUAL_WIDTH = 1200;
+        const PDF_WIDTH_PTS = 595;
+        const containerWidth = container.clientWidth;
+        const scale = Math.min(containerWidth / VIRTUAL_WIDTH, 1.0);
 
-       console.log('Container width:', container.clientWidth, 'storedScaleFit:', storedScaleFit);
+        // Sync hospital number and NID from patient details
+        const hospNo = document.getElementById('nb-f-hosp-no').value;
+        const nidNo = document.getElementById('nb-f-nid-no').value;
+        if(hospNo) nbValues['Text29'] = hospNo;
+        if(nidNo) nbValues['Text42'] = nidNo;
 
-       // Sync hospital number and NID from patient details
-       const hospNo = document.getElementById('nb-f-hosp-no').value;
-       const nidNo = document.getElementById('nb-f-nid-no').value;
-       if(hospNo) nbValues['Text29'] = hospNo;
-       if(nidNo) nbValues['Text42'] = nidNo;
+        // Calculate Font
+        const activeFontSize = isAutoFit ? calculatedFontSize : nbFontSize;
+        const virtualFontSize = (VIRTUAL_WIDTH / PDF_WIDTH_PTS) * activeFontSize;
+        const fontScaleFactor = 0.95; // Adjust if text is too large/small
 
-       // Use calculated font size if auto-fit is enabled, otherwise use newborn font size
-       const activeFontSize = isAutoFit ? calculatedFontSize : nbFontSize;
+        // Load newborn anchors if not loaded
+        if(Object.keys(nbAnchors).length === 0) {
+            console.log('Loading newborn anchors...');
+            try {
+                const response = await fetch(NB_ANCHORS_URL);
+                nbAnchors = await response.json();
+                console.log('Newborn anchors loaded:', Object.keys(nbAnchors).length, 'pages');
+            } catch(e) {
+                console.error('Failed to load anchors:', e);
+                stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
+                return;
+            }
+        }
 
-       // Load newborn anchors if not loaded
-       if(Object.keys(nbAnchors).length === 0) {
-           console.log('Loading newborn anchors...');
-           try {
-               const response = await fetch(NB_ANCHORS_URL);
-               nbAnchors = await response.json();
-               console.log('Newborn anchors loaded:', Object.keys(nbAnchors).length, 'pages');
-           } catch(e) {
-               console.error('Failed to load anchors:', e);
-               stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
-               return;
-           }
-       }
+        const imgUrl = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.jpg';
+        const numPages = Object.keys(nbAnchors).length || 1;
+        console.log('Rendering', numPages, 'page(s) with image:', imgUrl);
 
-       const imgUrl = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.jpg';
-       const numPages = Object.keys(nbAnchors).length || 1;
-       console.log('Rendering', numPages, 'page(s) with image:', imgUrl);
+        for(let i=1; i<=numPages; i++) {
+            // WRAPPER
+            const scaleWrapper = document.createElement('div');
+            scaleWrapper.style.width = '100%';
+            scaleWrapper.style.height = (containerWidth * 1.414) + 'px';
+            scaleWrapper.style.position = 'relative';
+            scaleWrapper.style.overflow = 'hidden';
+            scaleWrapper.style.marginBottom = '20px';
 
-       for(let i=1; i<=numPages; i++) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'pdf-page';
-          wrapper.style.backgroundImage = `url('${imgUrl}')`;
-          wrapper.style.backgroundSize = '100% 100%';
-          wrapper.style.backgroundRepeat = 'no-repeat';
-          wrapper.style.width = '100%';
-          wrapper.style.aspectRatio = '0.7071';
-          wrapper.style.position = 'relative';
+            // PAGE
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page';
+            wrapper.style.backgroundImage = `url('${imgUrl}')`;
+            wrapper.style.backgroundSize = '100% 100%';
+            wrapper.style.backgroundRepeat = 'no-repeat';
 
-          console.log('Created wrapper for page', i, 'with', nbAnchors[i] ? nbAnchors[i].length : 0, 'fields');
+            // LOCK SIZE
+            wrapper.style.width = `${VIRTUAL_WIDTH}px`;
+            wrapper.style.height = `${VIRTUAL_WIDTH * 1.4142}px`;
+            wrapper.style.position = 'absolute';
 
-          if(nbAnchors[i]) {
-             nbAnchors[i].forEach(a => {
-                const fieldType = NB_FIELD_TYPES[a.name];
-                let box;
+            // APPLY TRANSFORM
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'top left';
 
-                // Special handling for Text27 - add "Thalassemia status:" label
-                if (a.name === 'Text27') {
-                    box = document.createElement('div');
-                    box.className = 'pdf-box';
-                    box.contentEditable = true;
-                    box.dataset.field = a.name;
-                    const currentValue = nbValues[a.name] || 'Mother: \nFather: ';
-                    if (!currentValue.includes('Thalassemia status:')) {
-                        nbValues[a.name] = 'Thalassemia status:\nMother: \nFather: ';
+            console.log('Created wrapper for page', i, 'with', nbAnchors[i] ? nbAnchors[i].length : 0, 'fields');
+
+            if(nbAnchors[i]) {
+                nbAnchors[i].forEach(a => {
+                    const fieldType = NB_FIELD_TYPES[a.name];
+                    let box;
+
+                    // Special handling for Text27 - add "Thalassemia status:" label
+                    if (a.name === 'Text27') {
+                        box = document.createElement('div');
+                        box.className = 'pdf-box';
+                        box.contentEditable = true;
+                        box.dataset.field = a.name;
+                        const currentValue = nbValues[a.name] || 'Mother: \nFather: ';
+                        if (!currentValue.includes('Thalassemia status:')) {
+                            nbValues[a.name] = 'Thalassemia status:\nMother: \nFather: ';
+                        }
+                        box.innerText = nbValues[a.name];
+                        box.oninput = (e) => { nbValues[a.name] = e.target.innerText; };
                     }
-                    box.innerText = nbValues[a.name];
-                    box.oninput = (e) => { nbValues[a.name] = e.target.innerText; };
-                }
-                // Create appropriate control based on field type
-                else if (fieldType === 'datalist') {
-                    box = document.createElement('input');
-                    box.type = 'text';
-                    box.className = 'nb-pdf-datalist';
-                    box.dataset.field = a.name;
-                    box.value = nbValues[a.name] || '';
-                    box.setAttribute('list', 'dl-' + a.name);
+                    // Create appropriate control based on field type
+                    else if (fieldType === 'datalist') {
+                        box = document.createElement('input');
+                        box.type = 'text';
+                        box.className = 'nb-pdf-datalist';
+                        box.dataset.field = a.name;
+                        box.value = nbValues[a.name] || '';
+                        box.setAttribute('list', 'dl-' + a.name);
 
-                    // Create datalist
-                    const datalist = document.createElement('datalist');
-                    datalist.id = 'dl-' + a.name;
-                    const options = NB_DATALIST_OPTIONS[a.name] || [];
-                    options.forEach(opt => {
-                        const option = document.createElement('option');
-                        option.value = opt;
-                        datalist.appendChild(option);
-                    });
-                    wrapper.appendChild(datalist);
+                        // Create datalist
+                        const datalist = document.createElement('datalist');
+                        datalist.id = 'dl-' + a.name;
+                        const options = NB_DATALIST_OPTIONS[a.name] || [];
+                        options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt;
+                            datalist.appendChild(option);
+                        });
+                        wrapper.appendChild(datalist);
 
-                    box.oninput = (e) => {
-                        nbValues[a.name] = e.target.value;
-                        syncFromVisualToForm(a.name, e.target.value);
-                        // Trigger diagnosis generation for delivery mode and sex
-                        if (a.name === 'Text30' || a.name === 'Text39') {
-                            generateNbDiagnosis();
-                        }
-                    };
-                } else if (fieldType === 'datetime') {
-                    box = document.createElement('input');
-                    box.type = 'datetime-local';
-                    box.className = 'nb-pdf-datetime';
-                    box.dataset.field = a.name;
-                    box.value = nbValues[a.name] || '';
-                    box.onchange = (e) => {
-                        nbValues[a.name] = e.target.value;
-                        syncFromVisualToForm(a.name, e.target.value);
-                    };
-                } else if (fieldType === 'text') {
-                    // Text input field (like weight with "kg" default)
-                    box = document.createElement('input');
-                    box.type = 'text';
-                    box.className = 'nb-pdf-text';
-                    box.dataset.field = a.name;
-                    box.value = nbValues[a.name] || '';
-                    box.oninput = (e) => {
-                        nbValues[a.name] = e.target.value;
-                        syncFromVisualToForm(a.name, e.target.value);
-                    };
-                } else if (fieldType === 'number') {
-                    box = document.createElement('input');
-                    box.type = 'number';
-                    box.className = 'nb-pdf-number';
-                    box.dataset.field = a.name;
-                    box.value = nbValues[a.name] || '';
-                    box.oninput = (e) => {
-                        nbValues[a.name] = e.target.value;
-                        syncFromVisualToForm(a.name, e.target.value);
-                    };
-                } else if (fieldType === 'clickable') {
-                    // For Term/Preterm/AGA/SGA - clickable underline
-                    box = document.createElement('div');
-                    box.className = 'nb-pdf-clickable';
-                    box.contentEditable = false;
-                    box.dataset.field = a.name;
-                    box.innerText = nbValues[a.name] || '';
-                    box.style.textAlign = 'center';
-                    box.style.cursor = 'pointer';
-                    box.style.textDecoration = nbValues[a.name] === '____' ? 'underline' : 'none';
-                    box.onclick = (e) => {
-                        // Toggle selection
-                        if (nbValues[a.name] === '____') {
-                            nbValues[a.name] = '';
-                            e.target.innerText = '';
-                            e.target.style.textDecoration = 'none';
-                        } else {
-                            // Clear group selections
-                            if (['Text59', 'Text60', 'Text61'].includes(a.name)) {
-                                nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = '';
-                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
-                                    if (el.dataset.group === 'gest') {
-                                        el.innerText = '';
-                                        el.style.textDecoration = 'none';
-                                    }
-                                });
+                        box.oninput = (e) => {
+                            nbValues[a.name] = e.target.value;
+                            syncFromVisualToForm(a.name, e.target.value);
+                            // Trigger diagnosis generation for delivery mode and sex
+                            if (a.name === 'Text30' || a.name === 'Text39') {
+                                generateNbDiagnosis();
                             }
-                            if (['Text62', 'Text63', 'Text64'].includes(a.name)) {
-                                nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = '';
-                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
-                                    if (el.dataset.group === 'size') {
-                                        el.innerText = '';
-                                        el.style.textDecoration = 'none';
-                                    }
-                                });
+                        };
+                    } else if (fieldType === 'datetime') {
+                        box = document.createElement('input');
+                        box.type = 'datetime-local';
+                        box.className = 'nb-pdf-datetime';
+                        box.dataset.field = a.name;
+                        box.value = nbValues[a.name] || '';
+                        box.onchange = (e) => {
+                            nbValues[a.name] = e.target.value;
+                            syncFromVisualToForm(a.name, e.target.value);
+                        };
+                    } else if (fieldType === 'text') {
+                        // Text input field (like weight with "kg" default)
+                        box = document.createElement('input');
+                        box.type = 'text';
+                        box.className = 'nb-pdf-text';
+                        box.dataset.field = a.name;
+                        box.value = nbValues[a.name] || '';
+                        box.oninput = (e) => {
+                            nbValues[a.name] = e.target.value;
+                            syncFromVisualToForm(a.name, e.target.value);
+                        };
+                    } else if (fieldType === 'number') {
+                        box = document.createElement('input');
+                        box.type = 'number';
+                        box.className = 'nb-pdf-number';
+                        box.dataset.field = a.name;
+                        box.value = nbValues[a.name] || '';
+                        box.oninput = (e) => {
+                            nbValues[a.name] = e.target.value;
+                            syncFromVisualToForm(a.name, e.target.value);
+                        };
+                    } else if (fieldType === 'clickable') {
+                        // For Term/Preterm/AGA/SGA - clickable underline
+                        box = document.createElement('div');
+                        box.className = 'nb-pdf-clickable';
+                        box.contentEditable = false;
+                        box.dataset.field = a.name;
+                        box.innerText = nbValues[a.name] || '';
+                        box.style.textAlign = 'center';
+                        box.style.cursor = 'pointer';
+                        box.style.textDecoration = nbValues[a.name] === '____' ? 'underline' : 'none';
+                        box.onclick = (e) => {
+                            // Toggle selection
+                            if (nbValues[a.name] === '____') {
+                                nbValues[a.name] = '';
+                                e.target.innerText = '';
+                                e.target.style.textDecoration = 'none';
+                            } else {
+                                // Clear group selections
+                                if (['Text59', 'Text60', 'Text61'].includes(a.name)) {
+                                    nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = '';
+                                    wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                        if (el.dataset.group === 'gest') {
+                                            el.innerText = '';
+                                            el.style.textDecoration = 'none';
+                                        }
+                                    });
+                                }
+                                if (['Text62', 'Text63', 'Text64'].includes(a.name)) {
+                                    nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = '';
+                                    wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                        if (el.dataset.group === 'size') {
+                                            el.innerText = '';
+                                            el.style.textDecoration = 'none';
+                                        }
+                                    });
+                                }
+                                nbValues[a.name] = '____';
+                                e.target.innerText = '____';
+                                e.target.style.textDecoration = 'underline';
                             }
-                            nbValues[a.name] = '____';
-                            e.target.innerText = '____';
-                            e.target.style.textDecoration = 'underline';
-                        }
-                        generateNbDiagnosis();
-                    };
-                    // Set group data attribute
-                    if (['Text59', 'Text60', 'Text61'].includes(a.name)) box.dataset.group = 'gest';
-                    if (['Text62', 'Text63', 'Text64'].includes(a.name)) box.dataset.group = 'size';
-                } else {
-                    // Default: contenteditable text box
-                    box = document.createElement('div');
-                    box.className = 'pdf-box';
-                    box.contentEditable = true;
-                    box.dataset.field = a.name;
-                    box.innerText = nbValues[a.name] || '';
-                    box.oninput = (e) => {
-                        nbValues[a.name] = e.target.innerText;
-                        syncFromVisualToForm(a.name, e.target.innerText);
-                        // Auto-generate diagnosis if this is Text31 (indication)
-                        if (a.name === 'Text31') {
                             generateNbDiagnosis();
-                        }
-                    };
-                }
+                        };
+                        // Set group data attribute
+                        if (['Text59', 'Text60', 'Text61'].includes(a.name)) box.dataset.group = 'gest';
+                        if (['Text62', 'Text63', 'Text64'].includes(a.name)) box.dataset.group = 'size';
+                    } else {
+                        // Default: contenteditable text box
+                        box = document.createElement('div');
+                        box.className = 'pdf-box';
+                        box.contentEditable = true;
+                        box.dataset.field = a.name;
+                        box.innerText = nbValues[a.name] || '';
+                        box.oninput = (e) => {
+                            nbValues[a.name] = e.target.innerText;
+                            syncFromVisualToForm(a.name, e.target.innerText);
+                            // Auto-generate diagnosis if this is Text31 (indication)
+                            if (a.name === 'Text31') {
+                                generateNbDiagnosis();
+                            }
+                        };
+                    }
 
-                // Common styling
-                box.style.position = 'absolute';
-                box.style.left = (a.x * 100) + '%';
-                box.style.top = (a.y * 100) + '%';
-                box.style.width = (a.w * 100) + '%';
-                box.style.height = (a.h * 100) + '%';
-                box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px';
-                box.style.lineHeight = nbLineHeight;
-                box.style.padding = '2px';
-                box.style.boxSizing = 'border-box';
-                box.style.border = '1px solid rgba(0,0,0,0.1)';
-                box.style.background = 'rgba(255,255,255,0.8)';
+                    // Common styling - updated for virtual width
+                    box.style.position = 'absolute';
+                    box.style.left = (a.x * 100) + '%';
+                    box.style.top = (a.y * 100) + '%';
+                    box.style.width = (a.w * 100) + '%';
+                    box.style.height = (a.h * 100) + '%';
+                    box.style.fontSize = (virtualFontSize * fontScaleFactor) + 'px';
+                    box.style.lineHeight = nbLineHeight;
+                    box.style.padding = '2px';
+                    box.style.boxSizing = 'border-box';
+                    box.style.border = '1px solid rgba(0,0,0,0.1)';
+                    box.style.background = 'rgba(255,255,255,0.8)';
 
-                wrapper.appendChild(box);
-             });
-          }
-          stage.appendChild(wrapper);
-       }
+                    wrapper.appendChild(box);
+                });
+            }
+            scaleWrapper.appendChild(wrapper);
+            stage.appendChild(scaleWrapper);
+        }
     }
 
     function generateNbDiagnosis() {
@@ -3828,9 +3896,7 @@ Advice: ${nbValues['Text68']||'-'}`;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            // Reset the scale so it recalculates based on new window width
-            storedScaleFit = null;
-
+            // With virtual width approach, scale is recalculated automatically on each render
             if (currentMode === 'pdf') renderPdfVisual();
             if (currentMode === 'newborn') renderNbVisual();
         }, 100); // Small delay to improve performance
