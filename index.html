@@ -2423,6 +2423,18 @@ async function generateDcDocx() {
     let calculatedFontSize = 13;
     let isSyncing = false; // Prevent infinite sync loops
 
+    // === Your REAL PDF dimensions ===
+    const PDF_PAGE_WIDTH_PT  = 595;   // points (8.26 in × 72)
+    const PDF_PAGE_HEIGHT_PT = 775;   // points (10.76 in × 72)
+
+    // Screen conversion (standard web DPI = 96)
+    const DPI = 96;
+    const PT_TO_PX = DPI / 72;  // ≈ 1.3333 px per point
+
+    // Preview size in pixels (what the container should be)
+    const PREVIEW_WIDTH_PX  = Math.round(PDF_PAGE_WIDTH_PT  * PT_TO_PX);   // ≈ 794 px
+    const PREVIEW_HEIGHT_PX = Math.round(PDF_PAGE_HEIGHT_PT * PT_TO_PX);   // ≈ 1033 px
+
     // Newborn field type mappings
     const NB_FIELD_TYPES = {
         'Text35': 'datetime',  // Birth date & time
@@ -2936,100 +2948,73 @@ Advice: ${nbValues['Text68']||'-'}`;
 
     async function renderPdfVisual() {
         const stage = document.getElementById('pdf-stage');
-        stage.innerHTML = '';
-        const container = document.getElementById('view-pdf');
-
-        // 1. VIRTUAL RESOLUTION
-        // We use 1200px as the "100% Zoom" baseline.
-        const VIRTUAL_WIDTH = 1200;
-
-        // 2. ZOOM CAP
-        const currentWidth = container.clientWidth;
-        // Cap scale at 1.0. This prevents the "Way too zoomed in" issue.
-        // If window > 1200px, the form stays at 1200px.
-        const scale = Math.min((currentWidth - 20) / VIRTUAL_WIDTH, 1.0);
-
-        // 3. LOCK MATH
-        // 595 is standard A4 Point Width.
-        // We map 1200 virtual pixels -> 595 PDF points.
-        storedScaleFit = VIRTUAL_WIDTH / 595;
+        stage.innerHTML = ''; // clear previous content
 
         const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
-        const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
 
-        for(let i=1; i<=4; i++) {
-            // A. WRAPPER (Visual Size)
-            const outerWrapper = document.createElement('div');
-            const scaledHeight = (VIRTUAL_WIDTH * 1.4142) * scale;
+        for (let i = 1; i <= 4; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page';
 
-            outerWrapper.style.width = '100%';
-            outerWrapper.style.height = scaledHeight + 'px';
-            outerWrapper.style.marginBottom = '20px';
-            outerWrapper.style.display = 'flex';
-            outerWrapper.style.justifyContent = 'center';
-            outerWrapper.style.overflow = 'hidden';
+            // Fixed REAL size in pixels (this is key!)
+            wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
+            wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
+            wrapper.style.position = 'relative';
+            wrapper.style.margin = '20px auto';
+            wrapper.style.boxShadow = '0 4px 15px rgba(0,0,0,0.25)';
+            wrapper.style.backgroundImage = `url('https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp${i}.jpg')`;
+            wrapper.style.backgroundSize = '100% 100%'; // important: stretch exactly
+            wrapper.style.backgroundRepeat = 'no-repeat';
 
-            // B. INNER PAGE (High Res Source)
-            const innerPage = document.createElement('div');
-            innerPage.className = 'pdf-page';
-            innerPage.style.backgroundImage = `url('${imgBase}${i}.jpg')`;
-            innerPage.style.backgroundSize = '100% 100%';
-            innerPage.style.backgroundRepeat = 'no-repeat';
+            // Optional: scale down only for screen fit (coordinates stay correct!)
+            const scale = Math.min(
+                (window.innerWidth - 80) / PREVIEW_WIDTH_PX,
+                (window.innerHeight - 200) / PREVIEW_HEIGHT_PX,
+                1
+            );
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'top left';
 
-            // FIXED High-Res Dimensions
-            innerPage.style.width = VIRTUAL_WIDTH + 'px';
-            innerPage.style.height = (VIRTUAL_WIDTH * 1.4142) + 'px';
-
-            // TRANSFORM (Shrinks the High-Res page to fit wrapper)
-            innerPage.style.transform = `scale(${scale})`;
-
-            if(anchors[i]) {
+            // Add editable fields with REAL point → pixel conversion
+            if (anchors[i]) {
                 anchors[i].forEach(a => {
                     const box = document.createElement('div');
                     box.className = 'pdf-box';
-                    box.dataset.field = a.name;
+                    box.contentEditable = ALLOWED_EDIT_PDF.includes(a.name) ? 'true' : 'false';
 
-                    if(ALLOWED_EDIT_PDF.includes(a.name)) {
-                        box.contentEditable = true;
-                    } else {
-                        box.contentEditable = false;
-                        box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)';
-                    }
+                    // Convert normalized anchors (0–1) to real pixels
+                    box.style.left   = `${a.x * PREVIEW_WIDTH_PX}px`;
+                    box.style.top    = `${a.y * PREVIEW_HEIGHT_PX}px`;
+                    box.style.width  = `${a.w * PREVIEW_WIDTH_PX}px`;
+                    box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
 
-                    box.style.left = (a.x * 100) + '%';
-                    box.style.top = (a.y * 100) + '%';
-                    box.style.width = (a.w * 100) + '%';
-                    box.style.height = (a.h * 100) + '%';
+                    // Font scaling matches print
+                    box.style.fontFamily = 'Helvetica, Arial, sans-serif';
+                    box.style.fontSize   = `${activeFontSize * PT_TO_PX}px`;
+                    box.style.lineHeight = pdfLineHeight;
 
-                    // RESTORED: Your manually calibrated 0.62 factor
-                    // Since VIRTUAL_WIDTH is fixed, this size is constant internally.
-                    // The visual shrinking happens via the CSS transform, not font math.
-                    box.style.fontSize = (activeFontSize * storedScaleFit * 0.62) + 'px';
-                    box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
+                    // Load current value
+                    box.innerText = pdfValues[a.name] || '';
 
-                    // HARD WRAP
-                    const rawPdfBoxWidth = (a.w * 595) - 4;
-                    const wrappedText = getWrappedText(pdfValues[a.name] || '', rawPdfBoxWidth, activeFontSize);
-
-                    box.innerText = wrappedText;
-                    box.style.whiteSpace = 'pre-wrap';
-
-                    if(box.contentEditable === "true") {
-                        box.oninput = (e) => {
-                            pdfValues[a.name] = e.target.innerText;
+                    // Save changes back to pdfValues
+                    if (box.contentEditable === 'true') {
+                        box.oninput = () => {
+                            pdfValues[a.name] = box.innerText.trim();
+                            // Sync back to form fields
                             if(a.name === 'dx') {
-                                document.getElementById('f-finaldx').value = e.target.innerText;
-                                document.getElementById('f-adm-dx').value = e.target.innerText;
+                                document.getElementById('f-finaldx').value = box.innerText.trim();
+                                document.getElementById('f-adm-dx').value = box.innerText.trim();
                             } else {
                                 syncPdfToForm();
                             }
                         };
                     }
-                    innerPage.appendChild(box);
+
+                    wrapper.appendChild(box);
                 });
             }
-            outerWrapper.appendChild(innerPage);
-            stage.appendChild(outerWrapper);
+
+            stage.appendChild(wrapper);
         }
     }
 
