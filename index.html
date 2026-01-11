@@ -2953,7 +2953,16 @@ Advice: ${nbValues['Text68']||'-'}`;
                 if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
                 box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
                 box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
-                box.innerText = pdfValues[a.name] || '';
+
+                // WYSIWYG: For read-only fields, pre-wrap text using PDF metrics to match printed output
+                if (!ALLOWED_EDIT_PDF.includes(a.name)) {
+                    const rawBoxWidth = (a.w * 595) - 4; // 595 = A4 width in PDF points, -4 = padding
+                    const wrappedText = getWrappedText(pdfValues[a.name] || '', rawBoxWidth, activeFontSize);
+                    box.innerText = wrappedText;
+                    box.style.whiteSpace = 'pre-wrap'; // Respect \n characters
+                } else {
+                    box.innerText = pdfValues[a.name] || '';
+                }
                 if(box.contentEditable === "true") {
                     box.oninput = (e) => {
                         pdfValues[a.name] = e.target.innerText;
@@ -3335,6 +3344,61 @@ Advice: ${nbValues['Text68']||'-'}`;
         }
     }
 
+    /**
+     * WYSIWYG Text Wrapping Function
+     * Calculates exactly where text lines break based on PDF rendering metrics.
+     * This ensures identical line breaks between screen display and printed PDF.
+     *
+     * @param {string} text - The text to wrap
+     * @param {number} maxWidth - Maximum width in PDF points (e.g., box width * 595 - padding)
+     * @param {number} fontSize - Font size in PDF points
+     * @returns {string} Text with newline characters inserted at wrap points
+     */
+    function getWrappedText(text, maxWidth, fontSize) {
+        if (!text) return '';
+
+        // Create canvas for measuring text width using same font as PDF
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${fontSize}px Helvetica`;
+
+        // Split text into lines (preserving existing newlines)
+        const paragraphs = text.split('\n');
+        const wrappedLines = [];
+
+        for (const paragraph of paragraphs) {
+            if (!paragraph.trim()) {
+                // Preserve empty lines
+                wrappedLines.push('');
+                continue;
+            }
+
+            const words = paragraph.split(' ');
+            let currentLine = words[0] || '';
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const testLine = currentLine + ' ' + word;
+                const width = ctx.measureText(testLine).width;
+
+                if (width < maxWidth) {
+                    currentLine = testLine;
+                } else {
+                    // Line would exceed maxWidth, break here
+                    wrappedLines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+
+            // Add the last line of this paragraph
+            if (currentLine) {
+                wrappedLines.push(currentLine);
+            }
+        }
+
+        return wrappedLines.join('\n');
+    }
+
     function calculateOptimalFontSize(minSize, maxSize) {
        if(Object.keys(anchors).length === 0) return maxSize; const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
        const checkFit = (size) => {
@@ -3642,7 +3706,12 @@ Advice: ${nbValues['Text68']||'-'}`;
                  text = text.replace(/[\u2010-\u2015]/g, "-").replace(/[^\x00-\x7F]/g, "");
                  if(!text) return;
                  let fs = shouldAutoFit ? useFontSize : pdfFontSize;
-                 page.drawText(text, { x: a.x * width + 2, y: height - (a.y * height) - fs, size: fs, font: font, maxWidth: (a.w * width) - 4, lineHeight: fs * pdfLineHeight });
+
+                 // WYSIWYG: Pre-wrap text using same calculation as visual display
+                 const boxWidth = (a.w * width) - 4;
+                 const wrappedText = getWrappedText(text, boxWidth, fs);
+
+                 page.drawText(wrappedText, { x: a.x * width + 2, y: height - (a.y * height) - fs, size: fs, font: font, lineHeight: fs * pdfLineHeight });
               });
            });
            const pdfOut = await pdf.save();
