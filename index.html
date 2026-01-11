@@ -254,15 +254,15 @@
     #pdf-stage { margin-bottom: 80px; position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
 
     #view-newborn-visual { width: 100%; display: none; flex-direction: column; align-items: center; }
-    #nb-visual-stage { margin-bottom: 80px; position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+    #nb-visual-stage { margin-bottom: 80px; width: 100%; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
 
     /* PDF BOXES */
-    .pdf-page { margin: 0 auto 20px auto; max-width: 850px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; background: white; line-height: 0; font-size: 0; background-size: 100% 100%; }
+    .pdf-page { transform-origin: top center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: white; }
     .pdf-box { position: absolute; background: rgba(60, 130, 246, 0.05); border: 1px dashed rgba(60, 130, 246, 0.3); font-family: Helvetica, sans-serif; overflow: hidden; color: #000; line-height: 1.3; padding: 2px; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; transform: translateZ(0); }
     .pdf-box:focus { background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary); outline: none; z-index: 10; }
 
     /* Ensure the stage hides overflow cleanly */
-    #pdf-stage, #nb-visual-stage { width: 100%; overflow: hidden; }
+    #pdf-stage { width: 100%; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
 
     /* Newborn Visual Mode Controls */
     .nb-pdf-select, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-datalist { position: absolute; font-family: Helvetica, sans-serif; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(60, 130, 246, 0.4); color: #000; padding: 2px; box-sizing: border-box; }
@@ -2939,47 +2939,52 @@ Advice: ${nbValues['Text68']||'-'}`;
         stage.innerHTML = '';
         const container = document.getElementById('view-pdf');
 
-        // 1. SET HIGH RESOLUTION BASE
-        // We render the form internally at a fixed 1200px width.
-        // The text will be rendered relative to THIS width, not your screen size.
+        // 1. VIRTUAL RESOLUTION (Full A4 Page Width)
+        // We treat 1200px as the full width of the paper.
         const VIRTUAL_WIDTH = 1200;
 
-        // 2. CALCULATE SCALE
-        // We simply scale the 1200px image to fit whatever your current window is.
+        // 2. ZOOM CALCULATION (Center & Fit)
+        // We calculate how much to shrink 1200px to fit your screen.
         const currentWidth = container.clientWidth;
-        const scale = currentWidth / VIRTUAL_WIDTH;
+        // Allow scaling up or down to fill width, minus a small margin for aesthetics
+        const scale = (currentWidth - 20) / VIRTUAL_WIDTH;
 
-        // 3. LOCK FONT MATH TO 1200px
-        // 595 is the standard PDF width.
-        storedScaleFit = (VIRTUAL_WIDTH - 40) / 595;
+        // 3. LOCK MATH
+        // 595 is standard A4 Point Width.
+        // We map 1200 virtual pixels -> 595 PDF points.
+        storedScaleFit = VIRTUAL_WIDTH / 595;
 
         const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
         const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
 
         for(let i=1; i<=4; i++) {
-            // A. WRAPPER (Visual Space on Screen)
+            // A. WRAPPER (Holds the space)
             const outerWrapper = document.createElement('div');
-            outerWrapper.style.width = '100%';
-            // Calculate scaled height (A4 Ratio 1.4142)
-            const virtualHeight = (VIRTUAL_WIDTH - 40) * 1.4142;
-            outerWrapper.style.height = (virtualHeight * scale) + 'px';
+            // Height = Width * A4 Ratio (1.4142) * Scale
+            const scaledHeight = (VIRTUAL_WIDTH * 1.4142) * scale;
+
+            outerWrapper.style.width = '100%'; // Full width to allow centering
+            outerWrapper.style.height = scaledHeight + 'px';
             outerWrapper.style.marginBottom = '20px';
-            outerWrapper.style.position = 'relative';
+            outerWrapper.style.display = 'flex';
+            outerWrapper.style.justifyContent = 'center'; // KEEPS IT CENTERED
+            outerWrapper.style.overflow = 'hidden';
 
             // B. INNER PAGE (High Res Source)
             const innerPage = document.createElement('div');
             innerPage.className = 'pdf-page';
             innerPage.style.backgroundImage = `url('${imgBase}${i}.jpg')`;
             innerPage.style.backgroundSize = '100% 100%';
+            innerPage.style.backgroundRepeat = 'no-repeat';
 
-            // LOCK DIMENSIONS
-            innerPage.style.width = (VIRTUAL_WIDTH - 40) + 'px';
-            innerPage.style.height = virtualHeight + 'px';
+            // FIXED DIMENSIONS (Full A4)
+            innerPage.style.width = VIRTUAL_WIDTH + 'px';
+            innerPage.style.height = (VIRTUAL_WIDTH * 1.4142) + 'px';
 
-            // APPLY ZOOM
+            // TRANSFORM (Scale from Top Center)
             innerPage.style.transform = `scale(${scale})`;
-            innerPage.style.transformOrigin = '0 0'; // Pin Top-Left
-            innerPage.style.position = 'absolute';
+
+            // No absolute positioning needed due to Flexbox centering in outerWrapper
 
             if(anchors[i]) {
                 anchors[i].forEach(a => {
@@ -2987,7 +2992,6 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.className = 'pdf-box';
                     box.dataset.field = a.name;
 
-                    // Edit logic
                     if(ALLOWED_EDIT_PDF.includes(a.name)) {
                         box.contentEditable = true;
                     } else {
@@ -2995,16 +2999,13 @@ Advice: ${nbValues['Text68']||'-'}`;
                         box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)';
                     }
 
-                    // Positioning
                     box.style.left = (a.x * 100) + '%';
                     box.style.top = (a.y * 100) + '%';
                     box.style.width = (a.w * 100) + '%';
                     box.style.height = (a.h * 100) + '%';
 
-                    // FONT SIZE: Calculated for 1200px width.
-                    // It renders large, then gets scaled down by CSS.
-                    // We rely on 'text-rendering: geometricPrecision' to keep this accurate.
-                    box.style.fontSize = (activeFontSize * storedScaleFit * 0.62) + 'px';
+                    // FONT SIZE: Increased factor to 0.64 to fill empty space better
+                    box.style.fontSize = (activeFontSize * storedScaleFit * 0.64) + 'px';
                     box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
 
                     // HARD WRAP
@@ -3014,7 +3015,6 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.innerText = wrappedText;
                     box.style.whiteSpace = 'pre-wrap';
 
-                    // Input handler
                     if(box.contentEditable === "true") {
                         box.oninput = (e) => {
                             pdfValues[a.name] = e.target.innerText;
@@ -3042,12 +3042,10 @@ Advice: ${nbValues['Text68']||'-'}`;
         // 1. VIRTUAL WIDTH
         const VIRTUAL_WIDTH = 1200;
         const currentWidth = container.clientWidth;
-        const scale = currentWidth / VIRTUAL_WIDTH;
+        const scale = (currentWidth - 20) / VIRTUAL_WIDTH;
 
-        // Lock font math
-        storedScaleFit = (VIRTUAL_WIDTH - 40) / 595;
-
-        // Sync hospital number and NID from patient details
+        // Sync Vars
+        storedScaleFit = VIRTUAL_WIDTH / 595;
         const hospNo = document.getElementById('nb-f-hosp-no').value;
         const nidNo = document.getElementById('nb-f-nid-no').value;
         if(hospNo) nbValues['Text29'] = hospNo;
@@ -3073,25 +3071,26 @@ Advice: ${nbValues['Text68']||'-'}`;
         const numPages = Object.keys(nbAnchors).length || 1;
 
         for(let i=1; i<=numPages; i++) {
-            // A. WRAPPER
+            // WRAPPER
             const outerWrapper = document.createElement('div');
+            const scaledHeight = (VIRTUAL_WIDTH * 1.4142) * scale;
             outerWrapper.style.width = '100%';
-            const virtualHeight = (VIRTUAL_WIDTH - 40) * 1.4142;
-            outerWrapper.style.height = (virtualHeight * scale) + 'px';
+            outerWrapper.style.height = scaledHeight + 'px';
             outerWrapper.style.marginBottom = '20px';
-            outerWrapper.style.position = 'relative';
+            outerWrapper.style.display = 'flex';
+            outerWrapper.style.justifyContent = 'center'; // Center it
+            outerWrapper.style.overflow = 'hidden';
 
-            // B. INNER PAGE
+            // INNER PAGE
             const innerPage = document.createElement('div');
             innerPage.className = 'pdf-page';
             innerPage.style.backgroundImage = `url('${imgUrl}')`;
             innerPage.style.backgroundSize = '100% 100%';
-            innerPage.style.width = (VIRTUAL_WIDTH - 40) + 'px';
-            innerPage.style.height = virtualHeight + 'px';
+
+            innerPage.style.width = VIRTUAL_WIDTH + 'px';
+            innerPage.style.height = (VIRTUAL_WIDTH * 1.4142) + 'px';
 
             innerPage.style.transform = `scale(${scale})`;
-            innerPage.style.transformOrigin = '0 0';
-            innerPage.style.position = 'absolute';
 
           if(nbAnchors[i]) {
              nbAnchors[i].forEach(a => {
@@ -3238,7 +3237,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                 box.style.top = (a.y * 100) + '%';
                 box.style.width = (a.w * 100) + '%';
                 box.style.height = (a.h * 100) + '%';
-                box.style.fontSize = (activeFontSize * storedScaleFit * 0.62) + 'px';
+                box.style.fontSize = (activeFontSize * storedScaleFit * 0.64) + 'px';
                 box.style.lineHeight = nbLineHeight;
                 box.style.padding = '2px';
                 box.style.boxSizing = 'border-box';
