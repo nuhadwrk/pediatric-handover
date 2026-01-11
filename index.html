@@ -2939,15 +2939,15 @@ Advice: ${nbValues['Text68']||'-'}`;
         stage.innerHTML = '';
         const container = document.getElementById('view-pdf');
 
-        // 1. VIRTUAL RESOLUTION (Full A4 Page Width)
-        // We treat 1200px as the full width of the paper.
+        // 1. VIRTUAL RESOLUTION
+        // We use 1200px as the "100% Zoom" baseline.
         const VIRTUAL_WIDTH = 1200;
 
-        // 2. ZOOM CALCULATION (Center & Fit)
-        // We calculate how much to shrink 1200px to fit your screen.
+        // 2. ZOOM CAP
         const currentWidth = container.clientWidth;
-        // Allow scaling up or down to fill width, minus a small margin for aesthetics
-        const scale = (currentWidth - 20) / VIRTUAL_WIDTH;
+        // Cap scale at 1.0. This prevents the "Way too zoomed in" issue.
+        // If window > 1200px, the form stays at 1200px.
+        const scale = Math.min((currentWidth - 20) / VIRTUAL_WIDTH, 1.0);
 
         // 3. LOCK MATH
         // 595 is standard A4 Point Width.
@@ -2958,16 +2958,15 @@ Advice: ${nbValues['Text68']||'-'}`;
         const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
 
         for(let i=1; i<=4; i++) {
-            // A. WRAPPER (Holds the space)
+            // A. WRAPPER (Visual Size)
             const outerWrapper = document.createElement('div');
-            // Height = Width * A4 Ratio (1.4142) * Scale
             const scaledHeight = (VIRTUAL_WIDTH * 1.4142) * scale;
 
-            outerWrapper.style.width = '100%'; // Full width to allow centering
+            outerWrapper.style.width = '100%';
             outerWrapper.style.height = scaledHeight + 'px';
             outerWrapper.style.marginBottom = '20px';
             outerWrapper.style.display = 'flex';
-            outerWrapper.style.justifyContent = 'center'; // KEEPS IT CENTERED
+            outerWrapper.style.justifyContent = 'center';
             outerWrapper.style.overflow = 'hidden';
 
             // B. INNER PAGE (High Res Source)
@@ -2977,14 +2976,12 @@ Advice: ${nbValues['Text68']||'-'}`;
             innerPage.style.backgroundSize = '100% 100%';
             innerPage.style.backgroundRepeat = 'no-repeat';
 
-            // FIXED DIMENSIONS (Full A4)
+            // FIXED High-Res Dimensions
             innerPage.style.width = VIRTUAL_WIDTH + 'px';
             innerPage.style.height = (VIRTUAL_WIDTH * 1.4142) + 'px';
 
-            // TRANSFORM (Scale from Top Center)
+            // TRANSFORM (Shrinks the High-Res page to fit wrapper)
             innerPage.style.transform = `scale(${scale})`;
-
-            // No absolute positioning needed due to Flexbox centering in outerWrapper
 
             if(anchors[i]) {
                 anchors[i].forEach(a => {
@@ -3004,8 +3001,10 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.style.width = (a.w * 100) + '%';
                     box.style.height = (a.h * 100) + '%';
 
-                    // FONT SIZE: Increased factor to 0.64 to fill empty space better
-                    box.style.fontSize = (activeFontSize * storedScaleFit * 0.64) + 'px';
+                    // RESTORED: Your manually calibrated 0.62 factor
+                    // Since VIRTUAL_WIDTH is fixed, this size is constant internally.
+                    // The visual shrinking happens via the CSS transform, not font math.
+                    box.style.fontSize = (activeFontSize * storedScaleFit * 0.62) + 'px';
                     box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
 
                     // HARD WRAP
