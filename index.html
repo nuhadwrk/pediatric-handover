@@ -2797,12 +2797,15 @@ function syncFromVisualToForm(fieldName, value) {
         const autoChecked = document.getElementById('nb-auto-name').checked;
         if(!autoChecked) return;
 
-        // Read from nbValues instead of DOM to avoid timing issues
         const motherName = nbValues['Text1'] || '';
         const babyName = 'BO ' + motherName;
 
-        // Only update the baby name field, NOT Text21 (which is Presentation field)
+        // Only update the Input field for Name, do NOT touch Text21 (Presentation)
         document.getElementById('nb-f-name').value = babyName;
+
+        // Note: The Baby's Name isn't stored in nbValues for the Newborn PDF
+        // because that specific PDF doesn't seem to have a dedicated "Baby Name" box
+        // defined in your map (it's stored separately as p.name in the database).
     }
 
     function toggleAutoName() {
