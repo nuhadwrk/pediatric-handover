@@ -3820,8 +3820,21 @@ Advice: ${nbValues['Text68']||'-'}`;
        closeAdmissionSystem();
        pdfValues={};
        document.querySelectorAll('#view-form input, #view-form textarea').forEach(e=>e.value='');
-       document.getElementById('f-complaints').value=''; 
+       document.getElementById('f-complaints').value='';
     }
+
+    // Re-render the visual mode when window size changes
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            // Reset the scale so it recalculates based on new window width
+            storedScaleFit = null;
+
+            if (currentMode === 'pdf') renderPdfVisual();
+            if (currentMode === 'newborn') renderNbVisual();
+        }, 100); // Small delay to improve performance
+    });
   </script>
 </body>
 </html>
