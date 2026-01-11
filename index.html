@@ -749,7 +749,7 @@
           <h3 style="margin-top:0; color:var(--primary); border-bottom:1px solid #eee; padding-bottom:5px;">2. History</h3>
           <div class="form-group"><label>Presenting Complaints</label><textarea id="f-complaints" oninput="checkOverflow('f-complaints')"></textarea></div>
           <div class="form-group"><label>History of Present Illness (HOPI)</label><textarea id="f-hopi" style="min-height:150px;" oninput="checkOverflow('f-hopi')"></textarea><div id="warn-f-hopi" class="warning-text">⚠️ Text Limit Exceeded</div></div>
-          <div class="form-group"><label>Past History</label><textarea id="f-past" oninput="checkOverflow('f-past')"></textarea></div>
+          <div class="form-group"><label>Past History</label><textarea id="f-past" oninput="checkOverflow('f-past')"></textarea><div id="warn-f-past" class="warning-text">⚠️ Text Limit Exceeded</div></div>
           <div class="form-group"><label>Personal History</label><textarea id="f-personal" oninput="checkOverflow('f-personal')"></textarea></div>
           <div class="form-group"><label>Family History</label><textarea id="f-family" oninput="checkOverflow('f-family')"></textarea></div>
           <div class="form-grid">
@@ -3595,6 +3595,20 @@ ${blue(nbValues['Text67'])}
            updates.plan = aggregated.plan;
        }
        
+       // Update logged admission plan if changed
+       if (updates.plan && p.logs) {
+           const oldPlan = getFirstLoggedPlan(p.logs);
+           const newPlan = updates.plan.trim();
+
+           if (oldPlan !== newPlan) {
+               // Find and replace the first "Admission Plan:" entry in logs
+               const admPlanRegex = /(• [^\n]+\n Admission Plan: )[^\n•]+((?:\n(?!• )[^\n]+)*)/;
+               if (admPlanRegex.test(p.logs)) {
+                   updates.logs = p.logs.replace(admPlanRegex, `$1${newPlan}$2`);
+               }
+           }
+       }
+
        try {
            await db.collection('patients').doc(currentPatientId).update(updates);
            alert("Saved successfully!");
