@@ -2454,12 +2454,12 @@ async function generateDcDocx() {
     const PDF_PAGE_HEIGHT_PT = 775;   // points (10.76 in × 72)
 
     // Screen conversion — increase DPI to make base preview larger
-    const PREVIEW_DPI = 150;  // ← Change this value to control size (higher = larger)
-    const PT_TO_PX = PREVIEW_DPI / 72;  // ≈ 2.0833 px per point at 150 DPI
+    const PREVIEW_DPI = 120;  // ← Change this value to control size (higher = larger)
+    const PT_TO_PX = PREVIEW_DPI / 72;  // ≈ 1.6667 px per point at 120 DPI
 
     // Preview size in pixels (this is what controls how big it appears initially)
-    const PREVIEW_WIDTH_PX  = Math.round(PDF_PAGE_WIDTH_PT  * PT_TO_PX);   // ~1240 px at 150 dpi
-    const PREVIEW_HEIGHT_PX = Math.round(PDF_PAGE_HEIGHT_PT * PT_TO_PX);   // ~1615 px at 150 dpi
+    const PREVIEW_WIDTH_PX  = Math.round(PDF_PAGE_WIDTH_PT  * PT_TO_PX);   // ~992 px at 120 dpi
+    const PREVIEW_HEIGHT_PX = Math.round(PDF_PAGE_HEIGHT_PT * PT_TO_PX);   // ~1292 px at 120 dpi
 
     // Newborn field type mappings
     const NB_FIELD_TYPES = {
