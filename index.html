@@ -2801,9 +2801,8 @@ function syncFromVisualToForm(fieldName, value) {
         const motherName = nbValues['Text1'] || '';
         const babyName = 'BO ' + motherName;
 
+        // Only update the baby name field, NOT Text21 (which is Presentation field)
         document.getElementById('nb-f-name').value = babyName;
-        updateNbField('Text21', babyName);
-        syncNbVisualField('Text21', babyName);
     }
 
     function toggleAutoName() {
