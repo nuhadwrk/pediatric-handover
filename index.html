@@ -2235,9 +2235,9 @@ async function generateDcDocx() {
            // Get first logged plan from logs
            const admPlan = getFirstLoggedPlan(p.logs);
            if(admPlan) {
-               hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
+               hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
            }
-           hopiEl.innerText = hopiText;
+           hopiEl.innerHTML = hopiText;
        }
 
        const hosp = document.getElementById('det-hosp');
@@ -2258,9 +2258,9 @@ async function generateDcDocx() {
            // Get first logged plan from logs
            const admPlan = getFirstLoggedPlan(p.logs);
            if(admPlan) {
-               hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
+               hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
            }
-           hopiEl.innerText = hopiText;
+           hopiEl.innerHTML = hopiText;
        }
        if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
        if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
@@ -2833,33 +2833,66 @@ function syncFromVisualToForm(fieldName, value) {
     
     // --- HOPI GENERATOR HELPER ---
     function getNewbornHopiText() {
-        return `--- MOTHER'S IDENTITY ---
-Name: ${nbValues['Text1']||'-'} | Age: ${nbValues['Text2']||'-'}
-Hosp No: ${nbValues['Text3']||'-'} | Consanguinity: ${nbValues['Text4']||'-'}
-Booking: ${nbValues['Text5']||'-'} | Imm: ${nbValues['Text6']||'-'}
-Obs Index: ${nbValues['Text7']||'-'} | Prev SB: ${nbValues['Text8']||'-'}
+        const blue = (val) => `<span style="color: var(--primary)">${val||'-'}</span>`;
 
---- ANTENATAL ---
-LMP: ${nbValues['Text10']||'-'} | EDD: ${nbValues['Text11']||'-'}
-Hb: ${nbValues['Text12']||'-'} | Blood: ${nbValues['Text13']||'-'}
-VDRL: ${nbValues['Text14']||'-'} | Other: ${nbValues['Text15']||'-'}
+        return `<div style="white-space: pre-wrap; line-height: 1.6;">
+<strong>MOTHER'S DETAILS</strong>
 
---- RISK & LABOR ---
-Risks: ${nbValues['Text16']!=='—'?'Toxemia ':''}${nbValues['Text18']!=='—'?'PIH ':''}${nbValues['Text19']!=='—'?'APH':''}
-Presentation: ${nbValues['Text21']||'-'} | ROM: ${nbValues['Text22']||'-'}
-Liquor: ${nbValues['Text23']||'-'} | Drugs: ${nbValues['Text25']||'-'}
-Thalassemia: ${nbValues['Text27']||'-'}
+<strong>Name:</strong> ${blue(nbValues['Text1'])}
+<strong>Age:</strong> ${blue(nbValues['Text2'])}
+<strong>MRD No:</strong> ${blue(nbValues['Text3'])}
+<strong>Consanguinity:</strong> ${blue(nbValues['Text4'])}
+<strong>Booked / Unbooked:</strong> ${blue(nbValues['Text5'])}
+<strong>Immunized / Un-immunized:</strong> ${blue(nbValues['Text6'])}
+<strong>Para Gravida:</strong> ${blue(nbValues['Text7'])}
+<strong>Previous Still Birth:</strong> ${blue(nbValues['Text8'])}
+<strong>Weight:</strong> ${blue(nbValues['Text9'])}
+<strong>LMP:</strong> ${blue(nbValues['Text10'])}
+<strong>EDD:</strong> ${blue(nbValues['Text11'])}
+<strong>HB:</strong> ${blue(nbValues['Text12'])}
+<strong>Blood Grp & Type:</strong> ${blue(nbValues['Text13'])}
+<strong>VDRL:</strong> ${blue(nbValues['Text14'])}<strong>, G6PD:</strong> ${blue(nbValues['Text15'])}
+<strong>Toxemia:</strong> ${blue(nbValues['Text16'])}
+<strong>Hydramnios:</strong> ${blue(nbValues['Text17'])}
+<strong>P.I.H:</strong> ${blue(nbValues['Text18'])}
+<strong>A.P.H:</strong> ${blue(nbValues['Text19'])}
+<strong>Any other illness:</strong> ${blue(nbValues['Text20'])}
+<strong>Presentation:</strong> ${blue(nbValues['Text21'])}
+<strong>Time of Membrane rupture:</strong> ${blue(nbValues['Text22'])}
+<strong>Liquor Quality:</strong> ${blue(nbValues['Text23'])}<strong>, Quantity:</strong> ${blue(nbValues['Text24'])}
+<strong>Drugs given:</strong> ${blue(nbValues['Text25'])}
+<strong>Any Evidence of Foetal Distress:</strong> ${blue(nbValues['Text26'])}
+<strong>Thalassemia Status:</strong> ${blue(nbValues['Text27'])}
 
---- BIRTH ---
-Mode: ${nbValues['Text30']||'-'} ${nbValues['Text31']||''}
-Date: ${nbValues['Text35']||'-'}
-APGAR: 1'(${nbValues['Text32']}) 5'(${nbValues['Text33']}) 10'(${nbValues['Text34']})
-Resus: ${nbValues['Text36']||'-'}
-Wt: ${nbValues['Text41']||'-'} | Sex: ${nbValues['Text39']||'-'}
 
---- EXAM & PLAN ---
-Exam: ${nbValues['Text67']||'-'}
-Advice: ${nbValues['Text68']||'-'}`;
+<strong>BABY'S DETAILS</strong>
+
+<strong>Type of Delivery:</strong> ${blue(nbValues['Text30'])}
+<strong>Indication:</strong> ${blue(nbValues['Text31'])}
+<strong>Date & Time of Delivery:</strong> ${blue(nbValues['Text35'])}
+<strong>APGAR at:</strong> <strong>1min</strong> ${blue(nbValues['Text32'])} <strong>5min</strong> ${blue(nbValues['Text33'])} <strong>10min</strong> ${blue(nbValues['Text34'])}
+<strong>Resuscitation:</strong> ${blue(nbValues['Text36'])}
+<strong>Intubation & IPPR:</strong> ${blue(nbValues['Text37'])}
+<strong>Bicarbonate / Lethedron:</strong> ${blue(nbValues['Text38'])}
+<strong>Sex of Baby:</strong> ${blue(nbValues['Text39'])}
+<strong>Maturity:</strong> ${blue(nbValues['Text40'])}
+<strong>Weight:</strong> ${blue(nbValues['Text41'])}
+<strong>Congenital Anomalies:</strong> ${blue(nbValues['Text43'])}
+<strong>Anal Patency:</strong> ${blue(nbValues['Text44'])}
+<strong>Oesophageal Patency:</strong> ${blue(nbValues['Text45'])}
+<strong>Respiratory Distress:</strong> ${blue(nbValues['Text46'])}
+<strong>Cyanosis/Pallor/Jaundice:</strong> ${blue(nbValues['Text47'])}
+<strong>Any Other:</strong> ${blue(nbValues['Text48'])}
+<strong>Cord Blood Collected / Not Collected:</strong> ${blue(nbValues['Text49'])}
+<strong>Investigation on Blood:</strong> ${blue(nbValues['Text50'])}
+<strong>Gastric Aspirate - Microscopy:</strong> ${blue(nbValues['Text51'])}
+<strong>Culture:</strong> ${blue(nbValues['Text52'])}
+<strong>Any Other:</strong> ${blue(nbValues['Text53'])}
+
+<strong>Problems:</strong> ${blue(nbValues['Text66'])}
+
+${blue(nbValues['Text67'])}
+</div>`;
     }
 
     function launchAdmissionSystem(clearData = true) {
