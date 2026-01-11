@@ -257,12 +257,38 @@
     #nb-visual-stage { margin-bottom: 80px; width: 100%; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
 
     /* PDF BOXES */
-    .pdf-page { transform-origin: top center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: white; }
+    /* Make sure the stage is centered */
+    #pdf-stage {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      width: 100% !important;
+      padding: 20px 10px !important;
+      box-sizing: border-box !important;
+      overflow: hidden;
+    }
+
+    /* Each page wrapper — ensure centering */
+    .pdf-page {
+      margin: 20px auto !important;
+      display: block !important;
+      box-sizing: border-box !important;
+      transform-origin: top center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      background-color: white;
+    }
+
     .pdf-box { position: absolute; background: rgba(60, 130, 246, 0.05); border: 1px dashed rgba(60, 130, 246, 0.3); font-family: Helvetica, sans-serif; overflow: hidden; color: #000; line-height: 1.3; padding: 2px; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; transform: translateZ(0); }
     .pdf-box:focus { background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary); outline: none; z-index: 10; }
 
-    /* Ensure the stage hides overflow cleanly */
-    #pdf-stage { width: 100%; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+    /* Optional: prevent any left shift from flex or float */
+    .adm-viewport {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      padding: 20px !important;
+    }
 
     /* Newborn Visual Mode Controls */
     .nb-pdf-select, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-datalist { position: absolute; font-family: Helvetica, sans-serif; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(60, 130, 246, 0.4); color: #000; padding: 2px; box-sizing: border-box; }
@@ -2956,27 +2982,32 @@ Advice: ${nbValues['Text68']||'-'}`;
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page';
 
-            // Use the LARGER preview size we just calculated
+            // Large base size (your preferred "big" look)
             wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
             wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
             wrapper.style.position = 'relative';
-            wrapper.style.margin = '20px auto';
-            wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.25)';
+            wrapper.style.margin = '30px auto';                // more top/bottom breathing room
+            wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
             wrapper.style.backgroundImage = `url('https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp${i}.jpg')`;
             wrapper.style.backgroundSize = '100% 100%';
             wrapper.style.backgroundRepeat = 'no-repeat';
 
-            // Automatically scale down if too big for screen (but keep coordinates perfect)
-            const maxScale = 1.0; // 1.0 = full size, 0.8 = 80%, etc.
-            const scale = Math.min(
-                (window.innerWidth - 80) / PREVIEW_WIDTH_PX,
-                (window.innerHeight - 200) / PREVIEW_HEIGHT_PX,
-                maxScale
-            );
-            wrapper.style.transform = `scale(${scale})`;
-            wrapper.style.transformOrigin = 'top center';
+            // Only scale down if it overflows screen (but keep centered!)
+            const maxWidth = window.innerWidth - 60;           // some padding
+            const maxHeight = window.innerHeight - 200;
+            let scale = 1.0;
 
-            // Fields — positioned using the same large pixel size
+            if (PREVIEW_WIDTH_PX > maxWidth || PREVIEW_HEIGHT_PX > maxHeight) {
+                scale = Math.min(
+                    maxWidth / PREVIEW_WIDTH_PX,
+                    maxHeight / PREVIEW_HEIGHT_PX
+                );
+            }
+
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'top center';      // Changed to center horizontally
+
+            // Fields positioning (unchanged — still accurate)
             if (anchors[i]) {
                 anchors[i].forEach(a => {
                     const box = document.createElement('div');
@@ -2989,7 +3020,7 @@ Advice: ${nbValues['Text68']||'-'}`;
                     box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
 
                     box.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                    box.style.fontSize   = `${activeFontSize * PT_TO_PX}px`; // font scales with DPI
+                    box.style.fontSize   = `${activeFontSize * PT_TO_PX}px`;
                     box.style.lineHeight = pdfLineHeight;
 
                     box.innerText = pdfValues[a.name] || '';
