@@ -724,7 +724,7 @@
                           <input type="checkbox" id="nb-auto-name" onchange="toggleAutoName()" checked> Auto
                       </label>
                   </div>
-                  <input type="text" id="nb-f-name" oninput="updateNbField('Text21', this.value); syncNbVisualField('Text21', this.value);">
+                  <input type="text" id="nb-f-name">
               </div>
 
               <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no" oninput="updateNbField('Text29', this.value); syncNbVisualField('Text29', this.value);"></div>
@@ -2439,7 +2439,7 @@ async function generateDcDocx() {
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
     let pdfFontSize = 13;
-    let nbFontSize = 10;  // Default font size for newborn (fixed)
+    let nbFontSize = 9;  // Default font size for newborn (fixed)
     let nbLineHeight = 1.2;  // Default line height for newborn (fixed)
     let pdfLineHeight = 1.3;
     let visualScaleFactor = 0.62;
@@ -2557,7 +2557,7 @@ function syncFromVisualToForm(fieldName, value) {
         'Text29': 'nb-f-hosp-no',
         'Text42': 'nb-f-nid-no',
         'Text1': 'nb-m-name',       // Mother's name
-        'Text21': 'nb-f-name',      // Baby name
+        // Text21 is Presentation (Cephalic), not baby name - baby name stored separately as p.name
         'Text69': 'nb-generated-dx', // Diagnosis
     };
 
