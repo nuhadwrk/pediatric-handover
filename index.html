@@ -2992,16 +2992,12 @@ Advice: ${nbValues['Text68']||'-'}`;
             wrapper.style.backgroundSize = '100% 100%';
             wrapper.style.backgroundRepeat = 'no-repeat';
 
-            // Only scale down if it overflows screen (but keep centered!)
+            // Only constrain by width, allow vertical scrolling
             const maxWidth = window.innerWidth - 60;           // some padding
-            const maxHeight = window.innerHeight - 200;
             let scale = 1.0;
 
-            if (PREVIEW_WIDTH_PX > maxWidth || PREVIEW_HEIGHT_PX > maxHeight) {
-                scale = Math.min(
-                    maxWidth / PREVIEW_WIDTH_PX,
-                    maxHeight / PREVIEW_HEIGHT_PX
-                );
+            if (PREVIEW_WIDTH_PX > maxWidth) {
+                scale = maxWidth / PREVIEW_WIDTH_PX;
             }
 
             wrapper.style.transform = `scale(${scale})`;
