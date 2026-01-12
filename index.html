@@ -436,8 +436,8 @@
 
     /* --- Modern Lab Table Styles (Fixed Sizing) --- */
     .lab-action-cell {
-        width: 90px;
-        min-width: 90px;
+        width: 45px;
+        min-width: 45px;
         padding: 4px !important;
         vertical-align: middle;
     }
@@ -2491,8 +2491,8 @@ function renderLabMatrix() {
         const tr = document.createElement('tr');
         
         // Corner Header
-        let h = `<th style="width:90px; text-align:center; font-size:11px; color:#999;">ACTIONS</th>
-                 <th style="min-width:120px;">TEST NAME</th>`; 
+        let h = `<th style="width:45px; text-align:center; font-size:11px; color:#999;">ACTIONS</th>
+                 <th style="min-width:60px;"></th>`; 
         
         // Date Headers
         labs.dates.forEach((d, i) => {
@@ -3191,65 +3191,66 @@ function syncFromVisualToForm(fieldName, value) {
     
     // --- HOPI GENERATOR HELPER ---
     function getNewbornHopiText() {
-        const blue = (val) => `<span style="color: var(--primary)">${val||'-'}</span>`;
+        const blue = (label) => `<span style="color: var(--primary)">${label}</span>`;
+        const val = (v) => v || '-';
 
         return `<div style="white-space: pre-wrap; line-height: 1.6;">
 <strong>MOTHER'S DETAILS</strong>
 
-<strong>Name:</strong> ${blue(nbValues['Text1'])}
-<strong>Age:</strong> ${blue(nbValues['Text2'])}
-<strong>MRD No:</strong> ${blue(nbValues['Text3'])}
-<strong>Consanguinity:</strong> ${blue(nbValues['Text4'])}
-<strong>Booked / Unbooked:</strong> ${blue(nbValues['Text5'])}
-<strong>Immunized / Un-immunized:</strong> ${blue(nbValues['Text6'])}
-<strong>Para Gravida:</strong> ${blue(nbValues['Text7'])}
-<strong>Previous Still Birth:</strong> ${blue(nbValues['Text8'])}
-<strong>Weight:</strong> ${blue(nbValues['Text9'])}
-<strong>LMP:</strong> ${blue(nbValues['Text10'])}
-<strong>EDD:</strong> ${blue(nbValues['Text11'])}
-<strong>HB:</strong> ${blue(nbValues['Text12'])}
-<strong>Blood Grp & Type:</strong> ${blue(nbValues['Text13'])}
-<strong>VDRL:</strong> ${blue(nbValues['Text14'])}<strong>, G6PD:</strong> ${blue(nbValues['Text15'])}
-<strong>Toxemia:</strong> ${blue(nbValues['Text16'])}
-<strong>Hydramnios:</strong> ${blue(nbValues['Text17'])}
-<strong>P.I.H:</strong> ${blue(nbValues['Text18'])}
-<strong>A.P.H:</strong> ${blue(nbValues['Text19'])}
-<strong>Any other illness:</strong> ${blue(nbValues['Text20'])}
-<strong>Presentation:</strong> ${blue(nbValues['Text21'])}
-<strong>Time of Membrane rupture:</strong> ${blue(nbValues['Text22'])}
-<strong>Liquor Quality:</strong> ${blue(nbValues['Text23'])}<strong>, Quantity:</strong> ${blue(nbValues['Text24'])}
-<strong>Drugs given:</strong> ${blue(nbValues['Text25'])}
-<strong>Any Evidence of Foetal Distress:</strong> ${blue(nbValues['Text26'])}
-<strong>Thalassemia Status:</strong> ${blue(nbValues['Text27'])}
+${blue('Name:')} ${val(nbValues['Text1'])}
+${blue('Age:')} ${val(nbValues['Text2'])}
+${blue('MRD No:')} ${val(nbValues['Text3'])}
+${blue('Consanguinity:')} ${val(nbValues['Text4'])}
+${blue('Booked / Unbooked:')} ${val(nbValues['Text5'])}
+${blue('Immunized / Un-immunized:')} ${val(nbValues['Text6'])}
+${blue('Para Gravida:')} ${val(nbValues['Text7'])}
+${blue('Previous Still Birth:')} ${val(nbValues['Text8'])}
+${blue('Weight:')} ${val(nbValues['Text9'])}
+${blue('LMP:')} ${val(nbValues['Text10'])}
+${blue('EDD:')} ${val(nbValues['Text11'])}
+${blue('HB:')} ${val(nbValues['Text12'])}
+${blue('Blood Grp & Type:')} ${val(nbValues['Text13'])}
+${blue('VDRL:')} ${val(nbValues['Text14'])}${blue(', G6PD:')} ${val(nbValues['Text15'])}
+${blue('Toxemia:')} ${val(nbValues['Text16'])}
+${blue('Hydramnios:')} ${val(nbValues['Text17'])}
+${blue('P.I.H:')} ${val(nbValues['Text18'])}
+${blue('A.P.H:')} ${val(nbValues['Text19'])}
+${blue('Any other illness:')} ${val(nbValues['Text20'])}
+${blue('Presentation:')} ${val(nbValues['Text21'])}
+${blue('Time of Membrane rupture:')} ${val(nbValues['Text22'])}
+${blue('Liquor Quality:')} ${val(nbValues['Text23'])}${blue(', Quantity:')} ${val(nbValues['Text24'])}
+${blue('Drugs given:')} ${val(nbValues['Text25'])}
+${blue('Any Evidence of Foetal Distress:')} ${val(nbValues['Text26'])}
+${blue('Thalassemia Status:')} ${val(nbValues['Text27'])}
 
 
 <strong>BABY'S DETAILS</strong>
 
-<strong>Type of Delivery:</strong> ${blue(nbValues['Text30'])}
-<strong>Indication:</strong> ${blue(nbValues['Text31'])}
-<strong>Date & Time of Delivery:</strong> ${blue(nbValues['Text35'])}
-<strong>APGAR at:</strong> <strong>1min</strong> ${blue(nbValues['Text32'])} <strong>5min</strong> ${blue(nbValues['Text33'])} <strong>10min</strong> ${blue(nbValues['Text34'])}
-<strong>Resuscitation:</strong> ${blue(nbValues['Text36'])}
-<strong>Intubation & IPPR:</strong> ${blue(nbValues['Text37'])}
-<strong>Bicarbonate / Lethedron:</strong> ${blue(nbValues['Text38'])}
-<strong>Sex of Baby:</strong> ${blue(nbValues['Text39'])}
-<strong>Maturity:</strong> ${blue(nbValues['Text40'])}
-<strong>Weight:</strong> ${blue(nbValues['Text41'])}
-<strong>Congenital Anomalies:</strong> ${blue(nbValues['Text43'])}
-<strong>Anal Patency:</strong> ${blue(nbValues['Text44'])}
-<strong>Oesophageal Patency:</strong> ${blue(nbValues['Text45'])}
-<strong>Respiratory Distress:</strong> ${blue(nbValues['Text46'])}
-<strong>Cyanosis/Pallor/Jaundice:</strong> ${blue(nbValues['Text47'])}
-<strong>Any Other:</strong> ${blue(nbValues['Text48'])}
-<strong>Cord Blood Collected / Not Collected:</strong> ${blue(nbValues['Text49'])}
-<strong>Investigation on Blood:</strong> ${blue(nbValues['Text50'])}
-<strong>Gastric Aspirate - Microscopy:</strong> ${blue(nbValues['Text51'])}
-<strong>Culture:</strong> ${blue(nbValues['Text52'])}
-<strong>Any Other:</strong> ${blue(nbValues['Text53'])}
+${blue('Type of Delivery:')} ${val(nbValues['Text30'])}
+${blue('Indication:')} ${val(nbValues['Text31'])}
+${blue('Date & Time of Delivery:')} ${val(nbValues['Text35'])}
+${blue('APGAR at:')} ${blue('1min')} ${val(nbValues['Text32'])} ${blue('5min')} ${val(nbValues['Text33'])} ${blue('10min')} ${val(nbValues['Text34'])}
+${blue('Resuscitation:')} ${val(nbValues['Text36'])}
+${blue('Intubation & IPPR:')} ${val(nbValues['Text37'])}
+${blue('Bicarbonate / Lethedron:')} ${val(nbValues['Text38'])}
+${blue('Sex of Baby:')} ${val(nbValues['Text39'])}
+${blue('Maturity:')} ${val(nbValues['Text40'])}
+${blue('Weight:')} ${val(nbValues['Text41'])}
+${blue('Congenital Anomalies:')} ${val(nbValues['Text43'])}
+${blue('Anal Patency:')} ${val(nbValues['Text44'])}
+${blue('Oesophageal Patency:')} ${val(nbValues['Text45'])}
+${blue('Respiratory Distress:')} ${val(nbValues['Text46'])}
+${blue('Cyanosis/Pallor/Jaundice:')} ${val(nbValues['Text47'])}
+${blue('Any Other:')} ${val(nbValues['Text48'])}
+${blue('Cord Blood Collected / Not Collected:')} ${val(nbValues['Text49'])}
+${blue('Investigation on Blood:')} ${val(nbValues['Text50'])}
+${blue('Gastric Aspirate - Microscopy:')} ${val(nbValues['Text51'])}
+${blue('Culture:')} ${val(nbValues['Text52'])}
+${blue('Any Other:')} ${val(nbValues['Text53'])}
 
-<strong>Problems:</strong> ${blue(nbValues['Text66'])}
+${blue('Problems:')} ${val(nbValues['Text66'])}
 
-${blue(nbValues['Text67'])}
+${val(nbValues['Text67'])}
 </div>`;
     }
 
