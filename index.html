@@ -26,7 +26,7 @@
        - browser-image-compression: Loaded when uploading images
   -->
 
-  <style>
+<style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     :root {
       --bg: #f4f7fb; --primary: #0066cc; --primary-dark: #004a99; --accent: #2a9d8f; --text: #1d3557;
@@ -252,12 +252,49 @@
     .form-group textarea { min-height: 60px; resize: vertical; }
     #view-pdf { width: 100%; display: none; flex-direction: column; align-items: center; }
     #pdf-stage { margin-bottom: 80px; position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
-    
+
+    #view-newborn-visual { width: 100%; display: none; flex-direction: column; align-items: center; }
+    #nb-visual-stage { margin-bottom: 80px; width: 100%; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+
     /* PDF BOXES */
-    .pdf-page { margin: 0 auto 20px auto; max-width: 850px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; background: white; line-height: 0; font-size: 0; background-size: 100% 100%; }
-    .pdf-box { position: absolute; background: rgba(60, 130, 246, 0.05); border: 1px dashed rgba(60, 130, 246, 0.3); font-family: Helvetica, sans-serif; overflow: hidden; color: #000; line-height: 1.3; padding: 2px; }
+    /* Make sure the stage is centered */
+    #pdf-stage {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      width: 100% !important;
+      padding: 20px 10px !important;
+      box-sizing: border-box !important;
+      overflow: hidden;
+    }
+
+    /* Each page wrapper — ensure centering */
+    .pdf-page {
+      margin: 20px auto !important;
+      display: block !important;
+      box-sizing: border-box !important;
+      transform-origin: top center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      background-color: white;
+    }
+
+    .pdf-box { position: absolute; background: rgba(60, 130, 246, 0.05); border: 1px dashed rgba(60, 130, 246, 0.3); font-family: Helvetica, sans-serif; overflow: hidden; color: #000; line-height: 1.3; padding: 2px; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; transform: translateZ(0); }
     .pdf-box:focus { background: rgba(255, 255, 255, 0.9); border: 2px solid var(--primary); outline: none; z-index: 10; }
-    
+
+    /* Optional: prevent any left shift from flex or float */
+    .adm-viewport {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      padding: 20px !important;
+    }
+
+    /* Newborn Visual Mode Controls */
+    .nb-pdf-select, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-datalist { position: absolute; font-family: Helvetica, sans-serif; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(60, 130, 246, 0.4); color: #000; padding: 2px; box-sizing: border-box; }
+    .nb-pdf-select:focus, .nb-pdf-datetime:focus, .nb-pdf-number:focus, .nb-pdf-text:focus, .nb-pdf-datalist:focus { background: rgba(255, 255, 255, 1); border: 2px solid var(--primary); outline: none; z-index: 10; }
+    .nb-pdf-checkbox { position: absolute; background: rgba(255, 255, 200, 0.3); border: 1px solid rgba(255, 200, 0, 0.4); font-family: Helvetica, sans-serif; color: #000; }
+
     .warning-text { color: #d32f2f; font-size: 12px; margin-top: 4px; display: none; font-weight: bold; }
 
     #adm-toolbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 8px 20px; border-radius: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; gap: 10px; align-items: center; z-index: 6000; border: 1px solid #ddd; }
@@ -396,6 +433,91 @@
         .btn-sleek { font-size: 12px; padding: 8px 16px; flex: 1; max-width: 48%; }
         .btn-sleek.btn-warn { margin-left: 0; }
     }
+
+    /* --- Modern Lab Table Styles (Fixed Sizing) --- */
+    .lab-action-cell {
+        width: 45px;
+        min-width: 45px;
+        padding: 4px !important;
+        vertical-align: middle;
+    }
+
+    .lab-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center the group */
+        gap: 2px; /* Consistent spacing */
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 2px;
+        border: 1px solid #ddd;
+        width: fit-content;
+        margin: 0 auto; /* Center horizontally in cell */
+    }
+
+    .icon-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 12px; /* Smaller font for crisp icons */
+        padding: 0;      /* Remove padding to let flex center it */
+        border-radius: 4px;
+        color: #6c757d;
+        transition: all 0.2s;
+        
+        /* Strict Square Sizing */
+        width: 22px !important; 
+        height: 22px !important;
+        min-width: 22px;
+        min-height: 22px;
+        
+        /* Perfect Centering */
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .icon-btn:hover { background-color: #e2e6ea; color: #333; transform: scale(1.1); }
+
+    /* Specific Colors */
+    .btn-del-row:hover { background-color: #ffe6e6; color: #dc3545; }
+    .btn-add-row:hover { background-color: #e6ffea; color: #28a745; }
+    .btn-up:hover, .btn-dn:hover { background-color: #dbeafe; color: #0056b3; }
+
+    /* Column Header Styling */
+    .col-header-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+        width: 100%;
+    }
+
+    .col-header-wrapper input {
+        text-align: center; 
+        font-weight: bold; 
+        border-bottom: 2px solid var(--primary); 
+        padding: 4px;
+        width: 100%;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid var(--primary);
+    }
+
+    .btn-del-col {
+        font-size: 9px;
+        text-transform: uppercase;
+        color: #dc3545;
+        background: white;
+        border: 1px solid #f5c6cb;
+        border-radius: 3px;
+        cursor: pointer;
+        padding: 2px 6px;
+        line-height: 1;
+        transition: all 0.2s;
+    }
+    .btn-del-col:hover { background: #dc3545; color: white; border-color: #dc3545; }
   </style>
 
   <script>
@@ -485,7 +607,7 @@
     </div>
     <div id="notesCard" class="panel-card">
       <strong>Notes/Pending work</strong>
-      <textarea id="notesText" placeholder="Type pending tasks, callbacks, follow-ups..."></textarea>
+      <textarea id="notesText" placeholder="Pending tasks, notes..." oninput="saveNotes(this.value)"></textarea>
     </div>
   </div>
 
@@ -689,13 +811,13 @@
                   </div>
                   <input type="text" id="nb-f-name">
               </div>
-              
-              <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no"></div>
-              <div class="form-group"><label>NID No.</label><input type="text" id="nb-f-nid-no"></div>
+
+              <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no" oninput="updateNbField('Text29', this.value); syncNbVisualField('Text29', this.value);"></div>
+              <div class="form-group"><label>NID No.</label><input type="text" id="nb-f-nid-no" oninput="updateNbField('Text42', this.value); syncNbVisualField('Text42', this.value);"></div>
               
               <div class="form-group"><label>DOA</label><input type="text" id="nb-f-doa"></div>
               <div class="form-group"><label>Shift</label><select id="nb-f-shift"><option>Morning</option><option>Evening</option><option>Night</option></select></div>
-              <div class="form-group"><label>Ward</label><select id="nb-f-ward"><option>NICU</option><option>PW</option><option>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>ER</option></select></div>
+              <div class="form-group"><label>Ward</label><select id="nb-f-ward"><option>NICU</option><option>PW</option><option selected>GW</option><option>SW</option><option>PVT</option><option>ICU</option><option>ER</option></select></div>
               <div class="form-group"><label>Bed</label><input type="text" id="nb-f-bed"></div>
               
               <div class="form-group">
@@ -703,7 +825,7 @@
                     <label>Diagnosis</label>
                     <span style="font-size:10px; color:var(--primary); font-weight:bold;">(Auto)</span>
                   </div>
-                  <input type="text" id="nb-f-adm-dx">
+                  <input type="text" id="nb-f-adm-dx" oninput="updateNbField('Text69', this.value); document.getElementById('nb-generated-dx').value = this.value; syncNbVisualField('Text69', this.value);">
               </div>
            </div>
         </div>
@@ -712,7 +834,7 @@
           <h3 style="margin-top:0; color:var(--primary); border-bottom:1px solid #eee; padding-bottom:5px;">2. History</h3>
           <div class="form-group"><label>Presenting Complaints</label><textarea id="f-complaints" oninput="checkOverflow('f-complaints')"></textarea></div>
           <div class="form-group"><label>History of Present Illness (HOPI)</label><textarea id="f-hopi" style="min-height:150px;" oninput="checkOverflow('f-hopi')"></textarea><div id="warn-f-hopi" class="warning-text">⚠️ Text Limit Exceeded</div></div>
-          <div class="form-group"><label>Past History</label><textarea id="f-past" oninput="checkOverflow('f-past')"></textarea></div>
+          <div class="form-group"><label>Past History</label><textarea id="f-past" oninput="checkOverflow('f-past')"></textarea><div id="warn-f-past" class="warning-text">⚠️ Text Limit Exceeded</div></div>
           <div class="form-group"><label>Personal History</label><textarea id="f-personal" oninput="checkOverflow('f-personal')"></textarea></div>
           <div class="form-group"><label>Family History</label><textarea id="f-family" oninput="checkOverflow('f-family')"></textarea></div>
           <div class="form-grid">
@@ -741,7 +863,7 @@
             <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
          <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
-            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); handleMotherNameChange(this.value);"></div>
+            <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncBabyName(); syncNbVisualField('Text1', this.value);"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
          </div>
          <div class="form-grid">
@@ -944,7 +1066,7 @@
        </div>
        <div class="form-group">
           <label>Diagnosis (Auto-Generated)</label>
-          <textarea id="nb-generated-dx" oninput="updateNbField('Text69', this.value)" style="background:#f0f0f0; min-height:40px;"></textarea>
+          <textarea id="nb-generated-dx" oninput="updateNbField('Text69', this.value); syncNbVisualField('Text69', this.value);" style="background:#f0f0f0; min-height:40px;"></textarea>
        </div>
        <div class="form-group"><label>Attended By</label>
            <textarea id="nb-attended-by" rows="3" oninput="updateNbField('Text70', this.value)">Attended By:&#10;Dr. &#10;Dr. (MO)</textarea>
@@ -953,6 +1075,9 @@
 </div>
         <div id="view-pdf">
            <div id="pdf-stage"></div>
+        </div>
+        <div id="view-newborn-visual">
+           <div id="nb-visual-stage"></div>
         </div>
       </div>
     </div>
@@ -1143,6 +1268,7 @@
     const REQUEST_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/AdmissionRequest.pdf';
     const NEWBORN_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.pdf';
     const ANCHORS_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/anchors.json';
+    const NB_ANCHORS_URL = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/newborn-anchors.json';
 
     // *** TEMPLATE URLs ***
     const DOCX_URL_PED = "https://raw.githubusercontent.com/nuhadwrk/admission/main/discharge_template.docx"; 
@@ -1156,12 +1282,12 @@
         neo_findings: `Cried after delivery, Vigorous, Pink
 Congenital anomalies: none grossly.
 Hip Abduction test: normal
-Umbilicus: 2A + 1V
+UA: 3 vessels
 CVS: S1+S2+M0
 RS: B/L EAE, No added sounds
 CRT: <3s
 Abdomen: no organomegaly
--
+B/L descended testes
 Neonatal reflexes: normal
 Urine and meconium: Passed
 CCHD: Passed, RH:    RF:    `,
@@ -1679,15 +1805,41 @@ async function generateDcDocx() {
     document.getElementById("doa").value = getLocalISODate();
 
     // --- HANDOVER SUMMARY ---
+// --- HANDOVER SUMMARY & NOTES ---
+    let notesDebounce;
+    function saveNotes(val) {
+        clearTimeout(notesDebounce);
+        notesDebounce = setTimeout(() => {
+            // Save notes securely (merge:true ensures we don't wipe numbers)
+            db.collection('summaries').doc('current').set({ notes: val }, { merge: true });
+        }, 1000);
+    }
+
     function recalcSummary() {
       const d={
         adM:+document.getElementById('adM').value||0, adE:+document.getElementById('adE').value||0, adN:+document.getElementById('adN').value||0,
-        disM:+document.getElementById('disM').value||0, disE:+document.getElementById('disE').value||0, disN:+document.getElementById('disN').value||0
+        disM:+document.getElementById('disM').value||0, disE:+document.getElementById('disE').value||0, disN:+document.getElementById('disN').value||0,
+        // CRITICAL FIX: Include notes here so saving numbers doesn't erase them
+        notes: document.getElementById('notesText').value 
       };
       document.getElementById('totalAd').innerText=d.adM+d.adE+d.adN; document.getElementById('totalDis').innerText=d.disM+d.disE+d.disN;
-      db.collection('summaries').doc('current').set(d);
+      
+      // Save entire object
+      db.collection('summaries').doc('current').set(d, {merge: true});
     }
-    db.collection('summaries').doc('current').get().then(doc=>{ if(doc.exists){ const d=doc.data(); ['adM','adE','adN','disM','disE','disN'].forEach(k=>document.getElementById(k).value=d[k]||0); recalcSummary(); } });
+
+    // Load Data on Startup
+    db.collection('summaries').doc('current').get().then(doc=>{ 
+        if(doc.exists){ 
+            const d=doc.data(); 
+            ['adM','adE','adN','disM','disE','disN'].forEach(k=>document.getElementById(k).value=d[k]||0); 
+            
+            // FIX: Load the saved notes back into the textarea
+            if(d.notes) document.getElementById('notesText').value = d.notes;
+            
+            recalcSummary(); 
+        } 
+    });
 
     // --- PATIENT LOADING ---
     function loadPatients() {
@@ -2164,7 +2316,7 @@ async function generateDcDocx() {
        const initialPlan = document.getElementById('plan').value;
        let initialLogs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
        if(initialPlan) {
-           initialLogs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${initialPlan}\n\n`;
+           initialLogs += `• ${formatTimestamp(Date.now())}\n Admission Plan:\n${initialPlan}\n\n`;
        }
 
        db.collection('patients').add({
@@ -2194,9 +2346,9 @@ async function generateDcDocx() {
            // Get first logged plan from logs
            const admPlan = getFirstLoggedPlan(p.logs);
            if(admPlan) {
-               hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
+               hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
            }
-           hopiEl.innerText = hopiText;
+           hopiEl.innerHTML = hopiText;
        }
 
        const hosp = document.getElementById('det-hosp');
@@ -2217,9 +2369,9 @@ async function generateDcDocx() {
            // Get first logged plan from logs
            const admPlan = getFirstLoggedPlan(p.logs);
            if(admPlan) {
-               hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
+               hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
            }
-           hopiEl.innerText = hopiText;
+           hopiEl.innerHTML = hopiText;
        }
        if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
        if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
@@ -2275,26 +2427,299 @@ async function generateDcDocx() {
        Object.values(localPatients).filter(p=>p.isNew).forEach(p=>{ txt+=`${p.ward} Bed ${p.bed}: ${p.name}\n   ${p.diagnosis}\n   ${p.plan}\n\n`; });
        const w=window.open('','_blank'); w.document.write(`<pre style="font-family:monospace;white-space:pre-wrap;">${txt}</pre>`); w.document.close();
     }
+// --- NEW FUNCTION: Auto-populate standard labs ---
+    function loadStandardLabs() {
+        const p = localPatients[currentPatientId];
+        // Safely get existing labs or create empty structure
+        const l = p.labs || { dates: [], tests: {} };
+        
+        // Your requested standard list
+        const standardTests = [
+            "Hb", "PCV", "TLC", "N", "L", "PLT", 
+            "CRP", "Procal", 
+            "Na", "K", 
+            "TSB", "DSB", "AST", "ALT", 
+            "Urea", "BUN", "Creat", "URE", 
+            "Blood C/S", "Urine C/S"
+        ];
 
-    function renderLabMatrix() {
-       const p=localPatients[currentPatientId], labs=p.labs||{dates:[],tests:{}}, t=document.getElementById('labMatrix'); t.innerHTML='';
-       const thead=document.createElement('thead'), tr=document.createElement('tr');
-       let h=`<th></th>`; labs.dates.forEach((d,i)=>h+=`<th><input type="text" value="${d}" onblur="upLabDate(${i},this.value)"></th>`);
-       h+=`<th><button class="btn-sm" onclick="addLabCol()">Add Col</button></th>`; tr.innerHTML=h; thead.appendChild(tr); t.appendChild(thead);
-       const tbody=document.createElement('tbody');
-       Object.keys(labs.tests).forEach(k=>{
-           const r=document.createElement('tr'); let c=`<td><input type="text" value="${k}" style="font-weight:bold;" onblur="renTest('${k}',this.value)"></td>`;
-           labs.tests[k].forEach((v,i)=>{ c+=`<td><input type="text" value="${v}" onblur="upLabVal('${k}',${i},this.value)"></td>`; });
-           c+=`<td></td>`; r.innerHTML=c; tbody.appendChild(r);
-       });
-       const addRow=document.createElement('tr'); addRow.innerHTML=`<td><button class="btn-sm" onclick="addLabRow()">Add Row</button></td><td colspan="${labs.dates.length+1}"></td>`; tbody.appendChild(addRow); t.appendChild(tbody);
-       renderChart(labs);
+        // If no dates exist (new table), add today's date automatically
+        if (l.dates.length === 0) {
+            const t = new Date();
+            l.dates.push(`${t.getDate()}/${t.getMonth()+1}`);
+        }
+
+        // Loop through standard tests and add them ONLY if they don't exist
+        standardTests.forEach(test => {
+            if (!l.tests[test]) {
+                // Create an array of "-" placeholders matching the number of date columns
+                l.tests[test] = new Array(l.dates.length).fill("-");
+            }
+        });
+
+        // Save to Firebase (this will trigger the listener to re-render the table)
+        db.collection('patients').doc(currentPatientId).update({labs: l});
     }
-    function upLabVal(k,i,v){ const p=localPatients[currentPatientId], l=p.labs; l.tests[k][i]=v; db.collection('patients').doc(currentPatientId).update({labs:l}); }
-    function upLabDate(i,v){ const p=localPatients[currentPatientId], l=p.labs; l.dates[i]=v; db.collection('patients').doc(currentPatientId).update({labs:l}); }
-    function renTest(o,n){ if(o===n)return; const p=localPatients[currentPatientId], l=p.labs, nt={}; Object.keys(l.tests).forEach(k=>{ if(k===o)nt[n]=l.tests[k]; else nt[k]=l.tests[k]; }); l.tests=nt; db.collection('patients').doc(currentPatientId).update({labs:l}); }
-    function addLabCol(){ const p=localPatients[currentPatientId], l=p.labs||{dates:[],tests:{}}, t=new Date(); l.dates.push(`${t.getDate()}/${t.getMonth()+1}`); Object.keys(l.tests).forEach(k=>l.tests[k].push("-")); db.collection('patients').doc(currentPatientId).update({labs:l}); }
-    function addLabRow(){ const p=localPatients[currentPatientId], l=p.labs||{dates:[],tests:{}}; let n="New Test", c=1; while(l.tests[n]){c++;n=`New Test ${c}`;} l.tests[n]=new Array(l.dates.length).fill("-"); db.collection('patients').doc(currentPatientId).update({labs:l}); }
+// --- NEW LABS LOGIC (ARRAY BASED) ---
+
+    // 1. Convert old Object format to Array format on the fly
+    function ensureLabArrayFormat(p) {
+        let labs = p.labs || { dates: [], tests: {}, rows: [] };
+        
+        // If "rows" doesn't exist but "tests" does, migrate data!
+        if (!labs.rows && labs.tests) {
+            console.log("Migrating labs to ordered array...");
+            labs.rows = Object.keys(labs.tests).map(k => ({
+                name: k,
+                vals: labs.tests[k]
+            }));
+            delete labs.tests; // Remove old format
+            
+            // Save immediately so it sticks
+            db.collection('patients').doc(currentPatientId).update({labs: labs});
+        }
+        
+        // Ensure structure exists
+        if (!labs.rows) labs.rows = [];
+        if (!labs.dates) labs.dates = [];
+        
+        return labs;
+    }
+// --- NEW: Delete Column Logic ---
+    function delLabCol(index) {
+        if(!confirm("Delete this entire Date column?")) return;
+        
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+
+        // 1. Remove the Date Header
+        l.dates.splice(index, 1);
+
+        // 2. Remove the value at this index from EVERY test row
+        l.rows.forEach(row => {
+            if (row.vals && row.vals.length > index) {
+                row.vals.splice(index, 1);
+            }
+        });
+
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+    // 2. Main Render Function
+function renderLabMatrix() {
+        const p = localPatients[currentPatientId];
+        const labs = ensureLabArrayFormat(p); 
+        
+        const t = document.getElementById('labMatrix'); 
+        t.innerHTML = '';
+
+        // --- 1. Sleek Header (with Delete Column) ---
+        const thead = document.createElement('thead');
+        const tr = document.createElement('tr');
+        
+        // Corner Header
+        let h = `<th style="width:45px; text-align:center; font-size:11px; color:#999;">ACTIONS</th>
+                 <th style="min-width:60px;"></th>`; 
+        
+        // Date Headers
+        labs.dates.forEach((d, i) => {
+            h += `
+                <th>
+                    <div class="col-header-wrapper">
+                        <input type="text" value="${d}" onblur="upLabDate(${i},this.value)" 
+                               style="text-align:center; font-weight:bold; border-bottom:2px solid var(--primary); padding:4px;">
+                        <button class="btn-del-col" onclick="delLabCol(${i})">Delete</button>
+                    </div>
+                </th>`;
+        });
+        
+        // Add Date Button
+        h += `<th style="vertical-align:top;"><button class="btn-sm" style="font-size:10px; padding:2px 6px;" onclick="addLabCol()">+ Date</button></th>`;
+        
+        tr.innerHTML = h; 
+        thead.appendChild(tr); 
+        t.appendChild(thead);
+
+        // --- 2. Body (Rows with Icon Toolbar) ---
+        const tbody = document.createElement('tbody');
+        
+        labs.rows.forEach((row, rIndex) => {
+            const r = document.createElement('tr');
+            
+            // Icon Toolbar Cell
+            let controls = `
+                <td class="lab-action-cell">
+                    <div class="lab-toolbar">
+                        <button class="icon-btn btn-up" onclick="moveLabRow(${rIndex}, -1)" title="Move Up">▲</button>
+                        <button class="icon-btn btn-dn" onclick="moveLabRow(${rIndex}, 1)" title="Move Down">▼</button>
+                        <button class="icon-btn btn-add-row" onclick="insertLabRow(${rIndex})" title="Insert Row Below">✚</button>
+                        <button class="icon-btn btn-del-row" onclick="delLabRow(${rIndex})" title="Delete Row">✕</button>
+                    </div>
+                </td>
+            `;
+            
+            let nameCell = `<td><input type="text" value="${row.name}" style="font-weight:600;" onblur="renLabRow(${rIndex},this.value)"></td>`;
+            
+            let valCells = '';
+            row.vals.forEach((v, cIndex) => { 
+                valCells += `<td><input type="text" value="${v}" style="text-align:center;" onblur="upLabVal(${rIndex},${cIndex},this.value)"></td>`; 
+            });
+            
+            r.innerHTML = controls + nameCell + valCells + `<td></td>`; 
+            tbody.appendChild(r);
+        });
+
+        // --- 3. Footer Controls ---
+        const addRow = document.createElement('tr');
+        addRow.innerHTML = `
+            <td colspan="2" style="padding: 10px 5px;">
+                <div style="display:flex; gap:8px;">
+                    <button class="btn-sm" onclick="addLabRow()">Add Row (Bottom)</button>
+                    <button class="btn-sm" style="background:#17a2b8;" onclick="loadStandardLabs()">Load Standard Panel</button>
+                </div>
+            </td>
+            <td colspan="${labs.dates.length + 1}"></td>
+        `;
+        tbody.appendChild(addRow);
+        t.appendChild(tbody);
+
+        renderChartArray(labs);
+    }
+
+    // --- Data Manipulation Functions ---
+
+    function upLabVal(rIndex, cIndex, val) {
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+        l.rows[rIndex].vals[cIndex] = val;
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    function renLabRow(rIndex, val) {
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+        l.rows[rIndex].name = val;
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    function upLabDate(cIndex, val) {
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+        l.dates[cIndex] = val;
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    function addLabCol() {
+        const p = localPatients[currentPatientId];
+        const l = ensureLabArrayFormat(p);
+        const t = new Date();
+        l.dates.push(`${t.getDate()}/${t.getMonth()+1}`);
+        // Add empty string to every row's value array
+        l.rows.forEach(r => r.vals.push("-"));
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    function addLabRow() {
+        const p = localPatients[currentPatientId];
+        const l = ensureLabArrayFormat(p);
+        l.rows.push({ name: "New Test", vals: new Array(l.dates.length).fill("-") });
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    // --- NEW: Insert, Delete, Move ---
+
+    function insertLabRow(index) {
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+        // Insert at index + 1
+        l.rows.splice(index + 1, 0, { name: "New Test", vals: new Array(l.dates.length).fill("-") });
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    function delLabRow(index) {
+        if(!confirm("Delete this row?")) return;
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+        l.rows.splice(index, 1);
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    function moveLabRow(index, direction) {
+        const p = localPatients[currentPatientId];
+        const l = p.labs;
+        const targetIndex = index + direction;
+        
+        // Bounds check
+        if (targetIndex < 0 || targetIndex >= l.rows.length) return;
+
+        // Swap
+        const temp = l.rows[index];
+        l.rows[index] = l.rows[targetIndex];
+        l.rows[targetIndex] = temp;
+        
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    // --- Updated Load Standard Labs ---
+    function loadStandardLabs() {
+        const p = localPatients[currentPatientId];
+        const l = ensureLabArrayFormat(p);
+        
+        const standardTests = [
+            "Hb", "PCV", "TLC", "N", "L", "PLT", "CRP", "Procal", 
+            "Na", "K", "TSB", "DSB", "AST", "ALT", 
+            "Urea", "BUN", "Creat", "URE", "Blood C/S", "Urine C/S"
+        ];
+
+        if (l.dates.length === 0) {
+            const t = new Date();
+            l.dates.push(`${t.getDate()}/${t.getMonth()+1}`);
+        }
+
+        standardTests.forEach(testName => {
+            // Check if row exists by name
+            const exists = l.rows.some(r => r.name === testName);
+            if (!exists) {
+                l.rows.push({ name: testName, vals: new Array(l.dates.length).fill("-") });
+            }
+        });
+
+        db.collection('patients').doc(currentPatientId).update({labs: l});
+    }
+
+    // --- Updated Chart Logic for Array Format ---
+    async function renderChartArray(l) {
+        await ensureChartJS();
+        const ctx = document.getElementById('labsChart').getContext('2d'); 
+        if(chartInstance) chartInstance.destroy();
+        
+        const clr = ['#e63946','#2a9d8f','#457b9d','#f4a261', '#9b59b6', '#34495e']; 
+        let ci = 0;
+
+        const ds = l.rows.map(row => {
+            // Try to parse values (handle "-", empty, numbers)
+            const dataPoints = row.vals.map(v => {
+                const num = parseFloat(v);
+                return isNaN(num) ? null : num;
+            });
+            
+            // Only plot if there is at least one valid number
+            if (dataPoints.every(v => v === null)) return null;
+
+            return {
+                label: row.name,
+                data: dataPoints,
+                borderColor: clr[ci++ % clr.length],
+                tension: 0.3,
+                spanGaps: true
+            };
+        }).filter(d => d); // Remove null datasets
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: l.dates, datasets: ds },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
     async function renderChart(l){
        await ensureChartJS(); // Ensure Chart.js is loaded
        const ctx=document.getElementById('labsChart').getContext('2d'); if(chartInstance)chartInstance.destroy();
@@ -2382,33 +2807,176 @@ async function generateDcDocx() {
         renderHistory();
     }
 // --- ADMISSION SYSTEM LOGIC & VARIABLES ---
-    const MAP_FORM_PDF = { 'f-name': 'name', 'f-hosp-no': 'hid', 'f-age': 'age', 'f-sex': 'sex', 'f-ward': 'ward', 'f-bed': 'bed', 'f-doa': 'doa', 'f-finaldx': 'dx', 'f-plan': 'management', 'f-complaints': 'complains', 'f-hopi': 'hopi', 'f-past': 'pasthx', 'f-family': 'fhx', 'f-treatment': 'txhx', 'f-obs': 'obs', 'f-personal': 'personalhx', 'f-ge': 'ge', 'f-cvs': 'cvs', 'f-rs': 'rs', 'f-abd': 'pa', 'f-pelvis': 'pelvis', 'f-cns': 'cns', 'f-le': 'le' };
+const MAP_FORM_PDF = { 
+        'f-name': 'name', 'f-hosp-no': 'hid', 'f-age': 'age', 'f-sex': 'sex', 
+        'f-weight': 'weight', // Added weight
+        'f-ward': 'ward', 'f-bed': 'bed', 'f-doa': 'doa', 
+        'f-adm-dx': 'dx',     // Added top diagnosis
+        'f-finaldx': 'dx', 
+        'f-plan': 'management', 'f-complaints': 'complains', 'f-hopi': 'hopi', 
+        'f-past': 'pasthx', 'f-family': 'fhx', 'f-treatment': 'txhx', 
+        'f-obs': 'obs', 'f-personal': 'personalhx', 'f-ge': 'ge', 
+        'f-cvs': 'cvs', 'f-rs': 'rs', 'f-abd': 'pa', 'f-pelvis': 'pelvis', 
+        'f-cns': 'cns', 'f-le': 'le' 
+    };
     const MAP_PDF_DB = { 'name':'name', 'hid':'id', 'age':'age', 'sex':'sex', 'ward':'ward', 'bed':'bed', 'doa':'doa', 'management':'plan', 'complains':'complaint', 'hopi':'hopi', 'pasthx':'past_history', 'fhx':'family_history', 'txhx':'treatment_history', 'obs':'obs_history', 'personalhx':'personal_history', 'ge':'general_exam', 'cvs':'cvs', 'rs':'rs', 'pa':'abdomen', 'pelvis':'pelvis', 'cns':'cns', 'le':'local_exam', 'dx':'diagnosis' };
     
     // Newborn PDF Field Map (Required for PDF Generation)
-    const MAP_NB_PDF = { 'Text1': '', 'Text2': 'years', 'Text3': '', 'Text4': '', 'Text5': '', 'Text6': '', 'Text7': '', 'Text8': '-', 'Text9': 'Kg/m2', 'Text10': '', 'Text11': '', 'Text12': 'g/dL', 'Text13': '', 'Text14': '', 'Text15': '', 'Text16': '-', 'Text17': '-', 'Text18': '-', 'Text19': '-', 'Text20': '', 'Text21': '', 'Text22': '-', 'Text23': '', 'Text24': '', 'Text25': '-', 'Text26': '-', 'Text27': 'Mother: \nFather: ', 'Text29': '', 'Text30': '', 'Text31': '', 'Text32': '/10', 'Text33': '/10', 'Text34': '/10', 'Text35': '', 'Text36': 'Dry stimulation', 'Text37': '-', 'Text38': '-', 'Text39': '', 'Text40': '', 'Text41': 'Kg', 'Text42': '', 'Text43': '', 'Text44': '', 'Text45': '', 'Text46': '-', 'Text47': '-', 'Text48': '-', 'Text49': 'Collected', 'Text50': 'Hb, PCV, Blood Grouping', 'Text51': '-', 'Text52': '-', 'Text53': '-', 'Text59': '____', 'Text60': '', 'Text61': '', 'Text62': '____', 'Text63': '', 'Text64': '', 'Text66': 'Baby born vigorous, cried immediately after birth', 'Text67': 'Tone and cry:            Normal\nReflex and Activity:  Normal\n\nRS: B/L EAE, CLEAR\nNo LCR, UCR, XR, NF or Grunting\n\nCVS: S1 S2 M0\n\nUmbilical Vessels: 2A +1V\n\nHR , RR , SpO2 % in RA\n\n-', 'Text68': '-Routine newborn care\n-Exclusive breast feeding as early as possible then every 2hrly\n-Immunization as protocol\n-CCHD >24HOL, NMS >72HOL\n-W/F Tachypnea, Poor feeding, Lethargy', 'Text69': '', 'Text70': 'Attended By:\nDr. \nDr. (MO)' };
+    const MAP_NB_PDF = { 'Text1': '', 'Text2': 'years', 'Text3': '', 'Text4': '', 'Text5': '', 'Text6': '', 'Text7': '', 'Text8': '-', 'Text9': 'Kg/m2', 'Text10': '', 'Text11': '', 'Text12': 'g/dL', 'Text13': '', 'Text14': '', 'Text15': '', 'Text16': '-', 'Text17': '-', 'Text18': '-', 'Text19': '-', 'Text20': '', 'Text21': '', 'Text22': '-', 'Text23': '', 'Text24': '', 'Text25': '-', 'Text26': '-', 'Text27': 'Mother: \nFather: ', 'Text29': '', 'Text30': '', 'Text31': '', 'Text32': '/10', 'Text33': '/10', 'Text34': '/10', 'Text35': '', 'Text36': 'Dry stimulation', 'Text37': '-', 'Text38': '-', 'Text39': '', 'Text40': '', 'Text41': 'Kg', 'Text42': '', 'Text43': '', 'Text44': '', 'Text45': '', 'Text46': '-', 'Text47': '-', 'Text48': '-', 'Text49': 'Collected', 'Text50': 'Hb, PCV, Blood Grouping', 'Text51': '-', 'Text52': '-', 'Text53': '-', 'Text59': '', 'Text60': '', 'Text61': '', 'Text62': '', 'Text63': '', 'Text64': '', 'Text66': 'Baby born vigorous, cried immediately after birth', 'Text67': 'Tone and cry:            Normal\nReflex and Activity:  Normal\n\nRS: B/L EAE, CLEAR\nNo LCR, UCR, XR, NF or Grunting\n\nCVS: S1 S2 M0\n\nUmbilical Vessels: 2A +1V\n\nHR , RR , SpO2 % in RA\n\n-', 'Text68': '-Routine newborn care\n-Exclusive breast feeding as early as possible then every 2hrly\n-Immunization as protocol\n-CCHD >24HOL, NMS >72HOL\n-W/F Tachypnea, Poor feeding, Lethargy', 'Text69': '', 'Text70': 'Attended By:\nDr. \nDr. (MO)' };
 
     const ALLOWED_EDIT_PDF = [ 'dx', 'management', 'complains', 'hopi', 'pasthx', 'fhx', 'txhx', 'obs', 'personalhx', 'ge', 'cvs', 'rs', 'pa', 'pelvis', 'cns', 'le' ];
     const FIELD_MAX_LINES = { 'f-hopi': 9, 'f-complaints': 3, 'f-past': 6, 'f-personal': 6, 'f-family': 6, 'f-treatment': 6, 'f-obs': 6, 'f-ge': 5, 'f-cvs': 5, 'f-rs': 5, 'f-abd': 5, 'f-pelvis': 5, 'f-cns': 5, 'f-le': 5, 'f-plan': 8 };
 
     let pdfDoc = null;
     let anchors = {};
+    let nbAnchors = {};
     let pdfValues = {};
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
     let pdfFontSize = 13;
+    let nbFontSize = 9;  // Default font size for newborn (fixed)
+    let nbLineHeight = 1.2;  // Default line height for newborn (fixed)
     let pdfLineHeight = 1.3;
     let visualScaleFactor = 0.62;
     let visualLineHeightFactor = 1.0769; // Visual 1.4 ≈ Print 1.3 (1.4/1.3)
     let storedScaleFit = null;
     let isAutoFit = false;
-    let calculatedFontSize = 13; 
+    let calculatedFontSize = 13;
+    let isSyncing = false; // Prevent infinite sync loops
+
+    // === Your REAL PDF dimensions ===
+    const PDF_PAGE_WIDTH_PT  = 595;   // points (8.26 in × 72)
+    const PDF_PAGE_HEIGHT_PT = 775;   // points (10.76 in × 72)
+
+    // Screen conversion — increase DPI to make base preview larger
+    const PREVIEW_DPI = 96;  // ← Change this value to control size (higher = larger)
+    const PT_TO_PX = PREVIEW_DPI / 72;  // ≈ 1.3333 px per point at 96 DPI
+
+    // Preview size in pixels (this is what controls how big it appears initially)
+    const PREVIEW_WIDTH_PX  = Math.round(PDF_PAGE_WIDTH_PT  * PT_TO_PX);   // ~794 px at 96 dpi (matches patient details width)
+    const PREVIEW_HEIGHT_PX = Math.round(PDF_PAGE_HEIGHT_PT * PT_TO_PX);   // ~1033 px at 96 dpi
+
+    // Newborn field type mappings
+    const NB_FIELD_TYPES = {
+        'Text35': 'datetime',  // Birth date & time
+        'Text30': 'datalist',  // Delivery mode
+        'Text39': 'datalist',  // Sex
+        'Text59': 'clickable', // Term
+        'Text60': 'clickable', // Preterm
+        'Text61': 'clickable', // Postterm
+        'Text62': 'clickable', // AGA
+        'Text63': 'clickable', // SGA
+        'Text64': 'clickable', // LGA
+        'Text41': 'text',      // Weight (text field with "kg" default)
+        'Text4': 'datalist',   // Consanguinity
+        'Text5': 'datalist',   // Booking Status
+        'Text6': 'datalist',   // Immunization
+        'Text13': 'datalist',  // Blood Group
+        'Text14': 'datalist',  // VDRL
+        'Text15': 'datalist',  // Other Tests
+        'Text21': 'datalist',  // Presentation
+        'Text23': 'datalist',  // Liquor Quality
+        'Text24': 'datalist',  // Liquor Quantity
+        'Text43': 'datalist',  // Cong. Anomalies
+        'Text44': 'datalist',  // Anal Patency
+        'Text45': 'datalist',  // Esophageal Patency
+        'Text49': 'datalist',  // Cord Blood
+        // Rest are text/textarea inputs
+    };
+
+    const NB_DATALIST_OPTIONS = {
+        'Text30': ['SVD', 'Em LSCS', 'El LSCS', 'Instrumental'],
+        'Text39': ['Male', 'Female'],
+        'Text4': ['Non-consanguineous', 'Consanguineous'],
+        'Text5': ['Booked', 'Unbooked'],
+        'Text6': ['Immunized', 'Un-immunized'],
+        'Text13': ['O+ve', 'O-ve', 'A+ve', 'A-ve', 'B+ve', 'B-ve', 'AB+ve', 'AB-ve'],
+        'Text14': ['Negative, G6PD: Normal'],
+        'Text15': ['HIV: -ve, HbsAg: -ve, HCV: -ve'],
+        'Text21': ['Cephalic'],
+        'Text23': ['Clear'],
+        'Text24': ['Adequate'],
+        'Text43': ['No gross anomaly'],
+        'Text44': ['Patent'],
+        'Text45': ['To be established'],
+        'Text49': ['Collected', 'Not Collected'],
+    }; 
 
     function updateNbField(key, val) { nbValues[key] = val; }
     function updateNbTicks(group, val) {
         if(group === 'gest') { nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = ''; if(val === 'Term') nbValues['Text59'] = '____'; if(val === 'Preterm') nbValues['Text60'] = '____'; if(val === 'Postterm') nbValues['Text61'] = '____'; }
         if(group === 'size') { nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = ''; if(val === 'AGA') nbValues['Text62'] = '____'; if(val === 'SGA') nbValues['Text63'] = '____'; if(val === 'LGA') nbValues['Text64'] = '____'; }
     }
+
+    // Sync individual field to visual form in real-time
+    function syncNbVisualField(fieldName, value) {
+        // Only sync when in newborn visual mode
+        if(currentMode !== 'newborn') return;
+        // Prevent infinite loops
+        if(isSyncing) return;
+
+        // Find the visual field element and update it
+        const stage = document.getElementById('nb-visual-stage');
+        if(!stage) return;
+
+        isSyncing = true;
+        // Find all input/div elements and update matching field
+        const allFields = stage.querySelectorAll('.pdf-box, .nb-pdf-datalist, .nb-pdf-datetime, .nb-pdf-number, .nb-pdf-text, .nb-pdf-clickable');
+        allFields.forEach(el => {
+            const fieldId = el.getAttribute('data-field');
+            if(fieldId === fieldName) {
+                if(el.tagName === 'INPUT') {
+                    el.value = value;
+                } else if(el.classList.contains('nb-pdf-clickable')) {
+                    // For clickable fields, update text and underline
+                    el.innerText = value;
+                    el.style.textDecoration = value === '____' ? 'underline' : 'none';
+                } else {
+                    el.innerText = value;
+                }
+            }
+        });
+        isSyncing = false;
+    }
+
+// Sync from visual form back to sidebar form
+function syncFromVisualToForm(fieldName, value) {
+    // Prevent infinite loops
+    if(isSyncing) return;
+
+    isSyncing = true;
+    nbValues[fieldName] = value;
+
+    // Map visual fields back to form fields
+    const visualToFormMap = {
+        'Text29': 'nb-f-hosp-no',
+        'Text42': 'nb-f-nid-no',
+        'Text1': 'nb-m-name',       // Mother's name
+        // Text21 is Presentation (Cephalic), not baby name - baby name stored separately as p.name
+        'Text69': 'nb-generated-dx', // Diagnosis
+    };
+
+    const formFieldId = visualToFormMap[fieldName];
+    if(formFieldId) {
+        const formField = document.getElementById(formFieldId);
+        if(formField && formField.value !== value) {
+            formField.value = value;
+            
+            // --- FIX STARTS HERE ---
+            // If we just updated Mother's Name (Text1), we must manually trigger the baby name sync
+            if (fieldName === 'Text1') {
+                syncBabyName();
+            }
+            // --- FIX ENDS HERE ---
+
+            // Also sync diagnosis to patient details diagnosis field
+            if(fieldName === 'Text69') {
+                document.getElementById('nb-f-adm-dx').value = value;
+            }
+        }
+    }
+    isSyncing = false;
+}
 
     // Sync ALL form field values into nbValues before saving
     function syncAllNbFieldsToValues() {
@@ -2607,6 +3175,11 @@ async function generateDcDocx() {
         });
 
         console.log('✓ Loaded all newborn fields from nbValues');
+
+        // Auto-sync baby name after loading data
+        if (document.getElementById('nb-auto-name')?.checked) {
+            syncBabyName();
+        }
     }
 
     // --- SYNC FUNCTIONS ---
@@ -2615,17 +3188,27 @@ async function generateDcDocx() {
         if (!dateTimeVal) return; const [datePart, timePart] = dateTimeVal.split('T');
         document.getElementById('nb-f-doa').value = datePart;
     }
-    function toggleAutoName() {
-        const isAutoName = document.getElementById('nb-auto-name').checked;
-        if(isAutoName) { const motherName = document.getElementById('nb-m-name').value; handleMotherNameChange(motherName); }
+    function syncBabyName() {
+        const autoChecked = document.getElementById('nb-auto-name').checked;
+        if(!autoChecked) return;
+
+        const motherName = nbValues['Text1'] || '';
+        const babyName = 'BO ' + motherName;
+
+        // Only update the Input field for Name, do NOT touch Text21 (Presentation)
+        document.getElementById('nb-f-name').value = babyName;
+
+        // Note: The Baby's Name isn't stored in nbValues for the Newborn PDF
+        // because that specific PDF doesn't seem to have a dedicated "Baby Name" box
+        // defined in your map (it's stored separately as p.name in the database).
     }
-    function handleMotherNameChange(val) {
-        const isAutoName = document.getElementById('nb-auto-name').checked;
-        if(isAutoName && val.trim() !== '') {
-            const autoName = "BO " + val;
-            document.getElementById('nb-f-name').value = autoName;
+
+    function toggleAutoName() {
+        if (document.getElementById('nb-auto-name').checked) {
+            syncBabyName();
         }
     }
+
     function generateDiagnosis() {
        const gest = document.getElementById('nb-gest-sel').value || ''; const sexVal = document.getElementById('nb-sex-combo').value || '';
        const size = document.getElementById('nb-size-sel').value || ''; const mode = document.getElementById('nb-b-mode').value || ''; const ind = (document.getElementById('nb-b-ind').value || '').trim();
@@ -2645,40 +3228,77 @@ async function generateDcDocx() {
     
     // --- HOPI GENERATOR HELPER ---
     function getNewbornHopiText() {
-        return `--- MOTHER'S IDENTITY ---
-Name: ${nbValues['Text1']||'-'} | Age: ${nbValues['Text2']||'-'}
-Hosp No: ${nbValues['Text3']||'-'} | Consanguinity: ${nbValues['Text4']||'-'}
-Booking: ${nbValues['Text5']||'-'} | Imm: ${nbValues['Text6']||'-'}
-Obs Index: ${nbValues['Text7']||'-'} | Prev SB: ${nbValues['Text8']||'-'}
+        const blue = (label) => `<span style="color: var(--primary)">${label}</span>`;
+        const val = (v) => v || '-';
 
---- ANTENATAL ---
-LMP: ${nbValues['Text10']||'-'} | EDD: ${nbValues['Text11']||'-'}
-Hb: ${nbValues['Text12']||'-'} | Blood: ${nbValues['Text13']||'-'}
-VDRL: ${nbValues['Text14']||'-'} | Other: ${nbValues['Text15']||'-'}
+        return `<div style="white-space: pre-wrap; line-height: 1.6;">
+<strong>MOTHER'S DETAILS</strong>
+${blue('Name:')} ${val(nbValues['Text1'])}
+${blue('Age:')} ${val(nbValues['Text2'])}
+${blue('MRD No:')} ${val(nbValues['Text3'])}
+${blue('Consanguinity:')} ${val(nbValues['Text4'])}
+${blue('Booked / Unbooked:')} ${val(nbValues['Text5'])}
+${blue('Immunized / Un-immunized:')} ${val(nbValues['Text6'])}
+${blue('Para Gravida:')} ${val(nbValues['Text7'])}
+${blue('Previous Still Birth:')} ${val(nbValues['Text8'])}
+${blue('Weight:')} ${val(nbValues['Text9'])}
+${blue('LMP:')} ${val(nbValues['Text10'])}
+${blue('EDD:')} ${val(nbValues['Text11'])}
+${blue('HB:')} ${val(nbValues['Text12'])}
+${blue('Blood Grp & Type:')} ${val(nbValues['Text13'])}
+${blue('VDRL:')} ${val(nbValues['Text14'])}, ${blue('Other tests:')} ${val(nbValues['Text15'])}
+${blue('Toxemia:')} ${val(nbValues['Text16'])}
+${blue('Hydramnios:')} ${val(nbValues['Text17'])}
+${blue('P.I.H:')} ${val(nbValues['Text18'])}
+${blue('A.P.H:')} ${val(nbValues['Text19'])}
+${blue('Any other illness:')} ${val(nbValues['Text20'])}
+${blue('Presentation:')} ${val(nbValues['Text21'])}
+${blue('Time of Membrane rupture:')} ${val(nbValues['Text22'])}
+${blue('Liquor Quality:')} ${val(nbValues['Text23'])}${blue(', Quantity:')} ${val(nbValues['Text24'])}
+${blue('Drugs given:')} ${val(nbValues['Text25'])}
+${blue('Any Evidence of Foetal Distress:')} ${val(nbValues['Text26'])}
+${val(nbValues['Text27'])}
 
---- RISK & LABOR ---
-Risks: ${nbValues['Text16']!=='—'?'Toxemia ':''}${nbValues['Text18']!=='—'?'PIH ':''}${nbValues['Text19']!=='—'?'APH':''}
-Presentation: ${nbValues['Text21']||'-'} | ROM: ${nbValues['Text22']||'-'}
-Liquor: ${nbValues['Text23']||'-'} | Drugs: ${nbValues['Text25']||'-'}
-Thalassemia: ${nbValues['Text27']||'-'}
 
---- BIRTH ---
-Mode: ${nbValues['Text30']||'-'} ${nbValues['Text31']||''}
-Date: ${nbValues['Text35']||'-'}
-APGAR: 1'(${nbValues['Text32']}) 5'(${nbValues['Text33']}) 10'(${nbValues['Text34']})
-Resus: ${nbValues['Text36']||'-'}
-Wt: ${nbValues['Text41']||'-'} | Sex: ${nbValues['Text39']||'-'}
+<strong>BABY'S DETAILS</strong>
+${blue('Type of Delivery:')} ${val(nbValues['Text30'])}
+${blue('Indication:')} ${val(nbValues['Text31'])}
+${blue('Date & Time of Delivery:')} ${val(nbValues['Text35'])}
+${blue('APGAR at:')} ${blue('1min')} ${val(nbValues['Text32'])} ${blue('5min')} ${val(nbValues['Text33'])} ${blue('10min')} ${val(nbValues['Text34'])}
+${blue('Resuscitation:')} ${val(nbValues['Text36'])}
+${blue('Intubation & IPPR:')} ${val(nbValues['Text37'])}
+${blue('Bicarbonate / Lethedron:')} ${val(nbValues['Text38'])}
+${blue('Sex of Baby:')} ${val(nbValues['Text39'])}
+${blue('Maturity:')} ${val(nbValues['Text40'])}
+${blue('Weight:')} ${val(nbValues['Text41'])}
+${blue('Congenital Anomalies:')} ${val(nbValues['Text43'])}
+${blue('Anal Patency:')} ${val(nbValues['Text44'])}
+${blue('Oesophageal Patency:')} ${val(nbValues['Text45'])}
+${blue('Respiratory Distress:')} ${val(nbValues['Text46'])}
+${blue('Cyanosis/Pallor/Jaundice:')} ${val(nbValues['Text47'])}
+${blue('Any Other:')} ${val(nbValues['Text48'])}
+${blue('Cord Blood Collected / Not Collected:')} ${val(nbValues['Text49'])}
+${blue('Investigation on Blood:')} ${val(nbValues['Text50'])}
+${blue('Gastric Aspirate - Microscopy:')} ${val(nbValues['Text51'])}
+${blue('Culture:')} ${val(nbValues['Text52'])}
+${blue('Any Other:')} ${val(nbValues['Text53'])}
 
---- EXAM & PLAN ---
-Exam: ${nbValues['Text67']||'-'}
-Advice: ${nbValues['Text68']||'-'}`;
+${blue('Problems:')} ${val(nbValues['Text66'])}
+
+${val(nbValues['Text67'])}
+</div>`;
     }
 
     function launchAdmissionSystem(clearData = true) {
        document.getElementById('admission-system').style.display='flex';
        if(clearData) {
            document.querySelectorAll('#admission-system input, #admission-system textarea').forEach(e => { if(e.type === 'checkbox') e.checked = false; else e.value = e.defaultValue || ''; });
-           document.querySelectorAll('#admission-system select').forEach(e => e.selectedIndex = 0);
+           document.querySelectorAll('#admission-system select').forEach(e => {
+    // If the select has a defaultSelected option, revert to it. Otherwise index 0.
+    const options = Array.from(e.options);
+    const defaultOption = options.find(opt => opt.defaultSelected);
+    e.selectedIndex = defaultOption ? defaultOption.index : 0;
+});
            document.getElementById('f-doa').value = getLocalISODate(); document.getElementById('nb-f-doa').value = getLocalISODate();
            document.getElementById('f-shift').value = getCurrentShift(); document.getElementById('nb-f-shift').value = getCurrentShift();
            pdfValues = {}; nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF)); currentPatientId = null;
@@ -2704,11 +3324,23 @@ Advice: ${nbValues['Text68']||'-'}`;
        
        document.getElementById('view-form').style.display = mode==='form'?'block':'none';
        document.getElementById('view-pdf').style.display = mode==='pdf'?'flex':'none';
-       document.getElementById('view-newborn').style.display = mode==='newborn'?'block':'none';
+       document.getElementById('view-newborn').style.display = 'none'; // Hidden - using visual mode instead
+       document.getElementById('view-newborn-visual').style.display = mode==='newborn'?'flex':'none';
+       // Only show font controls for admission PDF, not for newborn (newborn has fixed size/line height)
        document.getElementById('pdf-controls').style.display = mode==='pdf'?'flex':'none';
-       
+
        if(document.body.classList.contains('is-mobile')) toggleAdmSidebar();
        if(mode==='pdf') { renderPdfVisual(); syncPdfControls(); }
+       if(mode==='newborn') {
+           renderNbVisual();
+           syncPdfControls();
+           // Auto-sync baby name when entering newborn mode
+           setTimeout(() => {
+               if (document.getElementById('nb-auto-name')?.checked) {
+                   syncBabyName();
+               }
+           }, 100);
+       }
 
        if(mode === 'newborn') {
            document.getElementById('adm-std-details').style.display = 'none';
@@ -2725,11 +3357,50 @@ Advice: ${nbValues['Text68']||'-'}`;
 
     function toggleAdmSidebar() { document.getElementById('admSidebar').classList.toggle('show'); }
     function toggleAdmAutoInputs() { const el = document.getElementById('adm-radio-auto'); const a = el ? el.checked : false; document.getElementById('adm-auto-age-inputs').style.display = a ? 'flex' : 'none'; }
-    function updateVisualField(pdfKey, value) { pdfValues[pdfKey] = value; }
-    function syncDx(val, fromBottom) { if (fromBottom) { document.getElementById('f-adm-dx').value = val; } else { document.getElementById('f-finaldx').value = val; } pdfValues['dx'] = val; }
+function updateVisualField(pdfKey, value) { 
+        // 1. Update Data
+        pdfValues[pdfKey] = value; 
+        
+        // 2. Update Visual PDF (Direct Call)
+        syncPdfVisualField(pdfKey, value);
+    }
+
+    // Sync field to standard visual mode PDF in real-time
+function syncPdfVisualField(fieldName, value) {
+        // We do NOT check currentMode here. We just check if the element exists.
+        const stage = document.getElementById('pdf-stage');
+        if (!stage) return;
+
+        // Find box using the attribute we explicitly set above
+        const boxes = stage.querySelectorAll(`.pdf-box[data-field="${fieldName}"]`);
+        
+        boxes.forEach(box => {
+            // Only update if text is different (prevents cursor jumping issues)
+            if (box.innerText !== value) {
+                box.innerText = value;
+            }
+        });
+    }
+
+function syncDx(val, fromBottom) {
+        // 1. Sync the two sidebar inputs
+        if (fromBottom) {
+            const topEl = document.getElementById('f-adm-dx');
+            if(topEl && topEl.value !== val) topEl.value = val;
+        } else {
+            const botEl = document.getElementById('f-finaldx');
+            if(botEl && botEl.value !== val) botEl.value = val;
+        }
+        
+        // 2. Update Data
+        pdfValues['dx'] = val;
+        
+        // 3. Update Visual PDF (Direct Call)
+        syncPdfVisualField('dx', val);
+    }
 
     function checkOverflow(fieldId) {
-        if (fieldId !== 'f-hopi') return; const pdfKey = MAP_FORM_PDF[fieldId]; if(!pdfKey) return;
+        if (fieldId !== 'f-hopi' && fieldId !== 'f-past') return; const pdfKey = MAP_FORM_PDF[fieldId]; if(!pdfKey) return;
         let targetAnchor = null; Object.values(anchors).forEach(pageAnchors => { const found = pageAnchors.find(a => a.name === pdfKey); if(found) targetAnchor = found; }); if(!targetAnchor) return;
         const maxLines = FIELD_MAX_LINES[fieldId] || 9; const text = document.getElementById(fieldId).value; const warnEl = document.getElementById('warn-' + fieldId);
         const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const fontSize = 9; ctx.font = `${fontSize}px Helvetica`; 
@@ -2741,41 +3412,364 @@ Advice: ${nbValues['Text68']||'-'}`;
         if(lineCount > maxLines) { if(warnEl) { warnEl.style.display = 'block'; warnEl.innerText = `⚠️ Text limit exceeded: ${lineCount}/${maxLines} lines`; } } else { if(warnEl) warnEl.style.display = 'none'; }
     }
 
-    async function renderPdfVisual() {
-       const stage = document.getElementById('pdf-stage'); stage.innerHTML = ''; const container = document.getElementById('view-pdf');
+async function renderPdfVisual() {
+        const stage = document.getElementById('pdf-stage');
+        stage.innerHTML = '';
 
-       // Calculate scale once and store it (prevents font size changes on window resize)
-       if (storedScaleFit === null) {
-          storedScaleFit = (container.clientWidth - 40) / 595;
-       }
+        const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
 
-       // Use calculated font size if auto-fit is enabled, otherwise use manual selection
-       const activeFontSize = isAutoFit ? calculatedFontSize : pdfFontSize;
+        for (let i = 1; i <= 4; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page';
+            
+            // Layout styling
+            wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
+            wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
+            wrapper.style.position = 'relative';
+            wrapper.style.margin = '30px auto';
+            wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+            wrapper.style.backgroundImage = `url('https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp${i}.jpg')`;
+            wrapper.style.backgroundSize = '100% 100%';
+            wrapper.style.backgroundRepeat = 'no-repeat';
 
-       const imgBase = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp';
-       for(let i=1; i<=4; i++) {
-          const wrapper = document.createElement('div'); wrapper.className = 'pdf-page';
-          wrapper.style.backgroundImage = `url('${imgBase}${i}.jpg')`; wrapper.style.backgroundSize = '100% 100%'; wrapper.style.backgroundRepeat = 'no-repeat'; wrapper.style.width = '100%'; wrapper.style.aspectRatio = '0.7071'; wrapper.style.position = 'relative';
-          if(anchors[i]) {
-             anchors[i].forEach(a => {
-                const box = document.createElement('div'); box.className = 'pdf-box';
-                if(ALLOWED_EDIT_PDF.includes(a.name)) { box.contentEditable = true; } else { box.contentEditable = false; box.style.backgroundColor = 'rgba(200, 200, 200, 0.15)'; box.title = "Edit in Sidebar"; }
-                box.style.left = (a.x * 100) + '%'; box.style.top = (a.y * 100) + '%';
-                box.style.width = (a.w * 100) + '%'; box.style.height = (a.h * 100) + '%'; box.style.fontSize = (activeFontSize * storedScaleFit * visualScaleFactor) + 'px'; box.style.lineHeight = (pdfLineHeight * visualLineHeightFactor);
-                box.innerText = pdfValues[a.name] || '';
-                if(box.contentEditable === "true") { box.oninput = (e) => { pdfValues[a.name] = e.target.innerText; }; }
+            // Scale logic
+            const maxWidth = window.innerWidth - 60;
+            let scale = 1.0;
+            if (PREVIEW_WIDTH_PX > maxWidth) {
+                scale = maxWidth / PREVIEW_WIDTH_PX;
+            }
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'top center';
+
+            if(anchors[i]) {
+                anchors[i].forEach(a => {
+                    const box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    
+                    // --- CRITICAL FIX: Use setAttribute so querySelector finds it reliably ---
+                    box.setAttribute('data-field', a.name);
+                    
+                    box.contentEditable = ALLOWED_EDIT_PDF.includes(a.name) ? 'true' : 'false';
+
+                    // Positioning
+                    box.style.left   = `${a.x * PREVIEW_WIDTH_PX}px`;
+                    box.style.top    = `${a.y * PREVIEW_HEIGHT_PX}px`;
+                    box.style.width  = `${a.w * PREVIEW_WIDTH_PX}px`;
+                    box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
+                    box.style.fontSize    = `${activeFontSize * PT_TO_PX}px`;
+                    box.style.lineHeight = pdfLineHeight;
+                    
+                    // Set Value
+                    box.innerText = pdfValues[a.name] || '';
+
+                    // --- Bidirectional Sync (Visual -> Form) ---
+                    if (box.contentEditable === 'true') {
+                        box.oninput = () => {
+                            const val = box.innerText.trim();
+                            pdfValues[a.name] = val;
+                            
+                            // 1. Direct Sync for Diagnosis (Critical Field)
+                            if (a.name === 'dx') {
+                                const topDx = document.getElementById('f-adm-dx');
+                                const botDx = document.getElementById('f-finaldx');
+                                if (topDx) topDx.value = val;
+                                if (botDx) botDx.value = val;
+                            }
+                            // 2. Generic Sync for others using the Map
+                            else {
+                                // Find which Form ID maps to this PDF Field
+                                const formId = Object.keys(MAP_FORM_PDF).find(key => MAP_FORM_PDF[key] === a.name);
+                                if (formId) {
+                                    const el = document.getElementById(formId);
+                                    if (el) el.value = val;
+                                }
+                            }
+                        };
+                    }
+
+                    wrapper.appendChild(box);
+                });
+            }
+            stage.appendChild(wrapper);
+        }
+    }
+
+    async function renderNbVisual() {
+        const stage = document.getElementById('nb-visual-stage');
+        stage.innerHTML = '';
+
+        // Sync values from form
+        const hospNo = document.getElementById('nb-f-hosp-no').value;
+        const nidNo = document.getElementById('nb-f-nid-no').value;
+        if(hospNo) nbValues['Text29'] = hospNo;
+        if(nidNo) nbValues['Text42'] = nidNo;
+
+        const activeFontSize = isAutoFit ? calculatedFontSize : nbFontSize;
+
+        // Load newborn anchors if not loaded
+        if(Object.keys(nbAnchors).length === 0) {
+            console.log('Loading newborn anchors...');
+            try {
+                const response = await fetch(NB_ANCHORS_URL);
+                nbAnchors = await response.json();
+                console.log('Newborn anchors loaded:', Object.keys(nbAnchors).length, 'pages');
+            } catch(e) {
+                console.error('Failed to load anchors:', e);
+                stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
+                return;
+            }
+        }
+
+        const imgUrl = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.jpg';
+        const numPages = Object.keys(nbAnchors).length || 1;
+
+        for(let i=1; i<=numPages; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pdf-page';
+
+            // Use same dimensions as standard visual
+            wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
+            wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
+            wrapper.style.position = 'relative';
+            wrapper.style.margin = '30px auto';
+            wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+            wrapper.style.backgroundImage = `url('${imgUrl}')`;
+            wrapper.style.backgroundSize = '100% 100%';
+            wrapper.style.backgroundRepeat = 'no-repeat';
+
+            // Only constrain by width, allow vertical scrolling
+            const maxWidth = window.innerWidth - 60;
+            let scale = 1.0;
+
+            if (PREVIEW_WIDTH_PX > maxWidth) {
+                scale = maxWidth / PREVIEW_WIDTH_PX;
+            }
+
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'top center';
+
+          if(nbAnchors[i]) {
+             nbAnchors[i].forEach(a => {
+                const fieldType = NB_FIELD_TYPES[a.name];
+                let box;
+
+                // Special handling for Text27 - add "Thalassemia status:" label
+                if (a.name === 'Text27') {
+                    box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    box.contentEditable = true;
+                    box.dataset.field = a.name;
+                    const currentValue = nbValues[a.name] || 'Mother: \nFather: ';
+                    if (!currentValue.includes('Thalassemia status:')) {
+                        nbValues[a.name] = 'Thalassemia status:\nMother: \nFather: ';
+                    }
+                    box.innerText = nbValues[a.name];
+                    box.oninput = (e) => { nbValues[a.name] = e.target.innerText; };
+                }
+                // Create appropriate control based on field type
+                else if (fieldType === 'datalist') {
+                    box = document.createElement('input');
+                    box.type = 'text';
+                    box.className = 'nb-pdf-datalist';
+                    box.dataset.field = a.name;
+                    box.value = nbValues[a.name] || '';
+                    box.setAttribute('list', 'dl-' + a.name);
+
+                    // Create datalist
+                    const datalist = document.createElement('datalist');
+                    datalist.id = 'dl-' + a.name;
+                    const options = NB_DATALIST_OPTIONS[a.name] || [];
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        datalist.appendChild(option);
+                    });
+                    wrapper.appendChild(datalist);
+
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                        // Trigger diagnosis generation for delivery mode and sex
+                        if (a.name === 'Text30' || a.name === 'Text39') {
+                            generateNbDiagnosis();
+                        }
+                    };
+                } else if (fieldType === 'datetime') {
+                    box = document.createElement('input');
+                    box.type = 'datetime-local';
+                    box.className = 'nb-pdf-datetime';
+                    box.dataset.field = a.name;
+                    box.value = nbValues[a.name] || '';
+                    box.onchange = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                    };
+                } else if (fieldType === 'text') {
+                    // Text input field (like weight with "kg" default)
+                    box = document.createElement('input');
+                    box.type = 'text';
+                    box.className = 'nb-pdf-text';
+                    box.dataset.field = a.name;
+                    box.value = nbValues[a.name] || '';
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                    };
+                } else if (fieldType === 'number') {
+                    box = document.createElement('input');
+                    box.type = 'number';
+                    box.className = 'nb-pdf-number';
+                    box.dataset.field = a.name;
+                    box.value = nbValues[a.name] || '';
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.value;
+                        syncFromVisualToForm(a.name, e.target.value);
+                    };
+                } else if (fieldType === 'clickable') {
+                    // For Term/Preterm/AGA/SGA - clickable underline
+                    box = document.createElement('div');
+                    box.className = 'nb-pdf-clickable';
+                    box.contentEditable = false;
+                    box.dataset.field = a.name;
+                    box.innerText = nbValues[a.name] || '';
+                    box.style.textAlign = 'center';
+                    box.style.cursor = 'pointer';
+                    box.style.textDecoration = nbValues[a.name] === '____' ? 'underline' : 'none';
+                    box.onclick = (e) => {
+                        // Toggle selection
+                        if (nbValues[a.name] === '____') {
+                            nbValues[a.name] = '';
+                            e.target.innerText = '';
+                            e.target.style.textDecoration = 'none';
+                        } else {
+                            // Clear group selections
+                            if (['Text59', 'Text60', 'Text61'].includes(a.name)) {
+                                nbValues['Text59'] = ''; nbValues['Text60'] = ''; nbValues['Text61'] = '';
+                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                    if (el.dataset.group === 'gest') {
+                                        el.innerText = '';
+                                        el.style.textDecoration = 'none';
+                                    }
+                                });
+                            }
+                            if (['Text62', 'Text63', 'Text64'].includes(a.name)) {
+                                nbValues['Text62'] = ''; nbValues['Text63'] = ''; nbValues['Text64'] = '';
+                                wrapper.querySelectorAll('.nb-pdf-clickable').forEach(el => {
+                                    if (el.dataset.group === 'size') {
+                                        el.innerText = '';
+                                        el.style.textDecoration = 'none';
+                                    }
+                                });
+                            }
+                            nbValues[a.name] = '____';
+                            e.target.innerText = '____';
+                            e.target.style.textDecoration = 'underline';
+                        }
+                        generateNbDiagnosis();
+                    };
+                    // Set group data attribute
+                    if (['Text59', 'Text60', 'Text61'].includes(a.name)) box.dataset.group = 'gest';
+                    if (['Text62', 'Text63', 'Text64'].includes(a.name)) box.dataset.group = 'size';
+                } else {
+                    // Default: contenteditable text box
+                    box = document.createElement('div');
+                    box.className = 'pdf-box';
+                    box.contentEditable = true;
+                    box.dataset.field = a.name;
+                    box.innerText = nbValues[a.name] || '';
+                    box.oninput = (e) => {
+                        nbValues[a.name] = e.target.innerText;
+                        syncFromVisualToForm(a.name, e.target.innerText);
+                        // Auto-generate diagnosis if this is Text31 (indication)
+                        if (a.name === 'Text31') {
+                            generateNbDiagnosis();
+                        }
+                    };
+                }
+
+                // Common styling with pixel-based positioning
+                box.style.position = 'absolute';
+                box.style.left = `${a.x * PREVIEW_WIDTH_PX}px`;
+                box.style.top = `${a.y * PREVIEW_HEIGHT_PX}px`;
+                box.style.width = `${a.w * PREVIEW_WIDTH_PX}px`;
+                box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
+                box.style.fontSize = `${activeFontSize * PT_TO_PX}px`;
+                box.style.lineHeight = nbLineHeight;
+                box.style.padding = '2px';
+                box.style.boxSizing = 'border-box';
+                box.style.border = '1px solid rgba(0,0,0,0.1)';
+                box.style.background = 'rgba(255,255,255,0.8)';
+
                 wrapper.appendChild(box);
-             });
-          }
-          stage.appendChild(wrapper);
+            });
+        }
+        stage.appendChild(wrapper);
        }
     }
-    
-    function changePdfFont(val) { pdfFontSize = parseInt(val); renderPdfVisual(); }
+
+    function generateNbDiagnosis() {
+       // Get values from nbValues instead of form elements
+       let gest = '';
+       if (nbValues['Text59'] === '____') gest = 'Term';
+       if (nbValues['Text60'] === '____') gest = 'Preterm';
+       if (nbValues['Text61'] === '____') gest = 'Postterm';
+
+       let size = '';
+       if (nbValues['Text62'] === '____') size = 'AGA';
+       if (nbValues['Text63'] === '____') size = 'SGA';
+       if (nbValues['Text64'] === '____') size = 'LGA';
+
+       const sexVal = nbValues['Text39'] || '';
+       const mode = nbValues['Text30'] || '';
+       const ind = (nbValues['Text31'] || '').trim();
+
+       let sexShort = 'M';
+       if(sexVal === 'Female') sexShort = 'F';
+       if(sexVal === 'Ambiguous') sexShort = 'Amb';
+
+       // Abbreviate "Term" to "T", keep "Preterm" and "Postterm" full
+       let gestShort = gest;
+       if(gest === 'Term') gestShort = 'T';
+
+       let modeStr = mode;
+       if(mode !== 'SVD' && ind !== '' && mode !== '') {
+           modeStr += ` for ${ind}`;
+       } else if (mode === 'SVD' && ind !== '') {
+           modeStr += ` for ${ind}`;
+       }
+
+       const parts = ['S/L'];
+       if(gestShort) parts.push(gestShort);
+       if(sexVal) parts.push(sexShort);
+       if(size) parts.push(size);
+       if(modeStr) parts.push(modeStr);
+
+       const dx = parts.join('/') + " for observation";
+
+       // Update nbValues and form fields
+       nbValues['Text69'] = dx;
+       document.getElementById('nb-generated-dx').value = dx;
+       document.getElementById('nb-f-adm-dx').value = dx;
+
+       // Sync to visual form if in visual mode
+       syncNbVisualField('Text69', dx);
+    }
+
+    function changePdfFont(val) {
+        const newSize = parseInt(val);
+        if(currentMode === 'newborn') {
+            nbFontSize = newSize;
+            renderNbVisual();
+        } else {
+            pdfFontSize = newSize;
+            renderPdfVisual();
+        }
+    }
     function changePdfLineHeight(val) {
         // User sets visual line height, convert to print line height
         pdfLineHeight = parseFloat(val) / visualLineHeightFactor;
-        renderPdfVisual();
+        if(currentMode === 'pdf') renderPdfVisual();
+        if(currentMode === 'newborn') renderNbVisual();
     }
 
     function toggleAutoFit(enabled) {
@@ -2783,7 +3777,8 @@ Advice: ${nbValues['Text68']||'-'}`;
         const fontSel = document.getElementById('sel-pdf-font');
 
         if (enabled) {
-            // Calculate optimal font size
+            // Calculate optimal font size (use appropriate values based on mode)
+            const values = currentMode === 'newborn' ? nbValues : pdfValues;
             calculatedFontSize = calculateOptimalFontSize(9, 14);
             if (fontSel) {
                 fontSel.disabled = true;
@@ -2797,7 +3792,8 @@ Advice: ${nbValues['Text68']||'-'}`;
             }
         }
 
-        renderPdfVisual();
+        if(currentMode === 'pdf') renderPdfVisual();
+        if(currentMode === 'newborn') renderNbVisual();
     }
 
     function syncPdfControls() {
@@ -2839,7 +3835,7 @@ Advice: ${nbValues['Text68']||'-'}`;
             document.getElementById('nb-f-name').value = p.name || '';
             document.getElementById('nb-f-hosp-no').value = p.id || '';
             document.getElementById('nb-f-nid-no').value = p.nid || '';
-            document.getElementById('nb-f-ward').value = p.ward || 'NICU';
+            document.getElementById('nb-f-ward').value = p.ward || 'GW';
             document.getElementById('nb-f-bed').value = p.bed || '';
             document.getElementById('nb-f-shift').value = p.shift || 'Morning';
             document.getElementById('nb-f-doa').value = p.doa || '';
@@ -2860,6 +3856,61 @@ Advice: ${nbValues['Text68']||'-'}`;
             document.getElementById('f-name').value = p.name || ''; document.getElementById('f-hosp-no').value = p.id || ''; 
             syncFormToPdf(); 
         }
+    }
+
+    /**
+     * WYSIWYG Text Wrapping Function
+     * Calculates exactly where text lines break based on PDF rendering metrics.
+     * This ensures identical line breaks between screen display and printed PDF.
+     *
+     * @param {string} text - The text to wrap
+     * @param {number} maxWidth - Maximum width in PDF points (e.g., box width * 595 - padding)
+     * @param {number} fontSize - Font size in PDF points
+     * @returns {string} Text with newline characters inserted at wrap points
+     */
+    function getWrappedText(text, maxWidth, fontSize) {
+        if (!text) return '';
+
+        // Create canvas for measuring text width using same font as PDF
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.font = `${fontSize}px Helvetica`;
+
+        // Split text into lines (preserving existing newlines)
+        const paragraphs = text.split('\n');
+        const wrappedLines = [];
+
+        for (const paragraph of paragraphs) {
+            if (!paragraph.trim()) {
+                // Preserve empty lines
+                wrappedLines.push('');
+                continue;
+            }
+
+            const words = paragraph.split(' ');
+            let currentLine = words[0] || '';
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const testLine = currentLine + ' ' + word;
+                const width = ctx.measureText(testLine).width;
+
+                if (width < maxWidth) {
+                    currentLine = testLine;
+                } else {
+                    // Line would exceed maxWidth, break here
+                    wrappedLines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+
+            // Add the last line of this paragraph
+            if (currentLine) {
+                wrappedLines.push(currentLine);
+            }
+        }
+
+        return wrappedLines.join('\n');
     }
 
     function calculateOptimalFontSize(minSize, maxSize) {
@@ -2884,7 +3935,7 @@ Advice: ${nbValues['Text68']||'-'}`;
         addLine("C/O", pdfValues['complains']); addLine("HOPI", pdfValues['hopi']); addLine("Past Hx", pdfValues['pasthx']); addLine("Personal Hx", pdfValues['personalhx']); addLine("Family Hx", pdfValues['fhx']); addLine("Tx Hx", pdfValues['txhx']); addLine("Obs/Gyn", pdfValues['obs']); addLine("G/E", pdfValues['ge']); addLine("CVS", pdfValues['cvs']); addLine("RS", pdfValues['rs']); addLine("Abd", pdfValues['pa']); addLine("Pelvis", pdfValues['pelvis']); addLine("CNS", pdfValues['cns']); addLine("Local", pdfValues['le']);
         return { hopi: aggregatedHopi, diagnosis: pdfValues['dx'] || "", plan: pdfValues['management'] || "" };
     }
-    async function saveEdits() {
+async function saveEdits() {
        const btnSave = document.getElementById('btn-save-edits');
        if(btnSave) {
            btnSave.innerText = "Saving...";
@@ -2896,52 +3947,69 @@ Advice: ${nbValues['Text68']||'-'}`;
        const p = localPatients[currentPatientId];
        const updates = {};
 
-       if (currentMode === 'newborn') {
-           // --- NEWBORN MODE SAVE ---
-           // Sync ALL form fields into nbValues before saving
-           syncAllNbFieldsToValues();
+       // --- Helper to safely get values (PDF priority) ---
+       const getVal = (nbKey, domId) => {
+           const valFromPdf = nbValues[nbKey];
+           const valFromDom = document.getElementById(domId)?.value;
+           return (valFromPdf !== undefined && valFromPdf !== null && valFromPdf !== '') ? valFromPdf : (valFromDom || '');
+       };
 
-           updates.name = document.getElementById('nb-f-name').value;
-           updates.id = document.getElementById('nb-f-hosp-no').value;
-           updates.nid = document.getElementById('nb-f-nid-no').value;
+       if (currentMode === 'newborn') {
+           // --- NEWBORN SAVE LOGIC ---
+           updates.id = getVal('Text29', 'nb-f-hosp-no');
+           updates.nid = getVal('Text42', 'nb-f-nid-no');
+           
+           const motherName = getVal('Text1', 'nb-m-name') || "Unknown";
+           const manualName = document.getElementById('nb-f-name').value;
+           updates.name = manualName || ("Baby of " + motherName);
+
            updates.ward = document.getElementById('nb-f-ward').value;
            updates.bed = document.getElementById('nb-f-bed').value;
            updates.shift = document.getElementById('nb-f-shift').value;
-           updates.doa = document.getElementById('nb-f-doa').value;
-           updates.diagnosis = document.getElementById('nb-f-adm-dx').value;
-           updates.weight = document.getElementById('nb-b-wt').value + ' kg';
+           updates.doa = document.getElementById('nb-f-doa').value; 
+
+           updates.diagnosis = getVal('Text69', 'nb-f-adm-dx');
            
-           const dobDate = document.getElementById('nb-b-datetime').value;
-           if(dobDate) {
-               const [d, t] = dobDate.split('T');
-               updates.dob = d; updates.dot = t; updates.isAutoAge = true;
-               updates.age = calculateNeonatalAge(d, t).display;
+           let rawWeight = getVal('Text41', 'nb-b-wt');
+           if(rawWeight && !rawWeight.toLowerCase().includes('kg')) rawWeight += ' kg';
+           updates.weight = rawWeight;
+
+           let dobString = getVal('Text35', 'nb-b-datetime');
+           if(dobString) {
+                dobString = dobString.replace(' ', 'T');
+                const [d, t] = dobString.split('T');
+                updates.dob = d; updates.dot = t; updates.isAutoAge = true;
+                updates.age = calculateNeonatalAge(d, t).display;
            }
-           
+
            nbValues['gest_val'] = document.getElementById('nb-gest-sel').value;
            nbValues['size_val'] = document.getElementById('nb-size-sel').value;
-           
+           if(!nbValues['Text29']) nbValues['Text29'] = updates.id;
+           if(!nbValues['Text42']) nbValues['Text42'] = updates.nid;
+
            updates.newbornData = { ...nbValues };
            updates.hopi = getNewbornHopiText(); 
+           
+           // Newborn Plan comes from "Advice"
+           updates.plan = getVal('Text68', 'nb-advice') || "Routine Newborn Care";
+
        } else {
-           // --- STANDARD MODE SAVE ---
+           // --- STANDARD SAVE LOGIC ---
            if(currentMode === 'form') syncFormToPdf();
            else syncPdfToForm();
            
            const hospNo = document.getElementById('f-hosp-no').value || "";
-           const nidNo = document.getElementById('f-nid-no').value || "";
            const rawAge = document.getElementById('f-age').value || "?";
            
            pdfValues['hid'] = hospNo;
            pdfValues['ward'] = document.getElementById('f-ward').value;
            pdfValues['bed'] = document.getElementById('f-bed').value;
            pdfValues['name'] = document.getElementById('f-name').value;
-           pdfValues['nid'] = formatTimestamp(Date.now());
            pdfValues['age'] = rawAge; 
 
            updates.name = document.getElementById('f-name').value;
            updates.id = hospNo;
-           updates.nid = nidNo;
+           updates.nid = document.getElementById('f-nid-no').value;
            updates.bed = document.getElementById('f-bed').value;
            updates.ward = document.getElementById('f-ward').value;
            updates.shift = document.getElementById('f-shift').value;
@@ -2961,6 +4029,28 @@ Advice: ${nbValues['Text68']||'-'}`;
            updates.plan = aggregated.plan;
        }
        
+       // --- LOG OVERWRITE LOGIC (FIXED) ---
+       // This block finds the existing "Admission Plan:" entry and swaps the text content
+       if (updates.plan && p.logs) {
+           const newPlanText = updates.plan.trim();
+           
+           // Regex breakdown:
+           // 1. (•.*?\n\s*Admission Plan:\s*\n) -> Captures Bullet + Timestamp + Header + Newline
+           // 2. ([\s\S]*?) -> Captures the BODY of the plan (non-greedy, spans lines)
+           // 3. (?=\n\s*•|$) -> Lookahead: Stops before the NEXT bullet or End of String
+           const logPattern = /(•.*?\n\s*Admission Plan:\s*\n)([\s\S]*?)(?=\n\s*•|$)/i;
+           
+           if (logPattern.test(p.logs)) {
+               // Replace the body (Group 2) with the new plan text
+               updates.logs = p.logs.replace(logPattern, `$1${newPlanText}`);
+           } else {
+               // Fallback: If no Admission Plan header found, append it to the logs just in case
+               // (Optional: remove this else block if you only want strict overwrites)
+               const header = `• ${formatTimestamp(p.timestamp || Date.now())}\n Admission Plan:\n`;
+               updates.logs = p.logs + `\n${header}${newPlanText}\n\n`;
+           }
+       }
+
        try {
            await db.collection('patients').doc(currentPatientId).update(updates);
            alert("Saved successfully!");
@@ -2977,55 +4067,111 @@ Advice: ${nbValues['Text68']||'-'}`;
        }
     }
 
-    async function saveAndAddNewborn(printWin) {
-        const p = { timestamp: Date.now(), isNew: true, logs: '', lastLoggedPlan: '', labs: {dates:[], tests:{}}, images: [] };
+async function saveAndAddNewborn(printWin) {
+        // REMOVED: syncAllNbFieldsToValues(); 
+        // Reason: It was overwriting Visual PDF edits with empty data from hidden sidebar inputs.
+
+        const p = { 
+            timestamp: Date.now(), 
+            isNew: true, 
+            logs: '', 
+            lastLoggedPlan: '', 
+            labs: {dates:[], tests:{}}, 
+            images: [] 
+        };
         
-        nbValues['Text29'] = document.getElementById('nb-f-hosp-no').value;
-        nbValues['Text42'] = document.getElementById('nb-f-nid-no').value;
+        // --- 1. ROBUST DATA CAPTURE ---
         
-        p.name = document.getElementById('nb-f-name').value || "Baby of " + (nbValues['Text1'] || "Unknown");
-        p.id = document.getElementById('nb-f-hosp-no').value;
-        p.nid = document.getElementById('nb-f-nid-no').value;
-        p.ward = document.getElementById('nb-f-ward').value || "NICU";
+        // Helper: Get value from Visual PDF State OR Sidebar DOM
+        // This ensures we don't lose data if one side didn't sync to the other
+        const getVal = (nbKey, domId) => {
+            const valFromPdf = nbValues[nbKey];
+            const valFromDom = document.getElementById(domId)?.value;
+            // Return PDF value if exists, otherwise DOM value, otherwise empty string
+            return (valFromPdf !== undefined && valFromPdf !== null && valFromPdf !== '') ? valFromPdf : (valFromDom || '');
+        };
+
+        // IDs
+        p.id = getVal('Text29', 'nb-f-hosp-no');
+        p.nid = getVal('Text42', 'nb-f-nid-no');
+        
+        // Name
+        const motherName = getVal('Text1', 'nb-m-name') || "Unknown";
+        // Manual baby name input takes precedence, then constructed name
+        const manualBabyName = document.getElementById('nb-f-name').value; 
+        p.name = manualBabyName || ("Baby of " + motherName);
+        
+        // Location & Shift
+        p.ward = document.getElementById('nb-f-ward').value || "GW";
         p.bed = document.getElementById('nb-f-bed').value;
-        p.sex = document.getElementById('nb-sex-combo').value;
-        p.weight = document.getElementById('nb-b-wt').value + ' kg';
+        p.shift = document.getElementById('nb-f-shift').value;
         
-        const dobDate = document.getElementById('nb-b-datetime').value;
-        if (dobDate) {
-            const [d, t] = dobDate.split('T');
-            p.dob = d; p.dot = t; p.isAutoAge = true;
+        // DOA (Sidebar only)
+        p.doa = document.getElementById('nb-f-doa').value || getLocalISODate();
+
+        // --- CRITICAL FIELDS ---
+
+        // Diagnosis
+        p.diagnosis = getVal('Text69', 'nb-f-adm-dx');
+
+        // Plan (Advice)
+        p.plan = getVal('Text68', 'nb-advice') || "Routine Newborn Care";
+
+        // Sex (Explicit Fix)
+        p.sex = getVal('Text39', 'nb-sex-combo') || 'Unknown';
+
+        // Weight
+        let rawWeight = getVal('Text41', 'nb-b-wt');
+        if(rawWeight && !rawWeight.toLowerCase().includes('kg')) {
+            rawWeight += ' kg';
+        }
+        p.weight = rawWeight;
+        
+        // Age & DOB
+        let dobString = getVal('Text35', 'nb-b-datetime');
+        if (dobString) {
+            dobString = dobString.replace(' ', 'T'); 
+            const [d, t] = dobString.split('T');
+            p.dob = d; 
+            p.dot = t; 
+            p.isAutoAge = true;
             p.age = calculateNeonatalAge(d, t).display;
         } else {
             p.age = "0 DOL";
+            p.isAutoAge = false;
         }
         
-        p.doa = document.getElementById('nb-f-doa').value || getLocalISODate();
-        p.shift = document.getElementById('nb-f-shift').value;
-        p.diagnosis = document.getElementById('nb-f-adm-dx').value;
-
-        // Use advice field (Text68) as admission plan
-        const adviceText = document.getElementById('nb-advice').value || "Routine Newborn Care";
-        p.plan = adviceText;
-
+        // Store form state
         nbValues['gest_val'] = document.getElementById('nb-gest-sel').value;
         nbValues['size_val'] = document.getElementById('nb-size-sel').value;
-
+        
+        // Ensure nbValues is fully populated for the PDF generation
+        // (We update any missing nbValues from the DOM now, SAFELY, without overwriting existing data)
+        if(!nbValues['Text29']) nbValues['Text29'] = p.id;
+        if(!nbValues['Text42']) nbValues['Text42'] = p.nid;
+        if(!nbValues['Text39']) nbValues['Text39'] = p.sex;
+        
         p.newbornData = { ...nbValues };
+        
+        // Generate HOPI
         p.hopi = getNewbornHopiText();
 
-        // Create logs in same format as standard admissions
+        // Create Logs
         let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
-        if(p.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${p.plan}\n\n`; }
+        if(p.plan) { 
+            logs += `• ${formatTimestamp(Date.now())}\n Admission Plan:\n${p.plan}\n\n`; 
+        }
         p.logs = logs;
         
+        // Ensure PDF Value for weight has 'kg' for the printout
         if(nbValues['Text41'] && !nbValues['Text41'].toLowerCase().includes('kg')) {
             nbValues['Text41'] += ' Kg';
         }
 
         try {
             await db.collection('patients').add(p);
-            await ensurePDFLib(); // Ensure PDF-lib is loaded
+            
+            await ensurePDFLib(); 
             const bytes = await fetch(NEWBORN_URL).then(r => r.arrayBuffer());
             const pdf = await PDFLib.PDFDocument.load(bytes);
             const form = pdf.getForm();
@@ -3035,6 +4181,7 @@ Advice: ${nbValues['Text68']||'-'}`;
             const pdfOut = await pdf.save();
             const blob = new Blob([pdfOut], { type: 'application/pdf' });
             printWin.location.href = URL.createObjectURL(blob);
+            
             closeAdmissionSystem();
         } catch(e) {
             alert("Error: " + e.message);
@@ -3169,7 +4316,12 @@ Advice: ${nbValues['Text68']||'-'}`;
                  text = text.replace(/[\u2010-\u2015]/g, "-").replace(/[^\x00-\x7F]/g, "");
                  if(!text) return;
                  let fs = shouldAutoFit ? useFontSize : pdfFontSize;
-                 page.drawText(text, { x: a.x * width + 2, y: height - (a.y * height) - fs, size: fs, font: font, maxWidth: (a.w * width) - 4, lineHeight: fs * pdfLineHeight });
+
+                 // WYSIWYG: Pre-wrap text using same calculation as visual display
+                 const boxWidth = (a.w * width) - 4;
+                 const wrappedText = getWrappedText(text, boxWidth, fs);
+
+                 page.drawText(wrappedText, { x: a.x * width + 2, y: height - (a.y * height) - fs, size: fs, font: font, lineHeight: fs * pdfLineHeight });
               });
            });
            const pdfOut = await pdf.save();
@@ -3256,9 +4408,18 @@ Advice: ${nbValues['Text68']||'-'}`;
        p.diagnosis = aggregated.diagnosis;
        p.plan = aggregated.plan;
        
-       let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
-       if(aggregated.plan) { logs += `• ${formatTimestamp(Date.now())}\n Admission Plan: ${aggregated.plan}\n\n`; }
-       p.logs = logs;
+       // --- FIX STARTS HERE ---
+    // Force read from the DOM element to ensure we catch exactly what is on screen
+    const rawPlanInput = document.getElementById('f-plan').value || aggregated.plan || "";
+
+    let logs = `• ${formatTimestamp(Date.now())}\n Admission Record Created.\n\n`;
+    
+    // Check rawPlanInput instead of aggregated.plan
+    if(rawPlanInput && rawPlanInput.trim().length > 0) {
+        logs += `• ${formatTimestamp(Date.now())}\n Admission Plan:\n${rawPlanInput.trim()}\n\n`;
+    }
+    p.logs = logs;
+    // --- FIX ENDS HERE ---
 
        try { await db.collection('patients').add(JSON.parse(JSON.stringify(p))); } 
        catch (dbError) { alert("CRITICAL ERROR: " + dbError.message); if(printWin) printWin.close(); return; }
@@ -3269,8 +4430,19 @@ Advice: ${nbValues['Text68']||'-'}`;
        closeAdmissionSystem();
        pdfValues={};
        document.querySelectorAll('#view-form input, #view-form textarea').forEach(e=>e.value='');
-       document.getElementById('f-complaints').value=''; 
+       document.getElementById('f-complaints').value='';
     }
+
+    // Re-render the visual mode when window size changes
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            // Scale and storedScaleFit recalculate automatically on each render
+            if (currentMode === 'pdf') renderPdfVisual();
+            if (currentMode === 'newborn') renderNbVisual();
+        }, 100); // Small delay to improve performance
+    });
   </script>
 </body>
 </html>
