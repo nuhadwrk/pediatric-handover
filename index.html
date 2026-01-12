@@ -2781,7 +2781,18 @@ function renderLabMatrix() {
         renderHistory();
     }
 // --- ADMISSION SYSTEM LOGIC & VARIABLES ---
-    const MAP_FORM_PDF = { 'f-name': 'name', 'f-hosp-no': 'hid', 'f-age': 'age', 'f-sex': 'sex', 'f-ward': 'ward', 'f-bed': 'bed', 'f-doa': 'doa', 'f-finaldx': 'dx', 'f-plan': 'management', 'f-complaints': 'complains', 'f-hopi': 'hopi', 'f-past': 'pasthx', 'f-family': 'fhx', 'f-treatment': 'txhx', 'f-obs': 'obs', 'f-personal': 'personalhx', 'f-ge': 'ge', 'f-cvs': 'cvs', 'f-rs': 'rs', 'f-abd': 'pa', 'f-pelvis': 'pelvis', 'f-cns': 'cns', 'f-le': 'le' };
+const MAP_FORM_PDF = { 
+        'f-name': 'name', 'f-hosp-no': 'hid', 'f-age': 'age', 'f-sex': 'sex', 
+        'f-weight': 'weight', // Added weight
+        'f-ward': 'ward', 'f-bed': 'bed', 'f-doa': 'doa', 
+        'f-adm-dx': 'dx',     // Added top diagnosis
+        'f-finaldx': 'dx', 
+        'f-plan': 'management', 'f-complaints': 'complains', 'f-hopi': 'hopi', 
+        'f-past': 'pasthx', 'f-family': 'fhx', 'f-treatment': 'txhx', 
+        'f-obs': 'obs', 'f-personal': 'personalhx', 'f-ge': 'ge', 
+        'f-cvs': 'cvs', 'f-rs': 'rs', 'f-abd': 'pa', 'f-pelvis': 'pelvis', 
+        'f-cns': 'cns', 'f-le': 'le' 
+    };
     const MAP_PDF_DB = { 'name':'name', 'hid':'id', 'age':'age', 'sex':'sex', 'ward':'ward', 'bed':'bed', 'doa':'doa', 'management':'plan', 'complains':'complaint', 'hopi':'hopi', 'pasthx':'past_history', 'fhx':'family_history', 'txhx':'treatment_history', 'obs':'obs_history', 'personalhx':'personal_history', 'ge':'general_exam', 'cvs':'cvs', 'rs':'rs', 'pa':'abdomen', 'pelvis':'pelvis', 'cns':'cns', 'le':'local_exam', 'dx':'diagnosis' };
     
     // Newborn PDF Field Map (Required for PDF Generation)
@@ -3196,7 +3207,6 @@ function syncFromVisualToForm(fieldName, value) {
 
         return `<div style="white-space: pre-wrap; line-height: 1.6;">
 <strong>MOTHER'S DETAILS</strong>
-
 ${blue('Name:')} ${val(nbValues['Text1'])}
 ${blue('Age:')} ${val(nbValues['Text2'])}
 ${blue('MRD No:')} ${val(nbValues['Text3'])}
@@ -3221,11 +3231,10 @@ ${blue('Time of Membrane rupture:')} ${val(nbValues['Text22'])}
 ${blue('Liquor Quality:')} ${val(nbValues['Text23'])}${blue(', Quantity:')} ${val(nbValues['Text24'])}
 ${blue('Drugs given:')} ${val(nbValues['Text25'])}
 ${blue('Any Evidence of Foetal Distress:')} ${val(nbValues['Text26'])}
-${blue('Thalassemia Status:')} ${val(nbValues['Text27'])}
+${val(nbValues['Text27'])}
 
 
 <strong>BABY'S DETAILS</strong>
-
 ${blue('Type of Delivery:')} ${val(nbValues['Text30'])}
 ${blue('Indication:')} ${val(nbValues['Text31'])}
 ${blue('Date & Time of Delivery:')} ${val(nbValues['Text35'])}
@@ -3322,34 +3331,45 @@ ${val(nbValues['Text67'])}
 
     function toggleAdmSidebar() { document.getElementById('admSidebar').classList.toggle('show'); }
     function toggleAdmAutoInputs() { const el = document.getElementById('adm-radio-auto'); const a = el ? el.checked : false; document.getElementById('adm-auto-age-inputs').style.display = a ? 'flex' : 'none'; }
-    function updateVisualField(pdfKey, value) { pdfValues[pdfKey] = value; }
+function updateVisualField(pdfKey, value) { 
+        // 1. Update Data
+        pdfValues[pdfKey] = value; 
+        
+        // 2. Update Visual PDF (Direct Call)
+        syncPdfVisualField(pdfKey, value);
+    }
 
     // Sync field to standard visual mode PDF in real-time
-    function syncPdfVisualField(fieldName, value) {
-        // Only sync when in PDF visual mode
-        if(currentMode !== 'pdf') return;
-
+function syncPdfVisualField(fieldName, value) {
+        // We do NOT check currentMode here. We just check if the element exists.
         const stage = document.getElementById('pdf-stage');
-        if(!stage) return;
+        if (!stage) return;
 
-        // Find and update matching field
-        const allFields = stage.querySelectorAll('.pdf-box');
-        allFields.forEach(el => {
-            const fieldId = el.getAttribute('data-field');
-            if(fieldId === fieldName) {
-                el.innerText = value;
+        // Find box using the attribute we explicitly set above
+        const boxes = stage.querySelectorAll(`.pdf-box[data-field="${fieldName}"]`);
+        
+        boxes.forEach(box => {
+            // Only update if text is different (prevents cursor jumping issues)
+            if (box.innerText !== value) {
+                box.innerText = value;
             }
         });
     }
 
-    function syncDx(val, fromBottom) {
+function syncDx(val, fromBottom) {
+        // 1. Sync the two sidebar inputs
         if (fromBottom) {
-            document.getElementById('f-adm-dx').value = val;
+            const topEl = document.getElementById('f-adm-dx');
+            if(topEl && topEl.value !== val) topEl.value = val;
         } else {
-            document.getElementById('f-finaldx').value = val;
+            const botEl = document.getElementById('f-finaldx');
+            if(botEl && botEl.value !== val) botEl.value = val;
         }
+        
+        // 2. Update Data
         pdfValues['dx'] = val;
-        // Sync to visual form immediately
+        
+        // 3. Update Visual PDF (Direct Call)
         syncPdfVisualField('dx', val);
     }
 
@@ -3366,7 +3386,7 @@ ${val(nbValues['Text67'])}
         if(lineCount > maxLines) { if(warnEl) { warnEl.style.display = 'block'; warnEl.innerText = `⚠️ Text limit exceeded: ${lineCount}/${maxLines} lines`; } } else { if(warnEl) warnEl.style.display = 'none'; }
     }
 
-    async function renderPdfVisual() {
+async function renderPdfVisual() {
         const stage = document.getElementById('pdf-stage');
         stage.innerHTML = '';
 
@@ -3375,55 +3395,68 @@ ${val(nbValues['Text67'])}
         for (let i = 1; i <= 4; i++) {
             const wrapper = document.createElement('div');
             wrapper.className = 'pdf-page';
-
-            // Large base size (your preferred "big" look)
+            
+            // Layout styling
             wrapper.style.width = `${PREVIEW_WIDTH_PX}px`;
             wrapper.style.height = `${PREVIEW_HEIGHT_PX}px`;
             wrapper.style.position = 'relative';
-            wrapper.style.margin = '30px auto';                // more top/bottom breathing room
+            wrapper.style.margin = '30px auto';
             wrapper.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
             wrapper.style.backgroundImage = `url('https://raw.githubusercontent.com/nuhadwrk/admission/main/Admissionp${i}.jpg')`;
             wrapper.style.backgroundSize = '100% 100%';
             wrapper.style.backgroundRepeat = 'no-repeat';
 
-            // Only constrain by width, allow vertical scrolling
-            const maxWidth = window.innerWidth - 60;           // some padding
+            // Scale logic
+            const maxWidth = window.innerWidth - 60;
             let scale = 1.0;
-
             if (PREVIEW_WIDTH_PX > maxWidth) {
                 scale = maxWidth / PREVIEW_WIDTH_PX;
             }
-
             wrapper.style.transform = `scale(${scale})`;
-            wrapper.style.transformOrigin = 'top center';      // Changed to center horizontally
+            wrapper.style.transformOrigin = 'top center';
 
-            // Fields positioning (unchanged — still accurate)
-            if (anchors[i]) {
+            if(anchors[i]) {
                 anchors[i].forEach(a => {
                     const box = document.createElement('div');
                     box.className = 'pdf-box';
+                    
+                    // --- CRITICAL FIX: Use setAttribute so querySelector finds it reliably ---
+                    box.setAttribute('data-field', a.name);
+                    
                     box.contentEditable = ALLOWED_EDIT_PDF.includes(a.name) ? 'true' : 'false';
 
+                    // Positioning
                     box.style.left   = `${a.x * PREVIEW_WIDTH_PX}px`;
                     box.style.top    = `${a.y * PREVIEW_HEIGHT_PX}px`;
                     box.style.width  = `${a.w * PREVIEW_WIDTH_PX}px`;
                     box.style.height = `${a.h * PREVIEW_HEIGHT_PX}px`;
-
-                    box.style.fontFamily = 'Helvetica, Arial, sans-serif';
-                    box.style.fontSize   = `${activeFontSize * PT_TO_PX}px`;
+                    box.style.fontSize    = `${activeFontSize * PT_TO_PX}px`;
                     box.style.lineHeight = pdfLineHeight;
-
+                    
+                    // Set Value
                     box.innerText = pdfValues[a.name] || '';
 
+                    // --- Bidirectional Sync (Visual -> Form) ---
                     if (box.contentEditable === 'true') {
                         box.oninput = () => {
-                            pdfValues[a.name] = box.innerText.trim();
-                            // Sync back to form fields
-                            if(a.name === 'dx') {
-                                document.getElementById('f-finaldx').value = box.innerText.trim();
-                                document.getElementById('f-adm-dx').value = box.innerText.trim();
-                            } else {
-                                syncPdfToForm();
+                            const val = box.innerText.trim();
+                            pdfValues[a.name] = val;
+                            
+                            // 1. Direct Sync for Diagnosis (Critical Field)
+                            if (a.name === 'dx') {
+                                const topDx = document.getElementById('f-adm-dx');
+                                const botDx = document.getElementById('f-finaldx');
+                                if (topDx) topDx.value = val;
+                                if (botDx) botDx.value = val;
+                            }
+                            // 2. Generic Sync for others using the Map
+                            else {
+                                // Find which Form ID maps to this PDF Field
+                                const formId = Object.keys(MAP_FORM_PDF).find(key => MAP_FORM_PDF[key] === a.name);
+                                if (formId) {
+                                    const el = document.getElementById(formId);
+                                    if (el) el.value = val;
+                                }
                             }
                         };
                     }
@@ -3431,7 +3464,6 @@ ${val(nbValues['Text67'])}
                     wrapper.appendChild(box);
                 });
             }
-
             stage.appendChild(wrapper);
         }
     }
@@ -3877,7 +3909,7 @@ ${val(nbValues['Text67'])}
         addLine("C/O", pdfValues['complains']); addLine("HOPI", pdfValues['hopi']); addLine("Past Hx", pdfValues['pasthx']); addLine("Personal Hx", pdfValues['personalhx']); addLine("Family Hx", pdfValues['fhx']); addLine("Tx Hx", pdfValues['txhx']); addLine("Obs/Gyn", pdfValues['obs']); addLine("G/E", pdfValues['ge']); addLine("CVS", pdfValues['cvs']); addLine("RS", pdfValues['rs']); addLine("Abd", pdfValues['pa']); addLine("Pelvis", pdfValues['pelvis']); addLine("CNS", pdfValues['cns']); addLine("Local", pdfValues['le']);
         return { hopi: aggregatedHopi, diagnosis: pdfValues['dx'] || "", plan: pdfValues['management'] || "" };
     }
-    async function saveEdits() {
+async function saveEdits() {
        const btnSave = document.getElementById('btn-save-edits');
        if(btnSave) {
            btnSave.innerText = "Saving...";
@@ -3889,52 +3921,69 @@ ${val(nbValues['Text67'])}
        const p = localPatients[currentPatientId];
        const updates = {};
 
-       if (currentMode === 'newborn') {
-           // --- NEWBORN MODE SAVE ---
-           // Sync ALL form fields into nbValues before saving
-           syncAllNbFieldsToValues();
+       // --- Helper to safely get values (PDF priority) ---
+       const getVal = (nbKey, domId) => {
+           const valFromPdf = nbValues[nbKey];
+           const valFromDom = document.getElementById(domId)?.value;
+           return (valFromPdf !== undefined && valFromPdf !== null && valFromPdf !== '') ? valFromPdf : (valFromDom || '');
+       };
 
-           updates.name = document.getElementById('nb-f-name').value;
-           updates.id = document.getElementById('nb-f-hosp-no').value;
-           updates.nid = document.getElementById('nb-f-nid-no').value;
+       if (currentMode === 'newborn') {
+           // --- NEWBORN SAVE LOGIC ---
+           updates.id = getVal('Text29', 'nb-f-hosp-no');
+           updates.nid = getVal('Text42', 'nb-f-nid-no');
+           
+           const motherName = getVal('Text1', 'nb-m-name') || "Unknown";
+           const manualName = document.getElementById('nb-f-name').value;
+           updates.name = manualName || ("Baby of " + motherName);
+
            updates.ward = document.getElementById('nb-f-ward').value;
            updates.bed = document.getElementById('nb-f-bed').value;
            updates.shift = document.getElementById('nb-f-shift').value;
-           updates.doa = document.getElementById('nb-f-doa').value;
-           updates.diagnosis = document.getElementById('nb-f-adm-dx').value;
-           updates.weight = document.getElementById('nb-b-wt').value + ' kg';
+           updates.doa = document.getElementById('nb-f-doa').value; 
+
+           updates.diagnosis = getVal('Text69', 'nb-f-adm-dx');
            
-           const dobDate = document.getElementById('nb-b-datetime').value;
-           if(dobDate) {
-               const [d, t] = dobDate.split('T');
-               updates.dob = d; updates.dot = t; updates.isAutoAge = true;
-               updates.age = calculateNeonatalAge(d, t).display;
+           let rawWeight = getVal('Text41', 'nb-b-wt');
+           if(rawWeight && !rawWeight.toLowerCase().includes('kg')) rawWeight += ' kg';
+           updates.weight = rawWeight;
+
+           let dobString = getVal('Text35', 'nb-b-datetime');
+           if(dobString) {
+                dobString = dobString.replace(' ', 'T');
+                const [d, t] = dobString.split('T');
+                updates.dob = d; updates.dot = t; updates.isAutoAge = true;
+                updates.age = calculateNeonatalAge(d, t).display;
            }
-           
+
            nbValues['gest_val'] = document.getElementById('nb-gest-sel').value;
            nbValues['size_val'] = document.getElementById('nb-size-sel').value;
-           
+           if(!nbValues['Text29']) nbValues['Text29'] = updates.id;
+           if(!nbValues['Text42']) nbValues['Text42'] = updates.nid;
+
            updates.newbornData = { ...nbValues };
            updates.hopi = getNewbornHopiText(); 
+           
+           // Newborn Plan comes from "Advice"
+           updates.plan = getVal('Text68', 'nb-advice') || "Routine Newborn Care";
+
        } else {
-           // --- STANDARD MODE SAVE ---
+           // --- STANDARD SAVE LOGIC ---
            if(currentMode === 'form') syncFormToPdf();
            else syncPdfToForm();
            
            const hospNo = document.getElementById('f-hosp-no').value || "";
-           const nidNo = document.getElementById('f-nid-no').value || "";
            const rawAge = document.getElementById('f-age').value || "?";
            
            pdfValues['hid'] = hospNo;
            pdfValues['ward'] = document.getElementById('f-ward').value;
            pdfValues['bed'] = document.getElementById('f-bed').value;
            pdfValues['name'] = document.getElementById('f-name').value;
-           pdfValues['nid'] = formatTimestamp(Date.now());
            pdfValues['age'] = rawAge; 
 
            updates.name = document.getElementById('f-name').value;
            updates.id = hospNo;
-           updates.nid = nidNo;
+           updates.nid = document.getElementById('f-nid-no').value;
            updates.bed = document.getElementById('f-bed').value;
            updates.ward = document.getElementById('f-ward').value;
            updates.shift = document.getElementById('f-shift').value;
@@ -3954,18 +4003,25 @@ ${val(nbValues['Text67'])}
            updates.plan = aggregated.plan;
        }
        
-       // Update logged admission plan if changed
+       // --- LOG OVERWRITE LOGIC (FIXED) ---
+       // This block finds the existing "Admission Plan:" entry and swaps the text content
        if (updates.plan && p.logs) {
-           const oldPlan = getFirstLoggedPlan(p.logs);
-           const newPlan = updates.plan.trim();
-
-           if (oldPlan !== newPlan) {
-               // Find and replace the first "Admission Plan:" entry in logs
-               // Format: "Admission Plan:\n" followed by plan content on next line
-               const admPlanRegex = /(• [^\n]+\n Admission Plan:\n)[^\n•]+((?:\n(?!• )[^\n]+)*)/;
-               if (admPlanRegex.test(p.logs)) {
-                   updates.logs = p.logs.replace(admPlanRegex, `$1${newPlan}$2`);
-               }
+           const newPlanText = updates.plan.trim();
+           
+           // Regex breakdown:
+           // 1. (•.*?\n\s*Admission Plan:\s*\n) -> Captures Bullet + Timestamp + Header + Newline
+           // 2. ([\s\S]*?) -> Captures the BODY of the plan (non-greedy, spans lines)
+           // 3. (?=\n\s*•|$) -> Lookahead: Stops before the NEXT bullet or End of String
+           const logPattern = /(•.*?\n\s*Admission Plan:\s*\n)([\s\S]*?)(?=\n\s*•|$)/i;
+           
+           if (logPattern.test(p.logs)) {
+               // Replace the body (Group 2) with the new plan text
+               updates.logs = p.logs.replace(logPattern, `$1${newPlanText}`);
+           } else {
+               // Fallback: If no Admission Plan header found, append it to the logs just in case
+               // (Optional: remove this else block if you only want strict overwrites)
+               const header = `• ${formatTimestamp(p.timestamp || Date.now())}\n Admission Plan:\n`;
+               updates.logs = p.logs + `\n${header}${newPlanText}\n\n`;
            }
        }
 
