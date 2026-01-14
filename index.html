@@ -1601,7 +1601,7 @@ HR:   RR:   SpO2:   `,
         const nbMeasurements = nb.Text41 ? `Birth weight: ${nb.Text41}\nHC:  cm\nLength:  cm\n${vitalsStr}` : DEFAULTS.neo_measurements;
 
         // Maternal History (Updated with g6pdText)
-        const nbMaternal = nb.Text1 ? `Age: ${nb.Text2||'-'}, ${nb.Text7||'-'}\nBlood group: ${nb.Text13||'-'}; ${g6pdText}, HIV/HBsAg: Non-reactive` : DEFAULTS.neo_maternal;
+        const nbMaternal = nb.Text1 ? `Age: ${nb.Text2||'-'}, ${nb.Text7||'-'}\nBlood group: ${nb.Text13||'-'}; ${g6pdText}, VDRL/HIV/HBsAg/HCV: Non-reactive` : DEFAULTS.neo_maternal;
 
         // --- STANDARD ADMISSION DATA MAPPING ---
         let admHist = "";
