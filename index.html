@@ -1542,115 +1542,151 @@ HR:   RR:   SpO2:   `,
         if(currentDcPatientId) selectDcPatient(currentDcPatientId);
     }
 
-// --- REFACTORED PATIENT SELECTION WITH SPECIFIC MAPPING ---
-    function selectDcPatient(id, forceReset = false) {
-        if(!id) return;
-        currentDcPatientId = id;
-        const p = localPatients[id];
-        const data = forceReset ? {} : (p.dischargeData || {});
-        const type = document.getElementById('dc-template-type').value;
-        const nb = p.newbornData || {}; 
-        
-        let mrnOnly = p.id || ''; let nidOnly = p.nid || ''; 
-        if(!nidOnly && p.id && p.id.includes(',')) { const parts = p.id.split(','); mrnOnly = parts[0].trim(); nidOnly = parts.length > 1 ? parts[1].trim() : ''; }
-        const nameWithNid = nidOnly ? `${p.name} (${nidOnly})` : p.name;
-        
-        let ageDisplay = p.age;
-        if ((type === 'neonate' || type === 'neonate_hx') && p.isAutoAge && p.dob && p.dot) { ageDisplay = calculateCompletedDOL(p.dob, p.dot); }
+// --- REFACTORED: AUTO-TEMPLATE BASED ON AGE ONLY ---
+function selectDcPatient(id, forceReset = false) {
+    if (!id) return;
+    const p = localPatients[id];
+    
+    // -----------------------------------------------------------
+    // 1. AUTO-DETECT TEMPLATE (STRICTLY AGE < 30 DAYS)
+    // -----------------------------------------------------------
+    const currentTemplate = document.getElementById('dc-template-type').value;
+    let targetTemplate = 'pediatric'; // Default to Paeds
 
-        // --- 1. DATE FORMATTING LOGIC (DD/MM/YYYY) ---
-        let formattedBirthDate = nb.Text35 || '';
-        if (formattedBirthDate) {
-            try {
-                // Handle "YYYY-MM-DDTHH:mm" or "YYYY-MM-DD HH:mm"
-                const d = new Date(formattedBirthDate);
-                if (!isNaN(d.getTime())) {
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                    const year = d.getFullYear();
-                    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    formattedBirthDate = `${day}/${month}/${year} ${time}`;
-                }
-            } catch (e) { /* keep original if fail */ }
-        }
+    let isNeonate = false;
 
-        // --- 2. VDRL/G6PD TEXT LOGIC ---
-        // Find text starting from "G6PD" in Text14
-        let g6pdText = nb.Text14 || '-';
-        if (g6pdText.includes("G6PD")) {
-            g6pdText = g6pdText.substring(g6pdText.indexOf("G6PD"));
-        }
-
-        // --- MAPPINGS ---
-        // Birth History
-        const nbBirthHx = nb.Text35 ? `Date: ${formattedBirthDate}\nType of Delivery: ${nb.Text30} ${nb.Text31||''}\nMaturity: ${nb.Text40||''}\nAPGAR: ${nb.Text32} (1 min), ${nb.Text33} (5 min), ${nb.Text34} (10 min)\nLiquor: ${nb.Text23||''} + ${nb.Text24||''}\nDistress: None\nCried immediately after delivery: Yes` : DEFAULTS.neo_birth_hx_col1;
-
-        // Findings (Default)
-        const nbFindings = DEFAULTS.neo_findings; 
-
-        // Measurements (Vitals Extraction)
-        let vitalsStr = "HR:   RR:   SpO2:   ";
-        if (nb.Text67) {
-            const hrMatch = nb.Text67.match(/HR\s*([0-9]+)/i);
-            const rrMatch = nb.Text67.match(/RR\s*([0-9]+)/i);
-            const spo2Match = nb.Text67.match(/SpO2\s*([0-9]+)/i);
-            if(hrMatch || rrMatch || spo2Match) {
-                vitalsStr = `HR: ${hrMatch?hrMatch[1]:'-'}  RR: ${rrMatch?rrMatch[1]:'-'}  SpO2: ${spo2Match?spo2Match[1]:'-'}%`;
-            }
-        }
-        const nbMeasurements = nb.Text41 ? `Birth weight: ${nb.Text41}\nHC:  cm\nLength:  cm\n${vitalsStr}` : DEFAULTS.neo_measurements;
-
-        // Maternal History (Updated with g6pdText)
-        const nbMaternal = nb.Text1 ? `Age: ${nb.Text2||'-'}, ${nb.Text7||'-'}\nBlood group: ${nb.Text13||'-'}; ${g6pdText}, VDRL/HIV/HBsAg/HCV: Non-reactive` : DEFAULTS.neo_maternal;
-
-        // --- STANDARD ADMISSION DATA MAPPING ---
-        let admHist = "";
-        if(p.admissionData) {
-            admHist = `${(p.admissionData.hopi || '').trim()}\n\nPast Hx: ${(p.admissionData.pasthx || '').trim()}\n\nPersonal Hx: ${(p.admissionData.personalhx || '').trim()}\n\nFamily Hx: ${(p.admissionData.fhx || '').trim()}`;
-        } else { admHist = (p.hopi || '').trim(); }
-
-        const admGeneralExamOnly = p.admissionData?.ge || p.general_exam || "";
-        const examParts = [{ l: 'G/E', v: p.general_exam }, { l: 'CVS', v: p.cvs }, { l: 'RS', v: p.rs }, { l: 'Abd', v: p.abdomen }, { l: 'CNS', v: p.cns }];
-        const admExamFull = examParts.filter(part => (part.v || '').trim() !== '').map(part => `${part.l}: ${part.v.trim()}`).join('\n');
-        const firstLoggedPlan = getFirstLoggedPlan(p.logs);
-        const admissionCourse = `In ER:\n${(p.treatment_history||'').trim()}\n\nAfter Admission:\n${firstLoggedPlan}`;
-
-        const map = {
-            'dc-name': data.name || nameWithNid, 'dc-age': data.age || ageDisplay, 'dc-sex': data.sex || p.sex, 'dc-weight': data.weight || p.weight,
-            'dc-mrn': data.mrn || mrnOnly, 'dc-ward': data.ward || p.ward, 'dc-bed': data.bed || p.bed, 'dc-folder': data.folder || '',
-            'dc-doa': data.doa || formatDateDDMMYYYY(p.doa), 'dc-dod': data.dod || formatDateDDMMYYYY(getLocalISODate()),
-            'dc-diagnosis': data.diagnosis || p.diagnosis, 'dc-address': data.address || '', 'dc-ix': data.ix || "ALL ENCLOSED", 'dc-review': data.review || "Follow up in P-OPD after 3 days"
-        };
-
-        if (type === 'neonate') { 
-            map['dc-history'] = data.history || nbBirthHx; 
-            map['dc-birth-hx-col1'] = data.birth_hx_1 || nbFindings; 
-            map['dc-birth-hx-col2'] = data.birth_hx_2 || nbMeasurements; 
-            map['dc-course'] = data.course || DEFAULTS.neo_course; 
-            map['dc-review'] = data.review || DEFAULTS.neo_review;
-        } else if (type === 'neonate_hx') { 
-            map['dc-history'] = data.history || admHist; 
-            const hasAdmGE = (admGeneralExamOnly && admGeneralExamOnly.trim().length > 0);
-            map['dc-exam'] = data.exam || (hasAdmGE ? admExamFull : DEFAULTS.neohx_exam); 
-            map['dc-birth-hx-col1'] = data.birth_hx_1 || nbBirthHx; 
-            map['dc-birth-hx-col2'] = data.birth_hx_2 || nbMeasurements; 
-            map['dc-course'] = data.course || ''; 
-        } else { 
-            map['dc-history'] = data.history || admHist; map['dc-exam'] = data.exam || admExamFull; map['dc-course'] = data.course || admissionCourse;
-        }
-
-        map['dc-maternal-hx'] = data.maternal_hx || nbMaternal;
-
-        if (type === 'neonate') { map['dc-cond'] = data.cond || DEFAULTS.neo_cond; map['dc-rx'] = data.rx || DEFAULTS.neo_rx; } 
-        else if (type === 'neonate_hx') { map['dc-cond'] = data.cond || DEFAULTS.neo_cond; map['dc-rx'] = data.rx || DEFAULTS.neohx_rx; } 
-        else { map['dc-cond'] = data.cond || DEFAULTS.ped_cond; map['dc-rx'] = data.rx || DEFAULTS.ped_rx; }
-
-        for (const [elId, val] of Object.entries(map)) {
-            const el = document.getElementById(elId);
-            if(el) { el.value = val; if(el.tagName === 'TEXTAREA') autoResize(el); }
-        }
-        renderDcHistory(p.logs);
+    // Check 1: Auto-Calculated Age (Most Accurate)
+    if (p.isAutoAge && p.dob && p.dot) {
+        const ageObj = calculateNeonatalAge(p.dob, p.dot);
+        // If days are calculated and less than 30
+        if (ageObj.days !== undefined && ageObj.days < 30) isNeonate = true;
     }
+    // Check 2: Manual Age String (Fallback)
+    else if (p.age) {
+        const a = p.age.toLowerCase();
+        // Logic: 
+        // 1. Contains "hr" (e.g., "6 hrs") -> Neonate
+        // 2. Contains "day" AND number is < 30 (e.g., "5 days") -> Neonate
+        // 3. Does NOT contain "mo" or "yr" (avoids "1 day 5 mos")
+        if ( (a.includes('hr') || (a.includes('day') && parseInt(a) < 30)) && !a.includes('mo') && !a.includes('yr') ) {
+            isNeonate = true;
+        }
+    }
+
+    if (isNeonate) targetTemplate = 'neonate';
+
+    // -----------------------------------------------------------
+    // 2. SWITCH & RELOAD IF MISMATCH
+    // -----------------------------------------------------------
+    const isCurrentNeo = currentTemplate.includes('neonate');
+    const isTargetNeo = targetTemplate === 'neonate';
+
+    // If template mismatch, switch and restart function
+    if (isCurrentNeo !== isTargetNeo) {
+        currentDcPatientId = id; 
+        document.getElementById('dc-template-type').value = targetTemplate;
+        updateDcTemplate(); 
+        return; 
+    }
+
+    // -----------------------------------------------------------
+    // 3. STANDARD DATA LOADING
+    // -----------------------------------------------------------
+    currentDcPatientId = id;
+    const data = forceReset ? {} : (p.dischargeData || {});
+    const type = document.getElementById('dc-template-type').value;
+    const nb = p.newbornData || {}; 
+    
+    let mrnOnly = p.id || ''; let nidOnly = p.nid || ''; 
+    if(!nidOnly && p.id && p.id.includes(',')) { const parts = p.id.split(','); mrnOnly = parts[0].trim(); nidOnly = parts.length > 1 ? parts[1].trim() : ''; }
+    const nameWithNid = nidOnly ? `${p.name} (${nidOnly})` : p.name;
+    
+    let ageDisplay = p.age;
+    if ((type === 'neonate' || type === 'neonate_hx') && p.isAutoAge && p.dob && p.dot) { ageDisplay = calculateCompletedDOL(p.dob, p.dot); }
+
+    let formattedBirthDate = nb.Text35 || '';
+    if (formattedBirthDate) {
+        try {
+            const d = new Date(formattedBirthDate);
+            if (!isNaN(d.getTime())) {
+                const day = String(d.getDate()).padStart(2, '0');
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const year = d.getFullYear();
+                const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                formattedBirthDate = `${day}/${month}/${year} ${time}`;
+            }
+        } catch (e) {}
+    }
+
+    let g6pdText = nb.Text14 || '-';
+    if (g6pdText.includes("G6PD")) {
+        g6pdText = g6pdText.substring(g6pdText.indexOf("G6PD"));
+    }
+
+    const nbBirthHx = nb.Text35 ? `Date: ${formattedBirthDate}\nType of Delivery: ${nb.Text30} ${nb.Text31||''}\nMaturity: ${nb.Text40||''}\nAPGAR: ${nb.Text32} (1 min), ${nb.Text33} (5 min), ${nb.Text34} (10 min)\nLiquor: ${nb.Text23||''} + ${nb.Text24||''}\nDistress: None\nCried immediately after delivery: Yes` : DEFAULTS.neo_birth_hx_col1;
+
+    const nbFindings = DEFAULTS.neo_findings; 
+
+    let vitalsStr = "HR:   RR:   SpO2:   ";
+    if (nb.Text67) {
+        const hrMatch = nb.Text67.match(/HR\s*([0-9]+)/i);
+        const rrMatch = nb.Text67.match(/RR\s*([0-9]+)/i);
+        const spo2Match = nb.Text67.match(/SpO2\s*([0-9]+)/i);
+        if(hrMatch || rrMatch || spo2Match) {
+            vitalsStr = `HR: ${hrMatch?hrMatch[1]:'-'}  RR: ${rrMatch?rrMatch[1]:'-'}  SpO2: ${spo2Match?spo2Match[1]:'-'}%`;
+        }
+    }
+    const nbMeasurements = nb.Text41 ? `Birth weight: ${nb.Text41}\nHC:   cm\nLength:   cm\n${vitalsStr}` : DEFAULTS.neo_measurements;
+
+    const nbMaternal = nb.Text1 ? `Age: ${nb.Text2||'-'}, ${nb.Text7||'-'}\nBlood group: ${nb.Text13||'-'}; ${g6pdText}, VDRL/HIV/HBsAg/HCV: Non-reactive` : DEFAULTS.neo_maternal;
+
+    let admHist = "";
+    if(p.admissionData) {
+        admHist = `${(p.admissionData.hopi || '').trim()}\n\nPast Hx: ${(p.admissionData.pasthx || '').trim()}\n\nPersonal Hx: ${(p.admissionData.personalhx || '').trim()}\n\nFamily Hx: ${(p.admissionData.fhx || '').trim()}`;
+    } else { admHist = (p.hopi || '').trim(); }
+
+    const admGeneralExamOnly = p.admissionData?.ge || p.general_exam || "";
+    const examParts = [{ l: 'G/E', v: p.general_exam }, { l: 'CVS', v: p.cvs }, { l: 'RS', v: p.rs }, { l: 'Abd', v: p.abdomen }, { l: 'CNS', v: p.cns }];
+    const admExamFull = examParts.filter(part => (part.v || '').trim() !== '').map(part => `${part.l}: ${part.v.trim()}`).join('\n');
+    const firstLoggedPlan = getFirstLoggedPlan(p.logs);
+    const admissionCourse = `In ER:\n${(p.treatment_history||'').trim()}\n\nAfter Admission:\n${firstLoggedPlan}`;
+
+    const map = {
+        'dc-name': data.name || nameWithNid, 'dc-age': data.age || ageDisplay, 'dc-sex': data.sex || p.sex, 'dc-weight': data.weight || p.weight,
+        'dc-mrn': data.mrn || mrnOnly, 'dc-ward': data.ward || p.ward, 'dc-bed': data.bed || p.bed, 'dc-folder': data.folder || '',
+        'dc-doa': data.doa || formatDateDDMMYYYY(p.doa), 'dc-dod': data.dod || formatDateDDMMYYYY(getLocalISODate()),
+        'dc-diagnosis': data.diagnosis || p.diagnosis, 'dc-address': data.address || '', 'dc-ix': data.ix || "ALL ENCLOSED", 'dc-review': data.review || "Follow up in P-OPD after 3 days"
+    };
+
+    if (type === 'neonate') { 
+        map['dc-history'] = data.history || nbBirthHx; 
+        map['dc-birth-hx-col1'] = data.birth_hx_1 || nbFindings; 
+        map['dc-birth-hx-col2'] = data.birth_hx_2 || nbMeasurements; 
+        map['dc-course'] = data.course || DEFAULTS.neo_course; 
+        map['dc-review'] = data.review || DEFAULTS.neo_review;
+    } else if (type === 'neonate_hx') { 
+        map['dc-history'] = data.history || admHist; 
+        const hasAdmGE = (admGeneralExamOnly && admGeneralExamOnly.trim().length > 0);
+        map['dc-exam'] = data.exam || (hasAdmGE ? admExamFull : DEFAULTS.neohx_exam); 
+        map['dc-birth-hx-col1'] = data.birth_hx_1 || nbBirthHx; 
+        map['dc-birth-hx-col2'] = data.birth_hx_2 || nbMeasurements; 
+        map['dc-course'] = data.course || ''; 
+    } else { 
+        map['dc-history'] = data.history || admHist; map['dc-exam'] = data.exam || admExamFull; map['dc-course'] = data.course || admissionCourse;
+    }
+
+    map['dc-maternal-hx'] = data.maternal_hx || nbMaternal;
+
+    if (type === 'neonate') { map['dc-cond'] = data.cond || DEFAULTS.neo_cond; map['dc-rx'] = data.rx || DEFAULTS.neo_rx; } 
+    else if (type === 'neonate_hx') { map['dc-cond'] = data.cond || DEFAULTS.neo_cond; map['dc-rx'] = data.rx || DEFAULTS.neohx_rx; } 
+    else { map['dc-cond'] = data.cond || DEFAULTS.ped_cond; map['dc-rx'] = data.rx || DEFAULTS.ped_rx; }
+
+    for (const [elId, val] of Object.entries(map)) {
+        const el = document.getElementById(elId);
+        if(el) { el.value = val; if(el.tagName === 'TEXTAREA') autoResize(el); }
+    }
+    renderDcHistory(p.logs);
+}
     function renderDcHistory(logsStr) {
         const container = document.getElementById('dc-history-list');
         if(!logsStr) { container.innerHTML = "No history."; return; }
