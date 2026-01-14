@@ -1655,7 +1655,7 @@ function selectDcPatient(id, forceReset = false) {
         'dc-name': data.name || nameWithNid, 'dc-age': data.age || ageDisplay, 'dc-sex': data.sex || p.sex, 'dc-weight': data.weight || p.weight,
         'dc-mrn': data.mrn || mrnOnly, 'dc-ward': data.ward || p.ward, 'dc-bed': data.bed || p.bed, 'dc-folder': data.folder || '',
         'dc-doa': data.doa || formatDateDDMMYYYY(p.doa), 'dc-dod': data.dod || formatDateDDMMYYYY(getLocalISODate()),
-        'dc-diagnosis': data.diagnosis || p.diagnosis, 'dc-address': data.address || '', 'dc-ix': data.ix || "ALL ENCLOSED", 'dc-review': data.review || "Follow up in P-OPD after 3 days"
+        'dc-diagnosis': data.diagnosis || p.diagnosis, 'dc-address': data.address || '', 'dc-ix': data.ix || ((type === 'neonate' || type === 'neonate_hx') ? "ALL ENCLOSED\nBG: , G6PD: " : "ALL ENCLOSED"), 'dc-review': data.review || "Follow up in P-OPD after 3 days"
     };
 
     if (type === 'neonate') { 
