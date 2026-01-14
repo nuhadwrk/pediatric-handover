@@ -1581,8 +1581,8 @@ function selectDcPatient(id, forceReset = false) {
     const isCurrentNeo = currentTemplate.includes('neonate');
     const isTargetNeo = targetTemplate === 'neonate';
 
-    // If template mismatch, switch and restart function
-    if (isCurrentNeo !== isTargetNeo) {
+// If template mismatch AND we are switching to a new patient (not just reloading)
+    if (id !== currentDcPatientId && isCurrentNeo !== isTargetNeo) {
         currentDcPatientId = id; 
         document.getElementById('dc-template-type').value = targetTemplate;
         updateDcTemplate(); 
