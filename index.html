@@ -1417,18 +1417,34 @@ HR:   RR:   SpO2:   `,
         }
     }
 
-    function saveLogsFromDom(patientId, element) {
+function saveLogsFromDom(patientId, element) {
         const listContainer = element.closest('ul');
         if (!listContainer) return;
+        
         const items = listContainer.querySelectorAll('li.history-item');
         let logEntries = [];
+        
         items.forEach(li => {
             const dateText = li.querySelector('.history-date').innerText.trim();
             const bodyText = li.querySelector('.history-text').innerText.trim();
-            if (dateText && bodyText) { logEntries.push(`• ${dateText}\n ${bodyText}\n\n`); }
+            if (dateText && bodyText) { 
+                logEntries.push(`• ${dateText}\n ${bodyText}\n\n`); 
+            }
         });
-        const reconstructedLogs = logEntries.reverse().join('');
-        db.collection('patients').doc(patientId).update({ logs: reconstructedLogs }).catch(e => console.error("Error saving logs", e));
+
+        // FIX: Check global sort order to prevent reversing the list unintentionally
+        let reconstructedLogs = '';
+        
+        // If UI is showing Oldest First, the DOM list is ALREADY chronological.
+        // If UI is showing Newest First (default), we must reverse it to store it chronologically in DB.
+        if (typeof historySortOrder !== 'undefined' && historySortOrder === 'oldest') {
+             reconstructedLogs = logEntries.join('');
+        } else {
+             reconstructedLogs = logEntries.reverse().join('');
+        }
+
+        db.collection('patients').doc(patientId).update({ logs: reconstructedLogs })
+          .catch(e => console.error("Error saving logs", e));
     }
 
 function deleteLogItem(btn, patientId) {
