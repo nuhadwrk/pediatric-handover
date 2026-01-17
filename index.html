@@ -1431,11 +1431,42 @@ HR:   RR:   SpO2:   `,
         db.collection('patients').doc(patientId).update({ logs: reconstructedLogs }).catch(e => console.error("Error saving logs", e));
     }
 
-    function deleteLogItem(btn, patientId) {
+function deleteLogItem(btn, patientId) {
         if(!confirm("Delete this log entry?")) return;
+        
         const li = btn.closest('li');
-        li.remove();
-        saveLogsFromDom(patientId, li);
+        const listContainer = li.closest('ul'); // 1. Capture parent BEFORE removing child
+        
+        li.remove(); // 2. Remove the visual item
+        
+        // 3. Reconstruct the log string from the remaining items
+        const items = listContainer.querySelectorAll('li.history-item');
+        let logEntries = [];
+        
+        items.forEach(item => {
+            const dateText = item.querySelector('.history-date').innerText.trim();
+            const bodyText = item.querySelector('.history-text').innerText.trim();
+            if (dateText && bodyText) { 
+                logEntries.push(`• ${dateText}\n ${bodyText}\n\n`); 
+            }
+        });
+        
+        // 4. Handle Sorting: Ensure DB is always saved Chronological (Oldest -> Newest)
+        // If UI is showing Newest First (default), we must reverse list before saving.
+        // If UI is showing Oldest First, the list is already correct.
+        let reconstructedLogs = '';
+        if (typeof historySortOrder !== 'undefined' && historySortOrder === 'oldest') {
+             reconstructedLogs = logEntries.join('');
+        } else {
+             reconstructedLogs = logEntries.reverse().join('');
+        }
+        
+        // 5. Save to Firestore
+        db.collection('patients').doc(patientId).update({ logs: reconstructedLogs })
+            .catch(e => {
+                console.error("Error saving logs", e);
+                alert("Failed to delete log from server.");
+            });
     }
 
     function checkLogInput(id) {
