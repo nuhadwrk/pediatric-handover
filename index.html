@@ -1318,7 +1318,33 @@ HR:   RR:   SpO2:   `,
     function calculateDaysAdmitted(doa) { try{ const d=new Date(doa), t=new Date(); t.setHours(0,0,0,0); d.setHours(0,0,0,0); const diff=Math.floor((t-d)/86400000)+1; return diff<=0?'1st DOA':`${diff}${getOrdinalSuffix(diff)} DOA`; }catch(e){return'1st DOA';} }
     
     function calculateNeonatalAge(dob, dot) { try{ if(!dob||!dot)return{display:'?'}; const b=new Date(`${dob}T${dot}:00`); if(isNaN(b.getTime()))return{display:'?'}; const n=new Date(), h=Math.floor((n-b)/3600000), d=Math.floor(h/24)+1; return {days:d,hours:h,display:h<=96?`${d}${getOrdinalSuffix(d)} DOL (${h} HOL)`:`${d}${getOrdinalSuffix(d)} DOL`}; }catch(e){return{days:1,hours:24,display:'?'};} }
+    function getLiveCGA(p) {
+    // We need GA Weeks, DOB, and DOT to calculate
+    const gaWeeks = parseInt(p.gaWeeks) || 0;
+    const gaDays = parseInt(p.gaDays) || 0;
     
+    if (gaWeeks > 0 && p.dob && p.dot) {
+        try {
+            const birthDate = new Date(`${p.dob}T${p.dot}:00`);
+            const now = new Date();
+            
+            if (!isNaN(birthDate.getTime())) {
+                // Calculate chronological age in days
+                const chronoDays = Math.floor((now - birthDate) / (1000 * 60 * 60 * 24));
+                
+                // Add Birth GA + Chrono Age
+                const totalGADays = (gaWeeks * 7) + gaDays;
+                const totalCGADays = totalGADays + chronoDays;
+                
+                const currentCgaWeeks = Math.floor(totalCGADays / 7);
+                const currentCgaDays = totalCGADays % 7;
+                
+                return ` (CGA: ${currentCgaWeeks}+${currentCgaDays})`;
+            }
+        } catch(e) { return ''; }
+    }
+    return '';
+}
     function calculateCompletedDOL(dob, dot) {
         if(!dob || !dot) return "";
         try {
@@ -2095,7 +2121,7 @@ async function generateDcDocx() {
              <p><strong>DOA:</strong> <span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></p>
              <p><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
              <p><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
-             <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span><span id="cga-label-${id}">${p.cgaWeeks ? ` (CGA: ${p.cgaWeeks}+${p.cgaDays})` : ''}</span></p>
+             <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span><span id="cga-label-${id}">${getLiveCGA(p)}</span>
 
              <div class="age-toggle" id="age-toggle-${id}">
                 <label><input type="radio" name="ageMode-${id}" value="manual" ${!p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Man</label>
@@ -2197,12 +2223,12 @@ async function generateDcDocx() {
             if(recent.innerHTML !== newRecent) recent.innerHTML = newRecent;
         }
 
-        // Update CGA label
-        const cgaLabel = c.querySelector(`#cga-label-${p.docId}`);
-        if (cgaLabel) {
-            const cgaText = p.cgaWeeks ? ` (CGA: ${p.cgaWeeks}+${p.cgaDays})` : '';
-            if (cgaLabel.innerText !== cgaText) cgaLabel.innerText = cgaText;
-        }
+        // Update CGA label - LIVE CALCULATION
+const cgaLabel = c.querySelector(`#cga-label-${p.docId}`);
+if (cgaLabel) {
+    const cgaText = getLiveCGA(p);
+    if (cgaLabel.innerText !== cgaText) cgaLabel.innerText = cgaText;
+}
 
         // Update GA input fields
         const gaWeeksInput = document.getElementById(`ga-weeks-${p.docId}`);
@@ -2254,53 +2280,25 @@ async function generateDcDocx() {
     function saveAgeMode(id) { const a=document.querySelector(`#age-toggle-${id} input[value='auto']`).checked, dob=document.getElementById(`dob-${id}`).value, dot=document.getElementById(`dot-${id}`).value, u={isAutoAge:a,dob,dot}; if(a&&dob&&dot) u.age=calculateNeonatalAge(dob,dot).display; db.collection('patients').doc(id).update(u); }
 
     function saveGAData(id) {
-        const gaWeeks = parseInt(document.getElementById(`ga-weeks-${id}`).value) || 0;
-        const gaDays = parseInt(document.getElementById(`ga-days-${id}`).value) || 0;
-        const p = localPatients[id];
-        const update = { gaWeeks, gaDays };
-        const cgaLabel = document.getElementById(`cga-label-${id}`);
+    const gaWeeks = parseInt(document.getElementById(`ga-weeks-${id}`).value) || 0;
+    const gaDays = parseInt(document.getElementById(`ga-days-${id}`).value) || 0;
+    
+    // We ONLY save the inputs (Birth GA). 
+    // We do NOT save the calculated CGA result to DB anymore.
+    // The display logic (getLiveCGA) handles the math.
+    const update = { gaWeeks, gaDays };
 
-        // Calculate CGA if patient has DOB/DOT
-        if (gaWeeks > 0 && p && p.dob && p.dot) {
-            const birthDate = new Date(`${p.dob}T${p.dot}:00`);
-            const now = new Date();
-            if (!isNaN(birthDate.getTime())) {
-                const chronoDays = Math.floor((now - birthDate) / (1000 * 60 * 60 * 24));
-                const totalGADays = (gaWeeks * 7) + gaDays;
-                const totalCGADays = totalGADays + chronoDays;
-                const cgaWeeks = Math.floor(totalCGADays / 7);
-                const cgaDays = totalCGADays % 7;
-                update.cgaWeeks = cgaWeeks;
-                update.cgaDays = cgaDays;
-
-                // Update DOM immediately
-                if (cgaLabel) {
-                    cgaLabel.innerText = ` (CGA: ${cgaWeeks}+${cgaDays})`;
-                }
-                // Update local cache
-                p.cgaWeeks = cgaWeeks;
-                p.cgaDays = cgaDays;
-            }
-        } else if (gaWeeks === 0) {
-            // Clear CGA if GA is cleared
-            update.cgaWeeks = null;
-            update.cgaDays = null;
-
-            // Update DOM immediately
-            if (cgaLabel) {
-                cgaLabel.innerText = '';
-            }
-            // Update local cache
-            p.cgaWeeks = null;
-            p.cgaDays = null;
+    // Update the DB with the new Birth GA
+    db.collection('patients').doc(id).update(update).then(() => {
+        // Force a visual update immediately so the user sees the change
+        if (localPatients[id]) {
+            localPatients[id].gaWeeks = gaWeeks;
+            localPatients[id].gaDays = gaDays;
+            const cgaLabel = document.getElementById(`cga-label-${id}`);
+            if(cgaLabel) cgaLabel.innerText = getLiveCGA(localPatients[id]);
         }
-
-        // Update local cache for GA
-        p.gaWeeks = gaWeeks;
-        p.gaDays = gaDays;
-
-        db.collection('patients').doc(id).update(update);
-    }
+    });
+}
 
     function changeWard(id,w) { const u={ward:w}; if(w==='Discharge') u.dischargeTimestamp=Date.now(); db.collection('patients').doc(id).update(u); }
     function toggleNew(id) { db.collection('patients').doc(id).get().then(d=>db.collection('patients').doc(id).update({isNew:!d.data().isNew})); }
