@@ -579,14 +579,14 @@
     <button class="btn-green" onclick="launchAdmissionSystem(true)">Admission</button>
     <button class="btn-teal" onclick="launchDischargeSystem()">DC</button>
     <div class="dropdown">
-      <button class="dropdown-btn">Print ▼</button>
-      <div class="dropdown-content">
-        <a onclick="printAll()">Print All</a>
-        <a onclick="printNICU()">Print NICU</a>
-        <a onclick="printWard()">Print Ward</a>
-        <a onclick="printNew()">Print New</a>
-      </div>
-    </div>
+  <button class="dropdown-btn" onclick="togglePrintDropdown()">Print ▼</button>
+  <div class="dropdown-content" id="printDropdown">
+    <a onclick="printAll()">Print All</a>
+    <a onclick="printNICU()">Print NICU</a>
+    <a onclick="printWard()">Print Ward</a>
+    <a onclick="printNew()">Print New</a>
+  </div>
+</div>
     <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
 
@@ -648,9 +648,13 @@
       <div class="modal-header">
         <h2 id="modalTitle">Patient Details</h2>
         <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
-            <button class="btn-sm" onclick="openAdmissionForPatient()" style="background:var(--accent);">Reprint/Edit Admission folder</button>
-            <button class="btn-sm" onclick="dischargeFromModal()" style="background:var(--discharge-btn);">Discharge Summary</button>
-        </div>
+    <button class="btn-sm" onclick="printPatientDetails()" style="background:#607d8b; display:flex; align-items:center; gap:4px;" title="Print details">
+        <span>🖨️</span>
+    </button>
+    
+    <button class="btn-sm" onclick="openAdmissionForPatient()" style="background:var(--accent);">Reprint/Edit Admission folder</button>
+    <button class="btn-sm" onclick="dischargeFromModal()" style="background:var(--discharge-btn);">Discharge Summary</button>
+</div>
         <button class="close-modal" onclick="closeModal()">×</button>
       </div>
       <div class="modal-tabs">
@@ -2488,26 +2492,172 @@ if (cgaLabel) {
         db.collection('patients').doc(currentPatientId).update({id: h, nid: n});
     }
 
-    function printReport(t,wl) {
-       const d=document.getElementById('handoverDate').innerText, txt=`HANDOVER REPORT - ${t} - ${d}\n\n`;
-       wl.forEach(w=>{
-         const l=Object.values(localPatients).filter(p=>p.ward===w);
-         if(l.length>0){ 
-             txt+=`--- ${w} (${l.length}) ---\n`;
-             l.sort((a,b)=>(parseInt(a.bed)||0)-(parseInt(b.bed)||0));
-             l.forEach(p=>{ txt+=`BED ${p.bed}: ${p.name} (${p.age}/${p.sex})\n   Dx: ${p.diagnosis}\n   Plan: ${p.plan}\n\n`; });
-         }
-       });
-       const w=window.open('','_blank'); w.document.write(`<pre style="font-family:monospace;white-space:pre-wrap;">${txt}</pre>`); w.document.close();
+    /* --- PRINT SYSTEM FUNCTIONS --- */
+
+// 1. Toggle Dropdown (Fixes Mobile/Tablet issue)
+function togglePrintDropdown() {
+    document.getElementById("printDropdown").classList.toggle("show");
+}
+
+// Close dropdown if clicked outside
+window.onclick = function(event) {
+    if (!event.target.matches('.dropdown-btn')) {
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        for (var i = 0; i < dropdowns.length; i++) {
+            var openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+            }
+        }
     }
-    function printAll(){ printReport('ALL',["PW","GW","SW","PVT","ICU","NICU","ER"]); }
-    function printNICU(){ printReport('NICU',["NICU"]); }
-    function printWard(){ printReport('WARD',["PW","GW","SW","PVT","ICU"]); }
-    function printNew(){
-       const d=document.getElementById('handoverDate').innerText, txt=`NEW ADMISSIONS - ${d}\n\n`;
-       Object.values(localPatients).filter(p=>p.isNew).forEach(p=>{ txt+=`${p.ward} Bed ${p.bed}: ${p.name}\n   ${p.diagnosis}\n   ${p.plan}\n\n`; });
-       const w=window.open('','_blank'); w.document.write(`<pre style="font-family:monospace;white-space:pre-wrap;">${txt}</pre>`); w.document.close();
-    }
+    // Keep existing modal close logic
+    if (event.target == document.getElementById('detailModal')) closeModal();
+    if (event.target == document.getElementById('admissionModal')) closeAdmissionModal();
+    if (event.target == document.getElementById('lightbox')) closeLightbox();
+    if (event.target == document.getElementById('patientActionModal')) closePatientActionModal();
+}
+
+// 2. Standard Reports (Print All, Ward, NICU)
+function printReport(t, wl) {
+    const d = document.getElementById('handoverDate').innerText;
+    let txt = `HANDOVER REPORT - ${t} - ${d}\n\n`; // Changed const to let
+
+    wl.forEach(w => {
+        const l = Object.values(localPatients).filter(p => p.ward === w);
+        if (l.length > 0) {
+            txt += `--- ${w} (${l.length}) ---\n`;
+            l.sort((a, b) => (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0));
+            l.forEach(p => {
+                txt += `BED ${p.bed}: ${p.name} (${p.age}/${p.sex})\n   Dx: ${p.diagnosis}\n   Plan: ${p.plan}\n\n`;
+            });
+        }
+    });
+
+    const w = window.open('', '_blank');
+    if (!w) { alert("⚠️ POPUP BLOCKED\nPlease allow popups for this site."); return; }
+    
+    w.document.write(`<pre style="font-family:monospace;white-space:pre-wrap;">${txt}</pre>`);
+    w.document.close();
+    w.print();
+}
+
+function printAll() { printReport('ALL', ["PW", "GW", "SW", "PVT", "ICU", "NICU", "ER"]); }
+function printNICU() { printReport('NICU', ["NICU"]); }
+function printWard() { printReport('WARD', ["PW", "GW", "SW", "PVT", "ICU"]); }
+
+// 3. Print New (Detailed Format)
+function printNew() {
+    const d = document.getElementById('handoverDate').innerText;
+    let txt = `NEW ADMISSIONS DETAILED REPORT - ${d}\n\n`;
+
+    // Filter New Patients
+    const newPatients = Object.values(localPatients).filter(p => p.isNew);
+    
+    if (newPatients.length === 0) { alert("No new patients marked."); return; }
+
+    // Group by Ward
+    const grouped = {};
+    newPatients.forEach(p => {
+        if (!grouped[p.ward]) grouped[p.ward] = [];
+        grouped[p.ward].push(p);
+    });
+
+    const wardOrder = ["NICU", "ICU", "PW", "GW", "SW", "PVT", "ER"];
+    
+    wardOrder.forEach(ward => {
+        if (grouped[ward]) {
+            txt += `--- ${ward} (${grouped[ward].length}) ---\n`;
+            
+            // Sort by Bed
+            grouped[ward].sort((a, b) => (parseInt(a.bed) || 0) - (parseInt(b.bed) || 0));
+
+            grouped[ward].forEach(p => {
+                // Header
+                txt += `BED ${p.bed}: ${p.name} (${p.age || '?'}/${p.sex || '?'})\n`;
+                txt += `Weight: ${p.weight || '-'}\n`;
+                txt += `----------------------------------------\n`;
+
+                // Diagnosis
+                txt += `DIAGNOSIS:\n${p.diagnosis || ''}\n\n`;
+
+                // Meds & Issues
+                if (p.medications && p.medications.trim()) txt += `MEDICATIONS:\n${p.medications}\n\n`;
+                if (p.issues && p.issues.trim()) txt += `ISSUES:\n${p.issues}\n\n`;
+
+                // HOPI / Plan (Content only, no label)
+                if (p.hopi && p.hopi.trim()) {
+                    txt += `${p.hopi.trim()}\n`;
+                }
+                
+                txt += `\n\n========================================\n\n`;
+            });
+        }
+    });
+
+    const w = window.open('', '_blank');
+    if (!w) { alert("⚠️ POPUP BLOCKED"); return; }
+    
+    w.document.write(`
+        <html>
+            <head><title>New Admissions Report</title></head>
+            <body>
+                <pre style="font-family:monospace; white-space:pre-wrap; font-size:14px;">${txt}</pre>
+                <script>window.onload = function() { window.print(); }<\/script>
+            </body>
+        </html>`
+    );
+    w.document.close();
+}
+
+// 4. Single Patient Print (Detailed Format)
+function printPatientDetails() {
+    const d = document.getElementById('handoverDate').innerText;
+    
+    const getTxt = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.innerText.trim() : '';
+    };
+
+    let txt = `PATIENT DETAIL REPORT - ${d}\n\n`;
+
+    // Header Block
+    txt += `NAME: ${getTxt('det-name')}\n`;
+    
+    let idLine = `ID:   ${getTxt('det-hosp')}`;
+    if (getTxt('det-nid')) idLine += ` | NID: ${getTxt('det-nid')}`;
+    txt += `${idLine}\n\n`; 
+
+    txt += `${getTxt('det-ward')} - Bed ${getTxt('det-bed')}, ${getTxt('det-age')} / ${getTxt('det-sex')}\n`;
+    txt += `Weight: ${getTxt('det-weight')}\n`;
+    txt += `----------------------------------------\n\n`;
+
+    // Details
+    txt += `DIAGNOSIS:\n${getTxt('det-diagnosis')}\n\n`;
+
+    const meds = getTxt('det-medications');
+    if (meds) txt += `MEDICATIONS:\n${meds}\n\n`;
+
+    const issues = getTxt('det-issues');
+    if (issues) txt += `ISSUES:\n${issues}\n\n`;
+
+    // HOPI / Plan (Content only)
+    const hopi = getTxt('det-hopi');
+    if (hopi) txt += `${hopi}\n`;
+
+    const w = window.open('', '_blank');
+    if (!w) { alert("⚠️ POPUP BLOCKED"); return; }
+
+    w.document.write(`
+        <html>
+            <head><title>${getTxt('det-name')} - Details</title></head>
+            <body>
+                <pre style="font-family:monospace; white-space:pre-wrap; font-size:14px;">${txt}</pre>
+                <script>window.onload = function() { window.print(); }<\/script>
+            </body>
+        </html>`
+    );
+    w.document.close();
+}
 // --- NEW FUNCTION: Auto-populate standard labs ---
     function loadStandardLabs() {
         const p = localPatients[currentPatientId];
