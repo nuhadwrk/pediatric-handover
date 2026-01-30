@@ -1322,7 +1322,14 @@ HR:   RR:   SpO2:   `,
     function calculateDaysAdmitted(doa) { try{ const d=new Date(doa), t=new Date(); t.setHours(0,0,0,0); d.setHours(0,0,0,0); const diff=Math.floor((t-d)/86400000)+1; return diff<=0?'1st DOA':`${diff}${getOrdinalSuffix(diff)} DOA`; }catch(e){return'1st DOA';} }
     
     function calculateNeonatalAge(dob, dot) { try{ if(!dob||!dot)return{display:'?'}; const b=new Date(`${dob}T${dot}:00`); if(isNaN(b.getTime()))return{display:'?'}; const n=new Date(), h=Math.floor((n-b)/3600000), d=Math.floor(h/24)+1; return {days:d,hours:h,display:h<=96?`${d}${getOrdinalSuffix(d)} DOL (${h} HOL)`:`${d}${getOrdinalSuffix(d)} DOL`}; }catch(e){return{days:1,hours:24,display:'?'};} }
-    function getLiveCGA(p) {
+    // Helper to get dynamic age for both Cards and Modals
+function getDisplayAge(p) {
+    if (p.isAutoAge && p.dob && p.dot) {
+        return calculateNeonatalAge(p.dob, p.dot).display;
+    }
+    return p.age || '';
+}
+  function getLiveCGA(p) {
     // We need GA Weeks, DOB, and DOT to calculate
     const gaWeeks = parseInt(p.gaWeeks) || 0;
     const gaDays = parseInt(p.gaDays) || 0;
@@ -2420,48 +2427,66 @@ if (cgaLabel) {
 
     // --- DETAIL MODAL ---
     function openModal(id) {
-       currentPatientId=id; const p=localPatients[id]; if(!p)return;
-       document.getElementById('detailModal').classList.add('active'); document.getElementById('modalTitle').innerText=`${p.name} - Details`;
-       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e)e.innerText=p[f]||''; });
+    currentPatientId=id; const p=localPatients[id]; if(!p)return;
+    document.getElementById('detailModal').classList.add('active'); 
+    document.getElementById('modalTitle').innerText=`${p.name} - Details`;
+    
+    // Standard fields (Removed 'age' from loop to handle it dynamically)
+    ['name','id','ward','bed','sex','weight','diagnosis','medications','issues'].forEach(f=>{ 
+        const e=document.getElementById(`det-${f}`); 
+        if(e)e.innerText=p[f]||''; 
+    });
 
-       // Handle HOPI with admission plan
-       const hopiEl = document.getElementById('det-hopi');
-       if(hopiEl) {
-           let hopiText = p.hopi || '';
-           // Get first logged plan from logs
-           const admPlan = getFirstLoggedPlan(p.logs);
-           if(admPlan) {
-               hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
-           }
-           hopiEl.innerHTML = hopiText;
-       }
+    // DYNAMIC AGE FIX
+    const ageEl = document.getElementById('det-age');
+    if(ageEl) ageEl.innerText = getDisplayAge(p);
 
-       const hosp = document.getElementById('det-hosp');
-       const nid = document.getElementById('det-nid');
-       if(hosp) hosp.innerText = p.id || '';
-       if(nid) nid.innerText = p.nid || '';
-
-       renderLabMatrix(); renderImages(); renderHistory(); switchTab('details');
+    // Handle HOPI with admission plan
+    const hopiEl = document.getElementById('det-hopi');
+    if(hopiEl) {
+        let hopiText = p.hopi || '';
+        const admPlan = getFirstLoggedPlan(p.logs);
+        if(admPlan) {
+            hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
+        }
+        hopiEl.innerHTML = hopiText;
     }
-    function refreshModalIfOpen() {
-       const p=localPatients[currentPatientId]; if(!p)return;
-       ['name','id','ward','bed','age','sex','weight','diagnosis','medications','issues'].forEach(f=>{ const e=document.getElementById(`det-${f}`); if(e&&document.activeElement!==e)e.innerText=p[f]||''; });
 
-       // Handle HOPI with admission plan
-       const hopiEl = document.getElementById('det-hopi');
-       if(hopiEl && document.activeElement !== hopiEl) {
-           let hopiText = p.hopi || '';
-           // Get first logged plan from logs
-           const admPlan = getFirstLoggedPlan(p.logs);
-           if(admPlan) {
-               hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
-           }
-           hopiEl.innerHTML = hopiText;
-       }
-       if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
-       if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
-       if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
+    const hosp = document.getElementById('det-hosp');
+    const nid = document.getElementById('det-nid');
+    if(hosp) hosp.innerText = p.id || '';
+    if(nid) nid.innerText = p.nid || '';
+
+    renderLabMatrix(); renderImages(); renderHistory(); switchTab('details');
+}
+
+function refreshModalIfOpen() {
+    if(!currentPatientId || !document.getElementById('detailModal').classList.contains('active')) return;
+    const p=localPatients[currentPatientId]; if(!p)return;
+    
+    // Standard fields
+    ['name','id','ward','bed','sex','weight','diagnosis','medications','issues'].forEach(f=>{ 
+        const e=document.getElementById(`det-${f}`); 
+        if(e&&document.activeElement!==e)e.innerText=p[f]||''; 
+    });
+
+    // DYNAMIC AGE FIX
+    const ageEl = document.getElementById('det-age');
+    if(ageEl && document.activeElement !== ageEl) ageEl.innerText = getDisplayAge(p);
+
+    const hopiEl = document.getElementById('det-hopi');
+    if(hopiEl && document.activeElement !== hopiEl) {
+        let hopiText = p.hopi || '';
+        const admPlan = getFirstLoggedPlan(p.logs);
+        if(admPlan) {
+            hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
+        }
+        hopiEl.innerHTML = hopiText;
     }
+    if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
+    if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
+    if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
+}
     function closeModal() { document.getElementById('detailModal').classList.remove('active'); currentPatientId=null; }
     window.onclick = function(e) { if(e.target==document.getElementById('detailModal'))closeModal(); if(e.target==document.getElementById('admissionModal'))closeAdmissionModal(); if(e.target==document.getElementById('lightbox'))closeLightbox(); if(e.target==document.getElementById('patientActionModal'))closePatientActionModal(); }
     async function switchTab(id) {
@@ -4167,136 +4192,130 @@ async function renderPdfVisual() {
         return { hopi: aggregatedHopi, diagnosis: pdfValues['dx'] || "", plan: pdfValues['management'] || "" };
     }
 async function saveEdits() {
-       const btnSave = document.getElementById('btn-save-edits');
-       if(btnSave) {
-           btnSave.innerText = "Saving...";
-           btnSave.style.background = "#0056b3"; 
-           btnSave.disabled = true;
-       }
-       if(!currentPatientId) return;
-
-       const p = localPatients[currentPatientId];
-       const updates = {};
-
-       // --- Helper to safely get values (PDF priority) ---
-       const getVal = (nbKey, domId) => {
-           const valFromPdf = nbValues[nbKey];
-           const valFromDom = document.getElementById(domId)?.value;
-           return (valFromPdf !== undefined && valFromPdf !== null && valFromPdf !== '') ? valFromPdf : (valFromDom || '');
-       };
-
-       if (currentMode === 'newborn') {
-           // --- NEWBORN SAVE LOGIC ---
-           updates.id = getVal('Text29', 'nb-f-hosp-no');
-           updates.nid = getVal('Text42', 'nb-f-nid-no');
-           
-           const motherName = getVal('Text1', 'nb-m-name') || "Unknown";
-           const manualName = document.getElementById('nb-f-name').value;
-           updates.name = manualName || ("Baby of " + motherName);
-
-           updates.ward = document.getElementById('nb-f-ward').value;
-           updates.bed = document.getElementById('nb-f-bed').value;
-           updates.shift = document.getElementById('nb-f-shift').value;
-           updates.doa = document.getElementById('nb-f-doa').value; 
-
-           updates.diagnosis = getVal('Text69', 'nb-f-adm-dx');
-           
-           let rawWeight = getVal('Text41', 'nb-b-wt');
-           if(rawWeight && !rawWeight.toLowerCase().includes('kg')) rawWeight += ' kg';
-           updates.weight = rawWeight;
-
-           let dobString = getVal('Text35', 'nb-b-datetime');
-           if(dobString) {
-                dobString = dobString.replace(' ', 'T');
-                const [d, t] = dobString.split('T');
-                updates.dob = d; updates.dot = t; updates.isAutoAge = true;
-                updates.age = calculateNeonatalAge(d, t).display;
-           }
-
-           nbValues['gest_val'] = document.getElementById('nb-gest-sel').value;
-           nbValues['size_val'] = document.getElementById('nb-size-sel').value;
-           if(!nbValues['Text29']) nbValues['Text29'] = updates.id;
-           if(!nbValues['Text42']) nbValues['Text42'] = updates.nid;
-
-           updates.newbornData = { ...nbValues };
-           updates.hopi = getNewbornHopiText(); 
-           
-           // Newborn Plan comes from "Advice"
-           updates.plan = getVal('Text68', 'nb-advice') || "Routine Newborn Care";
-
-       } else {
-           // --- STANDARD SAVE LOGIC ---
-           if(currentMode === 'form') syncFormToPdf();
-           else syncPdfToForm();
-           
-           const hospNo = document.getElementById('f-hosp-no').value || "";
-           const rawAge = document.getElementById('f-age').value || "?";
-           
-           pdfValues['hid'] = hospNo;
-           pdfValues['ward'] = document.getElementById('f-ward').value;
-           pdfValues['bed'] = document.getElementById('f-bed').value;
-           pdfValues['name'] = document.getElementById('f-name').value;
-           pdfValues['age'] = rawAge; 
-
-           updates.name = document.getElementById('f-name').value;
-           updates.id = hospNo;
-           updates.nid = document.getElementById('f-nid-no').value;
-           updates.bed = document.getElementById('f-bed').value;
-           updates.ward = document.getElementById('f-ward').value;
-           updates.shift = document.getElementById('f-shift').value;
-           updates.sex = document.getElementById('f-sex').value;
-           updates.age = rawAge;
-           updates.doa = document.getElementById('f-doa').value;
-           updates.weight = document.getElementById('f-weight').value;
-           updates.admissionData = { ...pdfValues };
-           
-           Object.keys(MAP_PDF_DB).forEach(pk => { 
-               if(pdfValues[pk]) { updates[MAP_PDF_DB[pk]] = pdfValues[pk]; }
-           });
-           
-           const aggregated = getAggregatedAdmissionData();
-           updates.hopi = aggregated.hopi;
-           updates.diagnosis = aggregated.diagnosis;
-           updates.plan = aggregated.plan;
-       }
-       
-       // --- LOG OVERWRITE LOGIC (FIXED) ---
-       // This block finds the existing "Admission Plan:" entry and swaps the text content
-       if (updates.plan && p.logs) {
-           const newPlanText = updates.plan.trim();
-           
-           // Regex breakdown:
-           // 1. (•.*?\n\s*Admission Plan:\s*\n) -> Captures Bullet + Timestamp + Header + Newline
-           // 2. ([\s\S]*?) -> Captures the BODY of the plan (non-greedy, spans lines)
-           // 3. (?=\n\s*•|$) -> Lookahead: Stops before the NEXT bullet or End of String
-           const logPattern = /(•.*?\n\s*Admission Plan:\s*\n)([\s\S]*?)(?=\n\s*•|$)/i;
-           
-           if (logPattern.test(p.logs)) {
-               // Replace the body (Group 2) with the new plan text
-               updates.logs = p.logs.replace(logPattern, `$1${newPlanText}`);
-           } else {
-               // Fallback: If no Admission Plan header found, append it to the logs just in case
-               // (Optional: remove this else block if you only want strict overwrites)
-               const header = `• ${formatTimestamp(p.timestamp || Date.now())}\n Admission Plan:\n`;
-               updates.logs = p.logs + `\n${header}${newPlanText}\n\n`;
-           }
-       }
-
-       try {
-           await db.collection('patients').doc(currentPatientId).update(updates);
-           alert("Saved successfully!");
-           closeAdmissionSystem();
-       } catch (err) {
-           console.error("Save failed: ", err);
-           alert("Error saving: " + err.message);
-       } finally {
-           if(btnSave) {
-               btnSave.innerText = "Save Edits";
-               btnSave.style.background = "#ffc107";
-               btnSave.disabled = false;
-           }
-       }
+    const btnSave = document.getElementById('btn-save-edits');
+    if(btnSave) {
+        btnSave.innerText = "Saving...";
+        btnSave.style.background = "#0056b3"; 
+        btnSave.disabled = true;
     }
+    if(!currentPatientId) return;
+
+    const p = localPatients[currentPatientId];
+    const updates = {};
+
+    // Helper to safely get values (PDF priority)
+    const getVal = (nbKey, domId) => {
+        const valFromPdf = nbValues[nbKey];
+        const valFromDom = document.getElementById(domId)?.value;
+        return (valFromPdf !== undefined && valFromPdf !== null && valFromPdf !== '') ? valFromPdf : (valFromDom || '');
+    };
+
+    if (currentMode === 'newborn') {
+        // --- NEWBORN SAVE LOGIC ---
+        updates.id = getVal('Text29', 'nb-f-hosp-no');
+        updates.nid = getVal('Text42', 'nb-f-nid-no');
+        
+        const motherName = getVal('Text1', 'nb-m-name') || "Unknown";
+        const manualName = document.getElementById('nb-f-name').value;
+        updates.name = manualName || ("Baby of " + motherName);
+
+        updates.ward = document.getElementById('nb-f-ward').value;
+        updates.bed = document.getElementById('nb-f-bed').value;
+        updates.shift = document.getElementById('nb-f-shift').value;
+        updates.doa = document.getElementById('nb-f-doa').value; 
+
+        // *** FIX: EXPLICITLY UPDATE SEX ***
+        updates.sex = getVal('Text39', 'nb-sex-combo'); 
+
+        updates.diagnosis = getVal('Text69', 'nb-f-adm-dx');
+        
+        let rawWeight = getVal('Text41', 'nb-b-wt');
+        if(rawWeight && !rawWeight.toLowerCase().includes('kg')) rawWeight += ' kg';
+        updates.weight = rawWeight;
+
+        let dobString = getVal('Text35', 'nb-b-datetime');
+        if(dobString) {
+             dobString = dobString.replace(' ', 'T');
+             const [d, t] = dobString.split('T');
+             updates.dob = d; updates.dot = t; updates.isAutoAge = true;
+             updates.age = calculateNeonatalAge(d, t).display;
+        }
+
+        nbValues['gest_val'] = document.getElementById('nb-gest-sel').value;
+        nbValues['size_val'] = document.getElementById('nb-size-sel').value;
+        
+        // Ensure critical fields are in nbValues
+        if(!nbValues['Text29']) nbValues['Text29'] = updates.id;
+        if(!nbValues['Text42']) nbValues['Text42'] = updates.nid;
+        if(!nbValues['Text39']) nbValues['Text39'] = updates.sex; // Ensure internal consistency
+
+        updates.newbornData = { ...nbValues };
+        updates.hopi = getNewbornHopiText(); 
+        updates.plan = getVal('Text68', 'nb-advice') || "Routine Newborn Care";
+
+    } else {
+        // --- STANDARD SAVE LOGIC ---
+        if(currentMode === 'form') syncFormToPdf();
+        else syncPdfToForm();
+        
+        const hospNo = document.getElementById('f-hosp-no').value || "";
+        const rawAge = document.getElementById('f-age').value || "?";
+        
+        pdfValues['hid'] = hospNo;
+        pdfValues['ward'] = document.getElementById('f-ward').value;
+        pdfValues['bed'] = document.getElementById('f-bed').value;
+        pdfValues['name'] = document.getElementById('f-name').value;
+        pdfValues['age'] = rawAge; 
+
+        updates.name = document.getElementById('f-name').value;
+        updates.id = hospNo;
+        updates.nid = document.getElementById('f-nid-no').value;
+        updates.bed = document.getElementById('f-bed').value;
+        updates.ward = document.getElementById('f-ward').value;
+        updates.shift = document.getElementById('f-shift').value;
+        updates.sex = document.getElementById('f-sex').value;
+        updates.age = rawAge;
+        updates.doa = document.getElementById('f-doa').value;
+        updates.weight = document.getElementById('f-weight').value;
+        updates.admissionData = { ...pdfValues };
+        
+        Object.keys(MAP_PDF_DB).forEach(pk => { 
+            if(pdfValues[pk]) { updates[MAP_PDF_DB[pk]] = pdfValues[pk]; }
+        });
+        
+        const aggregated = getAggregatedAdmissionData();
+        updates.hopi = aggregated.hopi;
+        updates.diagnosis = aggregated.diagnosis;
+        updates.plan = aggregated.plan;
+    }
+    
+    // Log overwriting logic
+    if (updates.plan && p.logs) {
+        const newPlanText = updates.plan.trim();
+        const logPattern = /(•.*?\n\s*Admission Plan:\s*\n)([\s\S]*?)(?=\n\s*•|$)/i;
+        if (logPattern.test(p.logs)) {
+            updates.logs = p.logs.replace(logPattern, `$1${newPlanText}`);
+        } else {
+            const header = `• ${formatTimestamp(p.timestamp || Date.now())}\n Admission Plan:\n`;
+            updates.logs = p.logs + `\n${header}${newPlanText}\n\n`;
+        }
+    }
+
+    try {
+        await db.collection('patients').doc(currentPatientId).update(updates);
+        alert("Saved successfully!");
+        closeAdmissionSystem();
+    } catch (err) {
+        console.error("Save failed: ", err);
+        alert("Error saving: " + err.message);
+    } finally {
+        if(btnSave) {
+            btnSave.innerText = "Save Edits";
+            btnSave.style.background = "#ffc107";
+            btnSave.disabled = false;
+        }
+    }
+}
 
 async function saveAndAddNewborn(printWin) {
         // REMOVED: syncAllNbFieldsToValues(); 
