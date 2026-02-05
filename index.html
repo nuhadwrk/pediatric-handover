@@ -1300,8 +1300,9 @@
           <table style="width:100%; border-collapse:collapse; font-size:14px;">
             <thead>
               <tr style="background:#f8f9fa; text-align:left;">
-                <th style="padding:10px; border-bottom:2px solid #ddd;">DOA</th>
-                <th style="padding:10px; border-bottom:2px solid #ddd;">DOD</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd; white-space:nowrap; min-width:100px;">DOA</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd; white-space:nowrap; min-width:100px;">DOD</th>
+
                 <th style="padding:10px; border-bottom:2px solid #ddd;">Name</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">ID</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">Age</th>
@@ -4843,15 +4844,35 @@ async function saveAndAddNewborn(printWin) {
         const displayData = data.slice(0, 50);
         let html = '';
 
+        // Strict Date Formatter Helper
+        const fmtDate = (val) => {
+            if (!val) return '-';
+            // Handle Timestamp (Number)
+            if (typeof val === 'number') {
+                const d = new Date(val);
+                return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+            }
+            // Handle YYYY-MM-DD String (Standard Input)
+            if (typeof val === 'string' && val.includes('-')) {
+                const parts = val.split('-');
+                if(parts[0].length === 4) { // Detect YYYY-MM-DD
+                    return `${parts[2]}-${parts[1]}-${parts[0]}`; // Flip to DD-MM-YYYY
+                }
+            }
+            return val;
+        };
+
         displayData.forEach(p => {
             const lookupId = p.docId || p.id;
-            // Format DOD if available
-            const dodText = p.dischargeTimestamp ? formatDateDDMMYYYY(p.dischargeTimestamp) : '-';
+
+            // Format Dates
+            const doaStr = fmtDate(p.doa);
+            const dodStr = p.dischargeTimestamp ? fmtDate(p.dischargeTimestamp) : '-';
 
             html += `
                 <tr style="border-bottom:1px solid #eee; transition:background 0.2s;">
-                    <td style="padding:10px;">${p.doa || formatDateDDMMYYYY(p.timestamp)}</td>
-                    <td style="padding:10px; color:#666;">${dodText}</td>
+                    <td style="padding:10px; white-space:nowrap;">${doaStr}</td>
+                    <td style="padding:10px; white-space:nowrap; color:#666;">${dodStr}</td>
 
                     <td style="padding:10px;">
                         <a href="#" onclick="openCensusModal('${lookupId}'); return false;"
@@ -5014,14 +5035,29 @@ async function saveAndAddNewborn(printWin) {
         const snap = await query.get();
         if (snap.empty) { alert("No data."); return; }
 
-        // UPDATED COLUMNS: Added DOD, Removed Ward
+        // Strict Date Formatter (Same as table)
+        const fmtDate = (val) => {
+            if (!val) return '-';
+            if (typeof val === 'number') {
+                const d = new Date(val);
+                return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+            }
+            if (typeof val === 'string' && val.includes('-')) {
+                const parts = val.split('-');
+                if(parts[0].length === 4) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return val;
+        };
+
         let csv = "DOA,DOD,ID,Name,Age,Sex,Diagnosis,Logs\n";
         snap.forEach(doc => {
             const p = doc.data();
             const clean = (t) => (t||"").toString().replace(/,/g," ").replace(/\n/g," | ");
-            const dod = p.dischargeTimestamp ? formatTimestamp(p.dischargeTimestamp) : "-";
 
-            csv += `${clean(p.doa)},${clean(dod)},${clean(p.id)},${clean(p.name)},${clean(p.age)},${clean(p.sex)},${clean(p.diagnosis)},${clean(p.logs)}\n`;
+            const doaStr = fmtDate(p.doa);
+            const dodStr = p.dischargeTimestamp ? fmtDate(p.dischargeTimestamp) : "-";
+
+            csv += `${clean(doaStr)},${clean(dodStr)},${clean(p.id)},${clean(p.name)},${clean(p.age)},${clean(p.sex)},${clean(p.diagnosis)},${clean(p.logs)}\n`;
         });
 
         const link = document.createElement("a");
