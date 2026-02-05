@@ -578,15 +578,18 @@
     <button class="add" onclick="toggleForm()">Add Patient</button>
     <button class="btn-green" onclick="launchAdmissionSystem(true)">Admission</button>
     <button class="btn-teal" onclick="launchDischargeSystem()">DC</button>
+
     <div class="dropdown">
-  <button class="dropdown-btn" onclick="togglePrintDropdown()">Print ▼</button>
-  <div class="dropdown-content" id="printDropdown">
-    <a onclick="printAll()">Print All</a>
-    <a onclick="printNICU()">Print NICU</a>
-    <a onclick="printWard()">Print Ward</a>
-    <a onclick="printNew()">Print New</a>
-  </div>
-</div>
+      <button class="dropdown-btn" onclick="togglePrintDropdown()">+ ▼</button>
+      <div class="dropdown-content" id="printDropdown">
+        <a onclick="launchCensusSystem()">📊 Census</a>
+        <a onclick="printAll()">Print All</a>
+        <a onclick="printNICU()">Print NICU</a>
+        <a onclick="printWard()">Print Ward</a>
+        <a onclick="printNew()">Print New</a>
+      </div>
+    </div>
+
     <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
 
@@ -1247,6 +1250,70 @@
       </div>
     </div>
   </div>
+
+  <div id="census-system" style="display:none; position:fixed; inset:0; background:#f4f7fb; z-index:5000; flex-direction:column;">
+    <div style="background:white; padding:15px 20px; border-bottom:1px solid #ccc; display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0; font-size:20px; display:flex; align-items:center; gap:10px;">
+        📊 Census & Trends
+        <span id="census-loading" style="font-size:14px; color:#666; font-weight:normal; display:none;">(Loading...)</span>
+      </h2>
+      <button onclick="document.getElementById('census-system').style.display='none'" style="background:none; border:none; font-size:28px; cursor:pointer;">×</button>
+    </div>
+
+    <div style="padding:20px; overflow-y:auto; flex:1;">
+      <div style="background:white; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05); margin-bottom:20px; display:flex; gap:15px; flex-wrap:wrap; align-items:center;">
+        <div>
+          <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">Date Range</label>
+          <select id="census-range" style="padding:8px; border-radius:4px; border:1px solid #ccc;" onchange="loadCensusData()">
+            <option value="30">Last 30 Days</option>
+            <option value="90">Last 3 Months</option>
+            <option value="180">Last 6 Months</option>
+            <option value="365">Last 1 Year</option>
+            <option value="all">All Time (Slow)</option>
+          </select>
+        </div>
+        <div style="margin-left:auto;">
+          <button class="btn-sleek" style="background:#28a745;" onclick="exportCensusCSV()">⬇ Download Excel/CSV</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; margin-bottom:20px;">
+        <div class="chart-container" style="height:250px; background:white; padding:15px; border-radius:8px; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+          <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Admissions Trend</h4>
+          <canvas id="chart-trend"></canvas>
+        </div>
+        <div class="chart-container" style="height:250px; background:white; padding:15px; border-radius:8px; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+          <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Ward Distribution</h4>
+          <canvas id="chart-ward"></canvas>
+        </div>
+        <div class="chart-container" style="height:250px; background:white; padding:15px; border-radius:8px; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+          <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Gender Split</h4>
+          <canvas id="chart-sex"></canvas>
+        </div>
+      </div>
+
+      <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+        <h3 style="margin-top:0;">Archived Records</h3>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <thead>
+              <tr style="background:#f8f9fa; text-align:left;">
+                <th style="padding:10px; border-bottom:2px solid #ddd;">DOA</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">Name</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">ID</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">Age</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">Sex</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">Diagnosis</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">Ward</th>
+              </tr>
+            </thead>
+            <tbody id="census-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
     // Initialize Firebase
     const firebaseConfig = {
@@ -1877,45 +1944,51 @@ async function generateDcDocx() {
        }
     }
     // --- AUTO-CLEANUP FUNCTION ---
-    async function autoCleanup() {
+    // --- AUTO-ARCHIVE (Replaces Auto-Cleanup) ---
+    async function autoArchive() {
         try {
             const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-            const snapshot = await db.collection('patients').where('ward', '==', 'Discharge').get();
+            const snapshot = await db.collection('patients')
+                .where('ward', '==', 'Discharge')
+                .where('dischargeTimestamp', '<', sevenDaysAgo)
+                .get();
 
-            snapshot.forEach(async (doc) => {
-                const patient = doc.data();
-                const dischargeTime = patient.dischargeTimestamp || 0;
+            if (snapshot.empty) return;
 
-                // If discharged more than 7 days ago, delete
-                if (dischargeTime > 0 && dischargeTime < sevenDaysAgo) {
-                    console.log(`Auto-cleanup: Deleting patient ${doc.id} discharged on ${new Date(dischargeTime).toLocaleDateString()}`);
+            const batch = db.batch();
+            let count = 0;
 
-                    // Delete associated images from storage
-                    if (patient.images && patient.images.length > 0) {
-                        for (const img of patient.images) {
-                            if (img.url && img.url.includes('firebasestorage')) {
-                                try {
-                                    await storage.refFromURL(img.url).delete();
-                                } catch (e) {
-                                    console.warn('Error deleting image:', e);
-                                }
-                            }
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const archiveRef = db.collection('census').doc(doc.id);
+
+                // Save to Census (overwrite to capture latest edits)
+                batch.set(archiveRef, data);
+
+                // Delete images to save cost (keep text data)
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach(img => {
+                        if (img.url && img.url.includes('firebasestorage')) {
+                            storage.refFromURL(img.url).delete().catch(e => console.warn(e));
                         }
-                    }
-
-                    // Delete patient document
-                    await doc.ref.delete();
+                    });
                 }
+
+                // Delete from active board
+                batch.delete(doc.ref);
+                count++;
             });
-        } catch (error) {
-            console.error('Auto-cleanup error:', error);
-        }
+
+            if (count > 0) await batch.commit();
+            console.log(`Auto-Archived ${count} patients.`);
+
+        } catch (error) { console.error('Archive error:', error); }
     }
 
     window.onload = function() {
         checkMobile();
         loadPatients();
-        autoCleanup();
+        autoArchive();
         document.getElementById("handoverDate").innerText = getLocalISODate();
         fetch(ANCHORS_URL).then(r=>r.json()).then(d=> anchors = d.anchorsByPage || d);
     }
@@ -2311,7 +2384,21 @@ if (cgaLabel) {
     });
 }
 
-    function changeWard(id,w) { const u={ward:w}; if(w==='Discharge') u.dischargeTimestamp=Date.now(); db.collection('patients').doc(id).update(u); }
+    function changeWard(id, w) {
+        const u = { ward: w };
+
+        if (w === 'Discharge') {
+            u.dischargeTimestamp = Date.now();
+            // Update Census Immediately
+            const p = localPatients[id];
+            if (p) {
+                const censusData = { ...p, ...u };
+                db.collection('census').doc(id).set(censusData, { merge: true });
+            }
+        }
+
+        db.collection('patients').doc(id).update(u);
+    }
     function toggleNew(id) { db.collection('patients').doc(id).get().then(d=>db.collection('patients').doc(id).update({isNew:!d.data().isNew})); }
     
     // Global variable to store patient ID for action modal
@@ -2487,7 +2574,17 @@ function refreshModalIfOpen() {
     if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
     if(document.getElementById('tab-history').classList.contains('active')) renderHistory();
 }
-    function closeModal() { document.getElementById('detailModal').classList.remove('active'); currentPatientId=null; }
+    function closeModal() {
+        document.getElementById('detailModal').classList.remove('active');
+        currentPatientId = null;
+
+        // Reset Read-Only Mode (if triggered by Census)
+        document.querySelectorAll('.sleek-input').forEach(el => {
+            el.contentEditable = "true";
+            el.style.color = "";
+            el.style.backgroundColor = "";
+        });
+    }
     window.onclick = function(e) { if(e.target==document.getElementById('detailModal'))closeModal(); if(e.target==document.getElementById('admissionModal'))closeAdmissionModal(); if(e.target==document.getElementById('lightbox'))closeLightbox(); if(e.target==document.getElementById('patientActionModal'))closePatientActionModal(); }
     async function switchTab(id) {
        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
@@ -4693,6 +4790,197 @@ async function saveAndAddNewborn(printWin) {
             if (currentMode === 'newborn') renderNbVisual();
         }, 100); // Small delay to improve performance
     });
+
+    // --- CENSUS SYSTEM & DASHBOARD LOGIC ---
+    let censusChartInstances = {};
+
+    async function launchCensusSystem() {
+        document.getElementById('census-system').style.display = 'flex';
+        document.getElementById("printDropdown").classList.remove("show");
+        await ensureChartJS();
+        loadCensusData();
+    }
+
+    async function loadCensusData() {
+        const range = document.getElementById('census-range').value;
+        const loadingEl = document.getElementById('census-loading');
+        const tbody = document.getElementById('census-table-body');
+
+        loadingEl.style.display = 'inline';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Loading...</td></tr>';
+
+        try {
+            let query = db.collection('census').orderBy('timestamp', 'desc');
+            if (range !== 'all') {
+                const days = parseInt(range);
+                query = query.where('timestamp', '>', Date.now() - (days * 86400000));
+            }
+
+            const snapshot = await query.get();
+            const records = [];
+            snapshot.forEach(doc => records.push(doc.data()));
+
+            renderCensusTable(records);
+            renderCensusCharts(records);
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="7" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
+        } finally { loadingEl.style.display = 'none'; }
+    }
+
+    function renderCensusTable(data) {
+        const tbody = document.getElementById('census-table-body');
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No records.</td></tr>';
+            return;
+        }
+
+        // Global map for modal lookup
+        window.censusDataMap = {};
+        data.forEach(p => window.censusDataMap[p.docId || p.id] = p);
+
+        const displayData = data.slice(0, 50);
+        let html = '';
+
+        displayData.forEach(p => {
+            const lookupId = p.docId || p.id;
+            html += `
+                <tr style="border-bottom:1px solid #eee; transition:background 0.2s;">
+                    <td style="padding:10px;">${p.doa || formatDateDDMMYYYY(p.timestamp)}</td>
+                    <td style="padding:10px;">
+                        <a href="#" onclick="openCensusModal('${lookupId}'); return false;"
+                           style="font-weight:bold; color:#0066cc; text-decoration:none;">
+                           ${p.name}
+                        </a>
+                    </td>
+                    <td style="padding:10px;">${p.id||'-'}</td>
+                    <td style="padding:10px;">${p.age||'-'}</td>
+                    <td style="padding:10px;">${p.sex||'-'}</td>
+                    <td style="padding:10px;">${p.diagnosis||'-'}</td>
+                    <td style="padding:10px;">${p.ward}</td>
+                </tr>
+            `;
+        });
+
+        if (data.length > 50) {
+            html += `<tr><td colspan="7" style="text-align:center; padding:10px; color:#888;">...and ${data.length - 50} more (Export to see all)</td></tr>`;
+        }
+        tbody.innerHTML = html;
+    }
+
+    function renderCensusCharts(data) {
+        const rangeVal = document.getElementById('census-range').value;
+        const isDaily = (rangeVal === '30' || rangeVal === '90');
+
+        const wardCounts = {}, sexCounts = {Male:0, Female:0}, dateMap = {};
+
+        data.forEach(p => {
+            wardCounts[p.ward] = (wardCounts[p.ward]||0)+1;
+            if(p.sex==='Male'||p.sex==='Female') sexCounts[p.sex]++;
+
+            // Date Logic (Daily vs Monthly)
+            let dateObj = null;
+            if (p.doa) dateObj = new Date(p.doa);
+            else if (p.timestamp) dateObj = new Date(p.timestamp);
+
+            if (dateObj && !isNaN(dateObj.getTime())) {
+                let key;
+                if (isDaily) key = dateObj.toISOString().split('T')[0];
+                else key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+                dateMap[key] = (dateMap[key] || 0) + 1;
+            }
+        });
+
+        const sortedTrend = Object.keys(dateMap).sort().map(key => {
+            const count = dateMap[key];
+            let label;
+            if (isDaily) {
+                const d = new Date(key);
+                label = d.toLocaleString('default', { month: 'short', day: '2-digit' });
+            } else {
+                const [y, m] = key.split('-');
+                const d = new Date(y, m - 1);
+                label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+            }
+            return { label, count };
+        });
+
+        ['chart-trend', 'chart-ward', 'chart-sex'].forEach(id => { if(censusChartInstances[id]) censusChartInstances[id].destroy(); });
+
+        censusChartInstances['chart-trend'] = new Chart(document.getElementById('chart-trend'), {
+            type: isDaily ? 'bar' : 'line',
+            data: { labels: sortedTrend.map(i=>i.label), datasets: [{ label: isDaily?'Daily':'Monthly', data: sortedTrend.map(i=>i.count), borderColor: '#0066cc', backgroundColor: isDaily?'#0066cc':'rgba(0,102,204,0.1)', tension: 0.3, fill: !isDaily }] },
+            options: {maintainAspectRatio:false}
+        });
+        censusChartInstances['chart-ward'] = new Chart(document.getElementById('chart-ward'), {
+            type: 'bar', data: { labels: Object.keys(wardCounts), datasets: [{ label: 'Patients', data: Object.values(wardCounts), backgroundColor: '#28a745' }] }, options: {maintainAspectRatio:false}
+        });
+        censusChartInstances['chart-sex'] = new Chart(document.getElementById('chart-sex'), {
+            type: 'doughnut', data: { labels: ['Male', 'Female'], datasets: [{ data: [sexCounts.Male, sexCounts.Female], backgroundColor: ['#36A2EB', '#FF6384'] }] }, options: {maintainAspectRatio:false}
+        });
+    }
+
+    function openCensusModal(id) {
+        const p = window.censusDataMap[id];
+        if (!p) return;
+
+        // Inject into localPatients with temp prefix
+        const tempId = "census_" + id;
+        localPatients[tempId] = p;
+        currentPatientId = tempId;
+
+        document.getElementById('detailModal').classList.add('active');
+        document.getElementById('modalTitle').innerText = `${p.name} (Archived)`;
+
+        ['name','id','ward','bed','sex','weight','diagnosis','medications','issues'].forEach(f => {
+             const el = document.getElementById(`det-${f}`);
+             if(el) el.innerText = p[f] || '';
+        });
+
+        if(document.getElementById('det-age')) document.getElementById('det-age').innerText = p.age || '';
+
+        const hopiEl = document.getElementById('det-hopi');
+        if(hopiEl) {
+            let hopiText = p.hopi || '';
+            const admPlan = getFirstLoggedPlan(p.logs);
+            if(admPlan) hopiText += `\n\n[Archived Plan]:\n${admPlan}`;
+            hopiEl.innerText = hopiText;
+        }
+
+        const hosp = document.getElementById('det-hosp'), nid = document.getElementById('det-nid');
+        if(hosp) hosp.innerText = p.id || '';
+        if(nid) nid.innerText = p.nid || '';
+
+        // Load tabs
+        renderLabMatrix(); renderHistory(); renderImages();
+
+        // Set Read-Only
+        document.querySelectorAll('.sleek-input').forEach(el => {
+            el.contentEditable = "false";
+            el.style.color = "#555";
+            el.style.backgroundColor = "#f9f9f9";
+        });
+    }
+
+    async function exportCensusCSV() {
+        const range = document.getElementById('census-range').value;
+        let query = db.collection('census').orderBy('timestamp', 'desc');
+        if (range !== 'all') query = query.where('timestamp', '>', Date.now() - (parseInt(range) * 86400000));
+
+        const snap = await query.get();
+        if (snap.empty) { alert("No data."); return; }
+
+        let csv = "Date,ID,Name,Age,Sex,Ward,Diagnosis,Logs\n";
+        snap.forEach(doc => {
+            const p = doc.data();
+            const clean = (t) => (t||"").toString().replace(/,/g," ").replace(/\n/g," | ");
+            csv += `${clean(p.doa)},${clean(p.id)},${clean(p.name)},${clean(p.age)},${clean(p.sex)},${clean(p.ward)},${clean(p.diagnosis)},${clean(p.logs)}\n`;
+        });
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+        link.download = `Census_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
+    }
   </script>
 </body>
 </html>
