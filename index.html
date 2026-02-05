@@ -186,7 +186,7 @@
     .history-item.editable-item { padding-right: 25px; }
 
     /* MODAL STYLES */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 6000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
     .modal-overlay.active { display: flex; }
     .modal-content { background: var(--card-bg); width: 95%; max-width: 1000px; height: 85vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
     .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 12px 12px 0 0; flex-shrink: 0; flex-wrap: wrap; gap: 10px; }
@@ -1282,10 +1282,12 @@
           <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Admissions Trend</h4>
           <canvas id="chart-trend"></canvas>
         </div>
+
         <div class="chart-container" style="height:250px; background:white; padding:15px; border-radius:8px; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-          <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Ward Distribution</h4>
-          <canvas id="chart-ward"></canvas>
+          <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Discharges Trend</h4>
+          <canvas id="chart-discharge"></canvas>
         </div>
+
         <div class="chart-container" style="height:250px; background:white; padding:15px; border-radius:8px; border:none; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
           <h4 style="margin:0 0 10px 0; font-size:14px; color:#555;">Gender Split</h4>
           <canvas id="chart-sex"></canvas>
@@ -1299,12 +1301,12 @@
             <thead>
               <tr style="background:#f8f9fa; text-align:left;">
                 <th style="padding:10px; border-bottom:2px solid #ddd;">DOA</th>
+                <th style="padding:10px; border-bottom:2px solid #ddd;">DOD</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">Name</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">ID</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">Age</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">Sex</th>
                 <th style="padding:10px; border-bottom:2px solid #ddd;">Diagnosis</th>
-                <th style="padding:10px; border-bottom:2px solid #ddd;">Ward</th>
               </tr>
             </thead>
             <tbody id="census-table-body"></tbody>
@@ -4843,9 +4845,14 @@ async function saveAndAddNewborn(printWin) {
 
         displayData.forEach(p => {
             const lookupId = p.docId || p.id;
+            // Format DOD if available
+            const dodText = p.dischargeTimestamp ? formatDateDDMMYYYY(p.dischargeTimestamp) : '-';
+
             html += `
                 <tr style="border-bottom:1px solid #eee; transition:background 0.2s;">
                     <td style="padding:10px;">${p.doa || formatDateDDMMYYYY(p.timestamp)}</td>
+                    <td style="padding:10px; color:#666;">${dodText}</td>
+
                     <td style="padding:10px;">
                         <a href="#" onclick="openCensusModal('${lookupId}'); return false;"
                            style="font-weight:bold; color:#0066cc; text-decoration:none;">
@@ -4856,7 +4863,6 @@ async function saveAndAddNewborn(printWin) {
                     <td style="padding:10px;">${p.age||'-'}</td>
                     <td style="padding:10px;">${p.sex||'-'}</td>
                     <td style="padding:10px;">${p.diagnosis||'-'}</td>
-                    <td style="padding:10px;">${p.ward}</td>
                 </tr>
             `;
         });
@@ -4871,49 +4877,88 @@ async function saveAndAddNewborn(printWin) {
         const rangeVal = document.getElementById('census-range').value;
         const isDaily = (rangeVal === '30' || rangeVal === '90');
 
-        const wardCounts = {}, sexCounts = {Male:0, Female:0}, dateMap = {};
+        const sexCounts = {Male:0, Female:0};
+        const admissionMap = {};
+        const dischargeMap = {}; // New Map for Discharges
 
         data.forEach(p => {
-            wardCounts[p.ward] = (wardCounts[p.ward]||0)+1;
+            // Sex Stats
             if(p.sex==='Male'||p.sex==='Female') sexCounts[p.sex]++;
 
-            // Date Logic (Daily vs Monthly)
-            let dateObj = null;
-            if (p.doa) dateObj = new Date(p.doa);
-            else if (p.timestamp) dateObj = new Date(p.timestamp);
+            // --- 1. ADMISSION LOGIC ---
+            let admDate = null;
+            if (p.doa) admDate = new Date(p.doa);
+            else if (p.timestamp) admDate = new Date(p.timestamp);
 
-            if (dateObj && !isNaN(dateObj.getTime())) {
+            if (admDate && !isNaN(admDate.getTime())) {
                 let key;
-                if (isDaily) key = dateObj.toISOString().split('T')[0];
-                else key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-                dateMap[key] = (dateMap[key] || 0) + 1;
+                if (isDaily) key = admDate.toISOString().split('T')[0];
+                else key = `${admDate.getFullYear()}-${String(admDate.getMonth() + 1).padStart(2, '0')}`;
+                admissionMap[key] = (admissionMap[key] || 0) + 1;
+            }
+
+            // --- 2. DISCHARGE LOGIC ---
+            if (p.dischargeTimestamp) {
+                let disDate = new Date(p.dischargeTimestamp);
+                if (!isNaN(disDate.getTime())) {
+                    let key;
+                    if (isDaily) key = disDate.toISOString().split('T')[0];
+                    else key = `${disDate.getFullYear()}-${String(disDate.getMonth() + 1).padStart(2, '0')}`;
+                    dischargeMap[key] = (dischargeMap[key] || 0) + 1;
+                }
             }
         });
 
-        const sortedTrend = Object.keys(dateMap).sort().map(key => {
-            const count = dateMap[key];
-            let label;
-            if (isDaily) {
-                const d = new Date(key);
-                label = d.toLocaleString('default', { month: 'short', day: '2-digit' });
-            } else {
-                const [y, m] = key.split('-');
-                const d = new Date(y, m - 1);
-                label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-            }
-            return { label, count };
+        // Helper to sort and label maps
+        const processMap = (mapData) => {
+            return Object.keys(mapData).sort().map(key => {
+                const count = mapData[key];
+                let label;
+                if (isDaily) {
+                    const d = new Date(key);
+                    label = d.toLocaleString('default', { month: 'short', day: '2-digit' });
+                } else {
+                    const [y, m] = key.split('-');
+                    const d = new Date(y, m - 1);
+                    label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+                }
+                return { label, count };
+            });
+        };
+
+        const sortedAdmissions = processMap(admissionMap);
+        const sortedDischarges = processMap(dischargeMap);
+
+        // Destroy old charts
+        ['chart-trend', 'chart-discharge', 'chart-sex'].forEach(id => {
+            if(censusChartInstances[id]) censusChartInstances[id].destroy();
         });
 
-        ['chart-trend', 'chart-ward', 'chart-sex'].forEach(id => { if(censusChartInstances[id]) censusChartInstances[id].destroy(); });
-
+        // Chart 1: Admissions
         censusChartInstances['chart-trend'] = new Chart(document.getElementById('chart-trend'), {
             type: isDaily ? 'bar' : 'line',
-            data: { labels: sortedTrend.map(i=>i.label), datasets: [{ label: isDaily?'Daily':'Monthly', data: sortedTrend.map(i=>i.count), borderColor: '#0066cc', backgroundColor: isDaily?'#0066cc':'rgba(0,102,204,0.1)', tension: 0.3, fill: !isDaily }] },
+            data: { labels: sortedAdmissions.map(i=>i.label), datasets: [{ label: isDaily?'Daily Adms':'Monthly Adms', data: sortedAdmissions.map(i=>i.count), borderColor: '#0066cc', backgroundColor: isDaily?'#0066cc':'rgba(0,102,204,0.1)', tension: 0.3, fill: !isDaily }] },
             options: {maintainAspectRatio:false}
         });
-        censusChartInstances['chart-ward'] = new Chart(document.getElementById('chart-ward'), {
-            type: 'bar', data: { labels: Object.keys(wardCounts), datasets: [{ label: 'Patients', data: Object.values(wardCounts), backgroundColor: '#28a745' }] }, options: {maintainAspectRatio:false}
+
+        // Chart 2: Discharges (Replaces Ward Chart)
+        censusChartInstances['chart-discharge'] = new Chart(document.getElementById('chart-discharge'), {
+            type: isDaily ? 'bar' : 'line',
+            data: {
+                labels: sortedDischarges.map(i=>i.label),
+                datasets: [{
+                    label: isDaily ? 'Daily Discharges' : 'Monthly Discharges',
+                    data: sortedDischarges.map(i=>i.count),
+                    borderColor: '#28a745',
+                    backgroundColor: isDaily ? '#28a745' : 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.3,
+                    fill: !isDaily
+                }]
+            },
+            options: {maintainAspectRatio:false}
         });
+
+        // Chart 3: Sex
         censusChartInstances['chart-sex'] = new Chart(document.getElementById('chart-sex'), {
             type: 'doughnut', data: { labels: ['Male', 'Female'], datasets: [{ data: [sexCounts.Male, sexCounts.Female], backgroundColor: ['#36A2EB', '#FF6384'] }] }, options: {maintainAspectRatio:false}
         });
@@ -4969,11 +5014,14 @@ async function saveAndAddNewborn(printWin) {
         const snap = await query.get();
         if (snap.empty) { alert("No data."); return; }
 
-        let csv = "Date,ID,Name,Age,Sex,Ward,Diagnosis,Logs\n";
+        // UPDATED COLUMNS: Added DOD, Removed Ward
+        let csv = "DOA,DOD,ID,Name,Age,Sex,Diagnosis,Logs\n";
         snap.forEach(doc => {
             const p = doc.data();
             const clean = (t) => (t||"").toString().replace(/,/g," ").replace(/\n/g," | ");
-            csv += `${clean(p.doa)},${clean(p.id)},${clean(p.name)},${clean(p.age)},${clean(p.sex)},${clean(p.ward)},${clean(p.diagnosis)},${clean(p.logs)}\n`;
+            const dod = p.dischargeTimestamp ? formatTimestamp(p.dischargeTimestamp) : "-";
+
+            csv += `${clean(p.doa)},${clean(dod)},${clean(p.id)},${clean(p.name)},${clean(p.age)},${clean(p.sex)},${clean(p.diagnosis)},${clean(p.logs)}\n`;
         });
 
         const link = document.createElement("a");
