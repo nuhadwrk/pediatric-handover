@@ -2179,8 +2179,13 @@ async function generateDcDocx() {
              
              <button class="log-btn" id="btn-log-${id}" ${(p.currentPlanDraft && p.currentPlanDraft.trim().length > 0) ? '' : 'disabled'} onclick="logPlan('${id}')">Log</button>
              
-             <p><strong>Ward:</strong><select onchange="changeWard('${id}',this.value)">${["PW","GW","SW","PVT","ICU","NICU","ER","Discharge"].map(w=>`<option value="${w}" ${w===p.ward?'selected':''}>${w}</option>`).join('')}</select></p>
-             <div class="new-checkbox"><label><input type="checkbox" ${p.isNew?'checked':''} onchange="toggleNew('${id}')"> New</label></div>
+             <p style="display: flex; align-items: center; gap: 20px;">
+                 <span><strong>Ward:</strong> <select onchange="changeWard('${id}',this.value)">${["PW","GW","SW","PVT","ICU","NICU","ER","Discharge"].map(w=>`<option value="${w}" ${w===p.ward?'selected':''}>${w}</option>`).join('')}</select></span>
+                 <span class="new-checkbox" style="margin-top: 0;"><label><input type="checkbox" ${p.isNew?'checked':''} onchange="toggleNew('${id}')"> New</label></span>
+             </p>
+             
+             <p style="margin-top:10px;"><strong>Notes:</strong></p>
+             <p><span data-field="cardNotes" contenteditable class="editable" style="display:block; width:100%; min-height:20px; white-space:pre-wrap;" onblur="updateField('${id}','cardNotes',this.innerText)">${p.cardNotes || ''}</span></p>
         `;
         return c;
     }
@@ -2194,7 +2199,7 @@ async function generateDcDocx() {
     }
 
     function updateCardDOM(c, p) {
-        const fields = ['name', 'id', 'nid', 'doa', 'shift', 'bed', 'age', 'sex', 'weight', 'diagnosis', 'medications', 'issues', 'hopi'];
+        const fields = ['name', 'id', 'nid', 'doa', 'shift', 'bed', 'age', 'sex', 'weight', 'diagnosis', 'medications', 'issues', 'hopi', 'cardNotes'];
         fields.forEach(f => {
             const el = c.querySelector(`[data-field="${f}"]`);
             if (el && document.activeElement !== el) {
@@ -2420,7 +2425,7 @@ if (cgaLabel) {
          sex:document.getElementById('sex').value, weight:document.getElementById('weight').value, diagnosis:document.getElementById('diagnosis').value,
          medications:document.getElementById('medications').value, issues:document.getElementById('issues').value, hopi:document.getElementById('hopi').value,
          ward:document.getElementById('ward').value, plan:initialPlan, isNew:document.getElementById('isNew').checked,
-         timestamp:Date.now(), logs: initialLogs, lastLoggedPlan: initialPlan, labs:{dates:[],tests:{}}, images:[]
+         timestamp:Date.now(), logs: initialLogs, lastLoggedPlan: initialPlan, labs:{dates:[],tests:{}}, images:[], cardNotes: ''
        }).then(()=>document.getElementById('formSection').style.display='none');
     }
     function toggleDarkMode() { const h=document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); }
