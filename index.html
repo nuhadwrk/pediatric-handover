@@ -691,6 +691,11 @@
           <div class="sleek-row"><span class="sleek-label">HOPI</span><div contenteditable="true" id="det-hopi" class="sleek-input" data-field="hopi" style="min-height: 100px; white-space: pre-wrap;" onblur="updateFromDetail('hopi', this.innerText)"></div></div>
         </div>
         <div id="tab-labs" class="tab-pane">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+              <button class="btn-sm" style="background:#607d8b; display:flex; align-items:center; gap:4px;" onclick="printLabs()">
+                  <span>🖨️ Print Labs</span>
+              </button>
+          </div>
           <div style="overflow-x: auto;"><table class="lab-table" id="labMatrix"></table></div>
           <div class="chart-container"><canvas id="labsChart"></canvas></div>
         </div>
@@ -2688,39 +2693,81 @@ function printPatientDetails() {
     );
     w.document.close();
 }
-// --- NEW FUNCTION: Auto-populate standard labs ---
-    function loadStandardLabs() {
-        const p = localPatients[currentPatientId];
-        // Safely get existing labs or create empty structure
-        const l = p.labs || { dates: [], tests: {} };
-        
-        // Your requested standard list
-        const standardTests = [
-            "Hb", "PCV", "TLC", "N", "L", "PLT", 
-            "CRP", "Procal", 
-            "Na", "K", 
-            "TSB", "DSB", "AST", "ALT", 
-            "Urea", "BUN", "Creat", "URE", 
-            "Blood C/S", "Urine C/S"
-        ];
-
-        // If no dates exist (new table), add today's date automatically
-        if (l.dates.length === 0) {
-            const t = new Date();
-            l.dates.push(`${t.getDate()}/${t.getMonth()+1}`);
-        }
-
-        // Loop through standard tests and add them ONLY if they don't exist
-        standardTests.forEach(test => {
-            if (!l.tests[test]) {
-                // Create an array of "-" placeholders matching the number of date columns
-                l.tests[test] = new Array(l.dates.length).fill("-");
-            }
-        });
-
-        // Save to Firebase (this will trigger the listener to re-render the table)
-        db.collection('patients').doc(currentPatientId).update({labs: l});
+function printLabs() {
+    if (!currentPatientId) return;
+    const p = localPatients[currentPatientId];
+    const labs = ensureLabArrayFormat(p); // Grabs the clean data directly
+    
+    // Prevent printing if there are no dates
+    if (!labs.dates || labs.dates.length === 0) {
+        alert("No labs to print yet.");
+        return;
     }
+
+    let txt = `
+    <html>
+    <head>
+        <title>${p.name} - Labs</title>
+        <style>
+            @page { size: A4 portrait; margin: 15mm; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; font-size: 12px; }
+            h2 { text-align: center; margin-top: 0; font-size: 16px; text-transform: uppercase; margin-bottom: 5px; }
+            .patient-info { margin-bottom: 15px; font-size: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; display: flex; justify-content: space-between; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+            th, td { border: 1px solid #444; padding: 4px 2px; text-align: center; font-size: 10px; word-wrap: break-word; }
+            th:first-child, td:first-child { width: 18%; text-align: left; padding-left: 5px; font-weight: bold; background-color: #f4f4f4; }
+            th { background-color: #eaeaea; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <h2>Laboratory Investigations</h2>
+        <div class="patient-info">
+            <span><strong>Name:</strong> ${p.name}</span>
+            <span><strong>HNo:</strong> ${p.id || '-'}</span>
+            <span><strong>Ward/Bed:</strong> ${p.ward || '-'}/${p.bed || '-'}</span>
+            <span><strong>Age:</strong> ${getDisplayAge(p)}</span>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+    `;
+
+    // Add Date Headers
+    labs.dates.forEach(date => {
+        txt += `<th>${date}</th>`;
+    });
+    txt += `</tr></thead><tbody>`;
+
+    // Add Test Rows & Values
+    labs.rows.forEach(row => {
+        // Skip entirely empty rows to save space on printed paper
+        const hasValues = row.vals.some(v => v.trim() !== '' && v.trim() !== '-');
+        if (!hasValues) return; 
+
+        txt += `<tr><td>${row.name}</td>`;
+        row.vals.forEach(val => {
+            txt += `<td>${val}</td>`;
+        });
+        txt += `</tr>`;
+    });
+
+    txt += `
+            </tbody>
+        </table>
+        <script>
+            window.onload = function() { window.print(); }
+        <\/script>
+    </body>
+    </html>
+    `;
+
+    const w = window.open('', '_blank');
+    if (!w) { alert("⚠️ POPUP BLOCKED\nPlease allow popups for this site."); return; }
+    
+    w.document.write(txt);
+    w.document.close();
+}
 // --- NEW LABS LOGIC (ARRAY BASED) ---
 
     // 1. Convert old Object format to Array format on the fly
