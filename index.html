@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
@@ -133,6 +134,10 @@
 
     .hopi-content { display: none; color: var(--text); font-size: 15px; }
     .hopi-content.expanded { display: block; }
+    .hopi-content.plan-history.expanded {
+        max-height: 700px;
+        overflow-y: auto;
+    }
     
     .inline-fields { display: flex; gap: 7.6px; align-items: baseline; }
     .inline-fields strong { flex-shrink: 0; font-size: 15px; }
@@ -158,7 +163,7 @@
     .patient-card .history-date { font-size: 11px; opacity: 0.8; font-weight: 700; color: var(--primary); }
     .patient-card .history-text { font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
     
-    .recent-logs-container { margin: 8px 0; max-height: 200px; overflow-y: auto; padding-left: 4px; transition: opacity 0.2s; }
+    .recent-logs-container { margin: 8px 0; max-height: 275px; overflow-y: auto; padding-left: 4px; transition: opacity 0.2s; }
     
     /* SCROLLBAR HIDING */
     .recent-logs-container::-webkit-scrollbar, .hopi-content::-webkit-scrollbar { width: 6px; background: transparent; }
@@ -578,15 +583,23 @@
     <button class="add" onclick="toggleForm()">Add Patient</button>
     <button class="btn-green" onclick="launchAdmissionSystem(true)">Admission</button>
     <button class="btn-teal" onclick="launchDischargeSystem()">DC</button>
-    <div class="dropdown">
-  <button class="dropdown-btn" onclick="togglePrintDropdown()">Print ▼</button>
-  <div class="dropdown-content" id="printDropdown">
-    <a onclick="printAll()">Print All</a>
-    <a onclick="printNICU()">Print NICU</a>
-    <a onclick="printWard()">Print Ward</a>
-    <a onclick="printNew()">Print New</a>
-  </div>
-</div>
+<div class="dropdown">
+      <button class="dropdown-btn" onclick="togglePrintDropdown()">▼</button>
+      <div class="dropdown-content" id="printDropdown">
+        <a href="https://tinyurl.com/neonatecal" target="_blank">Neonate Cal</a>
+        <a href="https://tinyurl.com/dosepedia" target="_blank">Dosage Cal</a>
+        <a href="https://vinavi.aasandha.mv/#/dashboard" target="_blank">Vinavi</a>
+        <a href="http://radiology.hmh.mv/zfp" target="_blank">Xray</a>
+        <a href="http://dharaka.hmh.mv/Home/LandingScreen?opd=1" target="_blank">Dharaka</a>
+        
+        <div style="border-top: 1px solid var(--border); margin: 4px 0;"></div>
+        
+        <a onclick="printAll()">Print All</a>
+        <a onclick="printNICU()">Print NICU</a>
+        <a onclick="printWard()">Print Ward</a>
+        <a onclick="printNew()">Print New</a>
+      </div>
+    </div>
     <button class="theme-toggle" onclick="toggleDarkMode()" aria-label="Toggle theme"></button>
   </div>
 
@@ -1728,9 +1741,9 @@ function selectDcPatient(id, forceReset = false) {
 
     const nbMaternal = nb.Text1 ? `Age: ${nb.Text2||'-'}, ${nb.Text7||'-'}\nBlood group: ${nb.Text13||'-'}; ${g6pdText}, VDRL/HIV/HBsAg/HCV: Non-reactive` : DEFAULTS.neo_maternal;
 
-    let admHist = "";
+let admHist = "";
     if(p.admissionData) {
-        admHist = `${(p.admissionData.hopi || '').trim()}\n\nPast Hx: ${(p.admissionData.pasthx || '').trim()}\n\nPersonal Hx: ${(p.admissionData.personalhx || '').trim()}\n\nFamily Hx: ${(p.admissionData.fhx || '').trim()}`;
+        admHist = `${(p.admissionData.hopi || '').trim()}\n\nPast History: ${(p.admissionData.pasthx || '').trim()}\n\nPersonal History: ${(p.admissionData.personalhx || '').trim()}\n\nFamily History: ${(p.admissionData.fhx || '').trim()}`;
     } else { admHist = (p.hopi || '').trim(); }
 
     const admGeneralExamOnly = p.admissionData?.ge || p.general_exam || "";
@@ -2131,8 +2144,9 @@ async function generateDcDocx() {
              <span class="new-badge${p.isNew?' new-active':''} card-ctrl">NEW</span>${disTag}
              
              <p><strong>Name:</strong> <span data-field="name" contenteditable class="editable" onblur="updateField('${id}','name',this.innerText)">${p.name}</span></p>
-             <p><strong>HNo:</strong> <span data-field="id" contenteditable class="editable" onblur="updateField('${id}','id',this.innerText)">${p.id||''}</span></p>
-             <p><strong>NID:</strong> <span data-field="nid" contenteditable class="editable" onblur="updateField('${id}','nid',this.innerText)">${p.nid||''}</span></p>
+             <p><strong style="cursor:pointer;" title="Click to copy HNo" onclick="copyFromLabel('val-hno-${id}', this, 'HNo:')">HNo:</strong> <span id="val-hno-${id}" data-field="id" contenteditable class="editable" onblur="updateField('${id}','id',this.innerText)">${p.id||''}</span></p>
+    
+    <p><strong style="cursor:pointer;" title="Click to copy NID" onclick="copyFromLabel('val-nid-${id}', this, 'NID:')">NID:</strong> <span id="val-nid-${id}" data-field="nid" contenteditable class="editable" onblur="updateField('${id}','nid',this.innerText)">${p.nid||''}</span></p>
              <p><strong>DOA:</strong> <span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></p>
              <p><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
              <p><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
@@ -2178,7 +2192,23 @@ async function generateDcDocx() {
                 ${formatLogsToHtml(p.logs || '', id, true, false)}
              </div>
 
-             <p><strong class="current-plan-label">Current plan:</strong></p>
+             <p style="display: flex; align-items: center; gap: 12px; margin-top: 7.6px; margin-bottom: 4px;">
+<p style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+    <strong class="current-plan-label">Current plan:</strong>
+
+    <span class="edit-history-link"
+          style="cursor:pointer; text-decoration:underline; font-size:12px;"
+          onclick="handleRoundNoteClick('${id}')">
+          Round note
+    </span>
+
+    <span class="edit-history-link"
+          style="cursor:pointer; text-decoration:underline; color:#28a745; font-size:12px;"
+          onclick="generatePrintOnly('${id}')">
+          Print
+    </span>
+</p>
+
              <p><span contenteditable class="editable" id="new-plan-${id}" oninput="saveDraftPlan('${id}', this.innerText); checkLogInput('${id}');">${p.currentPlanDraft || ''}</span></p>
              
              <button class="log-btn" id="btn-log-${id}" ${(p.currentPlanDraft && p.currentPlanDraft.trim().length > 0) ? '' : 'disabled'} onclick="logPlan('${id}')">Log</button>
@@ -2200,6 +2230,23 @@ async function generateDcDocx() {
         draftTimeout = setTimeout(() => {
             db.collection('patients').doc(id).update({ currentPlanDraft: text });
         }, 800);
+    }
+  function copyFromLabel(valueId, labelEl, originalText) {
+        const textToCopy = document.getElementById(valueId).innerText.trim();
+        if (!textToCopy) return;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            // Visual feedback: Change the label text and color briefly
+            labelEl.innerText = 'Copied!';
+            labelEl.style.color = '#28a745'; // Success green
+            
+            setTimeout(() => {
+                labelEl.innerText = originalText;
+                labelEl.style.color = ''; // Revert to default text color
+            }, 1000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
     }
 
     function updateCardDOM(c, p) {
@@ -2677,6 +2724,17 @@ function printPatientDetails() {
     // HOPI / Plan (Content only)
     const hopi = getTxt('det-hopi');
     if (hopi) txt += `${hopi}\n`;
+
+// --- NEW: Add Plan History ---
+    if (currentPatientId && localPatients[currentPatientId]) {
+        const p = localPatients[currentPatientId];
+        if (p.logs && p.logs.trim()) {
+            txt += `\n----------------------------------------\n`;
+            txt += `PLAN HISTORY:\n\n`;
+            txt += `${p.logs.trim()}\n`;
+        }
+    }
+    // -----------------------------
 
     const w = window.open('', '_blank');
     if (!w) { alert("⚠️ POPUP BLOCKED"); return; }
@@ -4237,9 +4295,25 @@ async function renderPdfVisual() {
        for (let s = maxSize; s >= minSize; s--) { if (checkFit(s)) return s; } return minSize; 
     }
     
-    function getAggregatedAdmissionData() {
-        let aggregatedHopi = ""; const addLine = (label, val) => { if(val && val.trim()) aggregatedHopi += `${label}:\n${val.trim()}\n\n`; };
-        addLine("C/O", pdfValues['complains']); addLine("HOPI", pdfValues['hopi']); addLine("Past Hx", pdfValues['pasthx']); addLine("Personal Hx", pdfValues['personalhx']); addLine("Family Hx", pdfValues['fhx']); addLine("Tx Hx", pdfValues['txhx']); addLine("Obs/Gyn", pdfValues['obs']); addLine("G/E", pdfValues['ge']); addLine("CVS", pdfValues['cvs']); addLine("RS", pdfValues['rs']); addLine("Abd", pdfValues['pa']); addLine("Pelvis", pdfValues['pelvis']); addLine("CNS", pdfValues['cns']); addLine("Local", pdfValues['le']);
+function getAggregatedAdmissionData() {
+        let aggregatedHopi = ""; 
+        const addLine = (label, val) => { if(val && val.trim()) aggregatedHopi += `${label}:\n${val.trim()}\n\n`; };
+        
+        addLine("C/O", pdfValues['complains']); 
+        addLine("HOPI", pdfValues['hopi']); 
+        addLine("Past History", pdfValues['pasthx']); 
+        addLine("Personal History", pdfValues['personalhx']); 
+        addLine("Family History", pdfValues['fhx']); 
+        addLine("Treatment History", pdfValues['txhx']); 
+        addLine("Obs/Gyn", pdfValues['obs']); 
+        addLine("General Examination", pdfValues['ge']); 
+        addLine("CVS", pdfValues['cvs']); 
+        addLine("RS", pdfValues['rs']); 
+        addLine("Abdomen", pdfValues['pa']); 
+        addLine("Pelvis", pdfValues['pelvis']); 
+        addLine("CNS", pdfValues['cns']); 
+        addLine("Local Examination", pdfValues['le']);
+        
         return { hopi: aggregatedHopi, diagnosis: pdfValues['dx'] || "", plan: pdfValues['management'] || "" };
     }
 async function saveEdits() {
@@ -4744,6 +4818,249 @@ async function saveAndAddNewborn(printWin) {
             if (currentMode === 'newborn') renderNbVisual();
         }, 100); // Small delay to improve performance
     });
+
+//NEW round notes
+
+// Helper to determine if patient was >= 1 month at admission
+function isPaediatric(patient) {
+    // 1. If age was entered manually, always assume Paediatric (PW format)
+    if (!patient.isAutoAge) {
+        return true;
+    }
+
+    // 2. If Auto Age is used, strictly calculate age AT ADMISSION
+    if (patient.dob) {
+        try {
+            // Parse Birth Date (Fallback to midnight if Time of Birth is missing)
+            const birthDate = new Date(`${patient.dob}T${patient.dot || '00:00'}:00`);
+            
+            // Parse Date of Admission (Fallback to current date if missing)
+            // Note: DB stores 'doa' as 'YYYY-MM-DD'
+            const admissionDate = patient.doa ? new Date(patient.doa) : new Date();
+            
+            // Ensure both dates are valid before math
+            if (!isNaN(birthDate.getTime()) && !isNaN(admissionDate.getTime())) {
+                const diffTime = admissionDate - birthDate;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                // If 30 days (1 month) or older at the time of admission, use Paediatric form
+                if (diffDays >= 30) {
+                    return true;
+                } else {
+                    return false; // Neonate / NICU form
+                }
+            }
+        } catch (e) {
+            console.warn("Error calculating admission age", e);
+        }
+    }
+    
+    // Default fallback: If it's Auto mode but dates are missing/broken, assume Neonate
+    return false; 
+}
+
+function handleRoundNoteClick(patientId) {
+    const p = localPatients[patientId];
+    if (!p) return;
+
+    const draftInput = document.getElementById(`new-plan-${patientId}`);
+    if (!draftInput) return;
+
+    const isPaeds = isPaediatric(p);
+    const medications = p.medications || '';
+    let template = "";
+
+    if (isPaeds) {
+        // Paediatric Template (>= 1 month)
+        template = `Morning Rounds S/B Dr.   
+Weight: ${p.weight || ''}
+
+Issues: 
+GC: 
+OE: T:     C, P:     bpm, RR:     , BP:     mmHg, SpO2:     
+\u00A0
+RS: 
+CVS: 
+PA: 
+Tx: ${medications}
+Advice:- `;
+    } else {
+        // Neonatal Template (< 1 month)
+        let bwt = '';
+        if (p.newbornData && p.newbornData['Text41']) {
+            bwt = p.newbornData['Text41'];
+        } else if (p.weight) {
+            bwt = p.weight;
+        }
+        
+        template = `Morning Rounds S/B Dr. 
+BWT: ${bwt}
+TWT:
+
+Issues: 
+GC: 
+OE: T:     C, P:     bpm, RR:     , BP:     mmHg, SpO2:     
+RS: 
+CVS: 
+PA: 
+\u00A0
+Feed: 
+TF:     
+UOP (ml/kg/hr):     
+I/O:     
+Tx: ${medications}
+Advice:- `;
+    }
+
+    draftInput.innerText = template;
+    saveDraftPlan(patientId, template);
+    draftInput.focus();
+}
+
+async function generatePrintOnly(patientId) {
+    const p = localPatients[patientId];
+    if (!p) return;
+
+    const draftInput = document.getElementById(`new-plan-${patientId}`);
+    let printText = draftInput ? draftInput.innerText.trim() : '';
+
+    // Fallback if input is empty
+    if (!printText) {
+        const isPaeds = isPaediatric(p);
+        if (isPaeds) {
+            printText = `Morning Rounds S/B Dr. \nWeight: ${p.weight || ''}\n\nIssues: \nGC: \nOE: T:       C, P:        bpm, RR:      , BP:          mmHg, SpO2:     \n\u00A0\nRS: \nCVS: \nPA: \nTx: ${p.medications || ''}\nAdvice:- `;
+        } else {
+            let bwt = p.newbornData?.['Text41'] || p.weight || '';
+            printText = `Morning Rounds S/B Dr. \nBWT: ${bwt}\nTWT:\n\nIssues: \nGC: \nOE: T:       C, P:        bpm, RR:      , BP:          mmHg, SpO2:     \nRS: \nCVS: \nPA: \n\u00A0\nFeed: \nTF:     \nUOP (ml/kg/hr):     \nI/O:     \nTx: ${p.medications || ''}\nAdvice:- `;
+        }
+    }
+
+    const printWin = window.open('', '_blank');
+
+    if (printWin) {
+        printWin.document.write('<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Compiling Round Note PDF...</h2></body></html>');
+    } else {
+        alert("Please enable popups to print.");
+        return;
+    }
+
+    try {
+        await generateRoundNotePdf(p, printText, printWin);
+    } catch (err) {
+        console.error("Print Failed: ", err);
+        if (printWin) printWin.document.body.innerHTML = `<h3 style="color:red">Failed: ${err.message}</h3>`;
+    }
+}
+
+async function generateRoundNotePdf(patient, rawNoteText, targetWindow) {
+    await ensurePDFLib();
+
+    // Determine which template to load based on Admission Age
+    const isPaeds = isPaediatric(patient);
+    const FORM_URL = isPaeds 
+        ? 'https://raw.githubusercontent.com/nuhadwrk/admission/main/PW_form.pdf'
+        : 'https://raw.githubusercontent.com/nuhadwrk/admission/main/NICU_form.pdf';
+
+    const bytes = await fetch(FORM_URL).then(r => r.arrayBuffer());
+    const pdfDoc = await PDFLib.PDFDocument.load(bytes);
+    const form = pdfDoc.getForm();
+
+    const pName = patient.name || '';
+    const hospNo = patient.id || '';
+let dobDisplay = patient.dob || '';
+    if (patient.dot) {
+        dobDisplay += ` ${patient.dot}`;
+    }
+
+// 1. We MUST define and calculate ageDisplay first
+    let ageDisplay = patient.age || '';
+    if (patient.isAutoAge && patient.dob && patient.dot) {
+        ageDisplay = calculateNeonatalAge(patient.dob, patient.dot).display;
+    }
+
+    // 2. NOW we can safely add gender to age display for PW mode
+    if (isPaeds && patient.sex) {
+        ageDisplay = ageDisplay ? `${ageDisplay} / ${patient.sex}` : patient.sex;
+    }
+
+    let cgaDisplay = getLiveCGA(patient) || '';
+    if (cgaDisplay) {
+        // Strip out the brackets and extract the raw value
+        let rawCga = cgaDisplay.replace('(CGA: ', '').replace(')', '').trim();
+        
+        // NEW: Prepend "CGA: " for NICU mode
+        cgaDisplay = !isPaeds ? `CGA: ${rawCga}` : rawCga;
+    }
+
+    let bwt = (patient.newbornData?.['Text41'] || patient.weight || '').replace(/kg/i, '').trim();
+
+    let issuesText = "";
+    let gcText = "";
+    let oeText = "";
+    let txText = "";
+    let adviceText = "";
+
+    const text = (rawNoteText || "").trim();
+
+    if (text.length > 5) {
+        const issuesMatch = text.match(/Issues:([\s\S]*?)(?=GC:|OE:|Tx:|Advice:|$)/i);
+        const gcMatch = text.match(/GC:([\s\S]*?)(?=OE:|Tx:|Advice:|$)/i);
+        const oeMatch = text.match(/OE:([\s\S]*?)(?=Tx:|Advice:|$)/i);
+        const txMatch = text.match(/Tx:([\s\S]*?)(?=Advice:|$)/i);
+        const adviceMatch = text.match(/Advice:([\s\S]*)$/i);
+
+        issuesText = issuesMatch ? issuesMatch[1].replace(/[\r\n]+/g, ' ').trim() : "";
+        gcText = gcMatch ? gcMatch[1].trim() : "";
+        oeText = oeMatch ? oeMatch[1].trim() : "";
+        txText = txMatch ? txMatch[1].trim() : "";
+        adviceText = adviceMatch ? adviceMatch[1].trim() : text;
+    }
+
+    const fieldMap = {
+        'date': formatTimestamp(Date.now()),
+        'doa': calculateDaysAdmitted(patient.doa),
+        'sb': 'Morning Rounds S/B Dr.',
+
+        'name': pName,
+        'ID': hospNo,
+        'DOB': dobDisplay,
+        'AGE': ageDisplay,
+        'CGA': cgaDisplay,
+
+        // Maps weight to both bwt and weight to safely catch whichever field the PW_form uses
+        'weight': isPaeds ? (patient.weight || '').replace(/kg/i, '').trim() : '',
+        'bwt': isPaeds ? (patient.weight || '').replace(/kg/i, '').trim() : bwt,
+        'twt': '',
+
+        'dx': patient.diagnosis || '',
+        'issues': issuesText || (patient.issues || '').replace(/[\r\n]+/g, ' ').trim(),
+
+        'GC': gcText,
+        'OE': oeText,
+        'Tx': txText || patient.medications || '',
+        'Advice': adviceText
+    };
+
+    Object.keys(fieldMap).forEach(fieldName => {
+        try {
+            const field = form.getTextField(fieldName);
+            if (field) field.setText(String(fieldMap[fieldName]));
+        } catch (e) {
+            // Fails silently if PW_form.pdf doesn't contain fields like 'CGA'
+            console.warn(`Field missing in PDF form: ${fieldName}`);
+        }
+    });
+
+    const pdfBytesOut = await pdfDoc.save();
+    const blob = new Blob([pdfBytesOut], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    if (targetWindow && !targetWindow.closed) {
+        targetWindow.location.href = url;
+    } else {
+        window.open(url, '_blank');
+    }
+}
   </script>
 </body>
 </html>
