@@ -5035,7 +5035,7 @@ let dobDisplay = patient.dob || '';
         'bwt': isPaeds ? (patient.weight || '').replace(/kg/i, '').trim() : bwt,
         
         // FIX: Now maps your typed TWT value instead of an empty string
-        'twt': twtText, 
+        'twt': twtText.replace(/kg/gi, '').trim(),
 
         'dx': patient.diagnosis || '',
         'issues': issuesText || (patient.issues || '').replace(/[\r\n]+/g, ' ').trim(),
