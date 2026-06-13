@@ -800,7 +800,7 @@
               <div class="form-group"><label>Bed</label><input type="text" id="f-bed" oninput="updateVisualField('bed', this.value)"></div>
               
               <div class="form-group"><label>Age</label>
-                  <input type="text" id="f-age" placeholder="Enter age or select Auto" oninput="updateVisualField('age', this.value)">
+                  <input type="text" id="f-age" value=" years" placeholder="Enter age or select Auto" oninput="updateVisualField('age', this.value)">
                   <div class="age-toggle" id="adm-age-toggle" style="display:flex; gap:10px; align-items:center; margin-top:5px; border:none; padding:0; background:transparent;">
                     <label style="margin:0; font-weight:normal; text-transform:none;"><input type="radio" id="adm-radio-manual" name="admAgeMode" value="manual" checked onchange="toggleAdmAutoInputs()"> Manual</label>
                     <label style="margin:0; font-weight:normal; text-transform:none;"><input type="radio" id="adm-radio-auto" name="admAgeMode" value="auto" onchange="toggleAdmAutoInputs()"> Auto</label>
@@ -811,7 +811,7 @@
                   </div>
               </div>
               <div class="form-group"><label>Sex</label><select id="f-sex" onchange="updateVisualField('sex', this.value)"><option>Male</option><option>Female</option></select></div>
-              <div class="form-group"><label>Weight</label><input type="text" id="f-weight"></div>
+              <div class="form-group"><label>Weight</label><input type="text" id="f-weight" value=" Kg" oninput="updateVisualField('weight', this.value)"></div>
               
               <div class="form-group"><label>Diagnosis</label><input type="text" id="f-adm-dx" oninput="syncDx(this.value)"></div>
            </div>
@@ -1323,9 +1323,9 @@ HR:   RR:   SpO2:   `,
         
         neo_course: `1. Breast feeding on demand\n2. Inj. vitamin K 1mg given at birth (left thigh) on \n3. Vaccines given: BCG, Hep. B on `,
         
-        neo_rx: `- Early morning and light exposure.\n- Exclusive breastfeeding for 6 months.\n- Cord care.\n- Immunization according to schedule.\n- Advised to keep home smoke-free.\n- Check for increase in yellowish discoloration of skin, poor feeding, lethargy etc.\n- Jusdee oral drops 1 ml PO OD x 1 year.`,
+        neo_rx: `- Exclusive breastfeeding for 6 months.\n- Cord care.\n- Immunization according to schedule.\n- Advised to keep home smoke-free.\n- Check for increase in yellowish discoloration of skin, poor feeding, lethargy etc.\n- Jusdee oral drops 1 ml PO OD x 1 year.`,
         
-        neohx_rx: `- Early morning and light exposure.\n- Exclusive breastfeeding for 6 months.\n- Cord care.\n- Immunization according to schedule.\n- Advised to keep home smoke-free including balconies, doorway and stairs and do not allow anyone to smoke near baby.\n- Check for increase in yellowish discoloration of skin, poor feeding, lethargy etc.`,
+        neohx_rx: `- Exclusive breastfeeding for 6 months.\n- Cord care.\n- Immunization according to schedule.\n- Advised to keep home smoke-free including balconies, doorway and stairs and do not allow anyone to smoke near baby.\n- Check for increase in yellowish discoloration of skin, poor feeding, lethargy etc.`,
 
         neo_review: `Follow up in P-OPD after 3days with Hb/PCV, TSB, DSB, FT4, TSH\nNeonatal Metabolic screening from RHC`,
 
@@ -1434,22 +1434,55 @@ function getDisplayAge(p) {
         }
 
         if (limitToLast3) { entries = entries.slice(0, 3); allowEdit = false; }
+        
         let html = '';
         entries.forEach(e => {
             const lines = e.trim().split('\n');
             const datePart = lines[0].trim();
             const body = lines.slice(1).join('\n').trim();
+            
             if(body) {
+                // The Date itself is now the clickable Copy trigger
+                const clickableDate = `<span style="cursor:pointer; transition: color 0.2s;" title="Click to copy log" onclick="copyLogText(this, '${datePart}')">${datePart}</span>`;
+                
                 if (allowEdit) {
-                    html += `<li class="history-item editable-item"><div class="history-date">${datePart}</div><div class="history-text" contenteditable="false" onblur="saveLogsFromDom('${patientId}', this)">${body}</div><span class="log-delete-btn" onclick="deleteLogItem(this, '${patientId}')" title="Delete Log">×</span></li>`;
+                    html += `<li class="history-item editable-item">
+                                <div class="history-date">${clickableDate}</div>
+                                <div class="history-text" contenteditable="false" onblur="saveLogsFromDom('${patientId}', this)">${body}</div>
+                                <span class="log-delete-btn" onclick="deleteLogItem(this, '${patientId}')" title="Delete Log">×</span>
+                             </li>`;
                 } else {
-                    html += `<li class="history-item"><div class="history-date">${datePart}</div><div class="history-text">${body}</div></li>`;
+                    html += `<li class="history-item">
+                                <div class="history-date">${clickableDate}</div>
+                                <div class="history-text">${body}</div>
+                             </li>`;
                 }
             }
         });
+        
         if (limitToLast3 && html === '') return '<div style="font-size:12px; color:#888; font-style:italic; padding-left:5px;">No recent logs</div>';
         const listId = limitToLast3 ? `recent-list-${patientId}` : `full-list-${patientId}`;
         return `<ul class="history-list" id="${listId}">${html}</ul>`;
+    }
+    function copyLogText(labelEl, originalText) {
+        // Find the text block inside the same list item
+        const logItem = labelEl.closest('.history-item');
+        const textToCopy = logItem.querySelector('.history-text').innerText.trim();
+
+        if (!textToCopy) return;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            // Visual feedback: briefly change the Date to 'Copied!'
+            labelEl.innerText = 'Copied!';
+            labelEl.style.color = '#28a745'; // Success green
+            
+            setTimeout(() => {
+                labelEl.innerText = originalText;
+                labelEl.style.color = ''; // Revert to default primary color
+            }, 1000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
     }
 
     function toggleEditHistory(id, context) {
@@ -3615,67 +3648,70 @@ function syncFromVisualToForm(fieldName, value) {
        updateNbField('Text69', dx);
     }
     
-    // --- HOPI GENERATOR HELPER ---
+// --- HOPI GENERATOR HELPER ---
     function getNewbornHopiText() {
-        const blue = (label) => `<span style="color: var(--primary)">${label}</span>`;
         const val = (v) => v || '-';
+// NEW: Helper to format the ugly ISO date into a nice string
+        const niceDate = (v) => {
+            if (!v) return '-';
+            const match = v.match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/);
+            if (match) return `${match[3]}-${match[2]}-${match[1]}, ${match[4]} HRS`;
+            return v;
+        };
 
-        return `<div style="white-space: pre-wrap; line-height: 1.6;">
-<strong>MOTHER'S DETAILS</strong>
-${blue('Name:')} ${val(nbValues['Text1'])}
-${blue('Age:')} ${val(nbValues['Text2'])}
-${blue('MRD No:')} ${val(nbValues['Text3'])}
-${blue('Consanguinity:')} ${val(nbValues['Text4'])}
-${blue('Booked / Unbooked:')} ${val(nbValues['Text5'])}
-${blue('Immunized / Un-immunized:')} ${val(nbValues['Text6'])}
-${blue('Para Gravida:')} ${val(nbValues['Text7'])}
-${blue('Previous Still Birth:')} ${val(nbValues['Text8'])}
-${blue('Weight:')} ${val(nbValues['Text9'])}
-${blue('LMP:')} ${val(nbValues['Text10'])}
-${blue('EDD:')} ${val(nbValues['Text11'])}
-${blue('HB:')} ${val(nbValues['Text12'])}
-${blue('Blood Grp & Type:')} ${val(nbValues['Text13'])}
-${blue('VDRL:')} ${val(nbValues['Text14'])}, ${blue('Other tests:')} ${val(nbValues['Text15'])}
-${blue('Toxemia:')} ${val(nbValues['Text16'])}
-${blue('Hydramnios:')} ${val(nbValues['Text17'])}
-${blue('P.I.H:')} ${val(nbValues['Text18'])}
-${blue('A.P.H:')} ${val(nbValues['Text19'])}
-${blue('Any other illness:')} ${val(nbValues['Text20'])}
-${blue('Presentation:')} ${val(nbValues['Text21'])}
-${blue('Time of Membrane rupture:')} ${val(nbValues['Text22'])}
-${blue('Liquor Quality:')} ${val(nbValues['Text23'])}${blue(', Quantity:')} ${val(nbValues['Text24'])}
-${blue('Drugs given:')} ${val(nbValues['Text25'])}
-${blue('Any Evidence of Foetal Distress:')} ${val(nbValues['Text26'])}
+        return `MOTHER'S DETAILS
+Name: ${val(nbValues['Text1'])}
+Age: ${val(nbValues['Text2'])}
+MRD No: ${val(nbValues['Text3'])}
+Consanguinity: ${val(nbValues['Text4'])}
+Booked / Unbooked: ${val(nbValues['Text5'])}
+Immunized / Un-immunized: ${val(nbValues['Text6'])}
+<strong>Para Gravida:<strong> ${val(nbValues['Text7'])}
+Previous Still Birth: ${val(nbValues['Text8'])}
+<strong>Weight:</strong> ${val(nbValues['Text9'])}
+LMP: ${val(nbValues['Text10'])}
+EDD: ${val(nbValues['Text11'])}
+HB: ${val(nbValues['Text12'])}
+<strong>Blood Grp & Type:<strong> ${val(nbValues['Text13'])}
+VDRL: ${val(nbValues['Text14'])}, Other tests: ${val(nbValues['Text15'])}
+Toxemia: ${val(nbValues['Text16'])}
+Hydramnios: ${val(nbValues['Text17'])}
+P.I.H: ${val(nbValues['Text18'])}
+A.P.H: ${val(nbValues['Text19'])}
+Any other illness: ${val(nbValues['Text20'])}
+Presentation: ${val(nbValues['Text21'])}
+Time of Membrane rupture: ${val(nbValues['Text22'])}
+Liquor Quality: ${val(nbValues['Text23'])}, Quantity: ${val(nbValues['Text24'])}
+Drugs given: ${val(nbValues['Text25'])}
+Any Evidence of Foetal Distress: ${val(nbValues['Text26'])}
 ${val(nbValues['Text27'])}
 
+BABY'S DETAILS
+<strong>Type of Delivery:<strong> ${val(nbValues['Text30'])}
+<strong>Indication:<strong> ${val(nbValues['Text31'])}
+<strong>Date & Time of Delivery:<strong> ${val(nbValues['Text35'])}
+<strong>APGAR at:</strong> <strong>1min</strong> ${val(nbValues['Text32'])} <strong>5min</strong> ${val(nbValues['Text33'])} <strong>10min</strong> ${val(nbValues['Text34'])}
+<strong>Resuscitation:<strong> ${val(nbValues['Text36'])}
+Intubation & IPPR: ${val(nbValues['Text37'])}
+Bicarbonate / Lethedron: ${val(nbValues['Text38'])}
+<strong>Sex of Baby:<strong> ${val(nbValues['Text39'])}
+<strong>Maturity:</strong> ${val(nbValues['Text40'])}
+<strong>Weight:</strong> ${val(nbValues['Text41'])}
+Congenital Anomalies: ${val(nbValues['Text43'])}
+Anal Patency: ${val(nbValues['Text44'])}
+Oesophageal Patency: ${val(nbValues['Text45'])}
+Respiratory Distress: ${val(nbValues['Text46'])}
+Cyanosis/Pallor/Jaundice: ${val(nbValues['Text47'])}
+Any Other: ${val(nbValues['Text48'])}
+Cord Blood Collected / Not Collected: ${val(nbValues['Text49'])}
+Investigation on Blood: ${val(nbValues['Text50'])}
+Gastric Aspirate - Microscopy: ${val(nbValues['Text51'])}
+Culture: ${val(nbValues['Text52'])}
+Any Other: ${val(nbValues['Text53'])}
 
-<strong>BABY'S DETAILS</strong>
-${blue('Type of Delivery:')} ${val(nbValues['Text30'])}
-${blue('Indication:')} ${val(nbValues['Text31'])}
-${blue('Date & Time of Delivery:')} ${val(nbValues['Text35'])}
-${blue('APGAR at:')} ${blue('1min')} ${val(nbValues['Text32'])} ${blue('5min')} ${val(nbValues['Text33'])} ${blue('10min')} ${val(nbValues['Text34'])}
-${blue('Resuscitation:')} ${val(nbValues['Text36'])}
-${blue('Intubation & IPPR:')} ${val(nbValues['Text37'])}
-${blue('Bicarbonate / Lethedron:')} ${val(nbValues['Text38'])}
-${blue('Sex of Baby:')} ${val(nbValues['Text39'])}
-${blue('Maturity:')} ${val(nbValues['Text40'])}
-${blue('Weight:')} ${val(nbValues['Text41'])}
-${blue('Congenital Anomalies:')} ${val(nbValues['Text43'])}
-${blue('Anal Patency:')} ${val(nbValues['Text44'])}
-${blue('Oesophageal Patency:')} ${val(nbValues['Text45'])}
-${blue('Respiratory Distress:')} ${val(nbValues['Text46'])}
-${blue('Cyanosis/Pallor/Jaundice:')} ${val(nbValues['Text47'])}
-${blue('Any Other:')} ${val(nbValues['Text48'])}
-${blue('Cord Blood Collected / Not Collected:')} ${val(nbValues['Text49'])}
-${blue('Investigation on Blood:')} ${val(nbValues['Text50'])}
-${blue('Gastric Aspirate - Microscopy:')} ${val(nbValues['Text51'])}
-${blue('Culture:')} ${val(nbValues['Text52'])}
-${blue('Any Other:')} ${val(nbValues['Text53'])}
+<strong>Problems:<strong> ${val(nbValues['Text66'])}
 
-${blue('Problems:')} ${val(nbValues['Text66'])}
-
-${val(nbValues['Text67'])}
-</div>`;
+${val(nbValues['Text67'])}`;
     }
 
     function launchAdmissionSystem(clearData = true) {
@@ -4575,7 +4611,13 @@ async function saveAndAddNewborn(printWin) {
             const pdf = await PDFLib.PDFDocument.load(bytes);
             const form = pdf.getForm();
             for (const [key, val] of Object.entries(nbValues)) {
-                try { const f = form.getTextField(key); if(f) f.setText(String(val)); } catch(e) {}
+                let printVal = val;
+                // NEW: Intercept Text35 and format it right before printing
+                if (key === 'Text35' && printVal) {
+                    const match = String(printVal).match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/);
+                    if(match) printVal = `${match[3]}-${match[2]}-${match[1]}, ${match[4]} HRS`;
+                }
+                try { const f = form.getTextField(key); if(f) f.setText(String(printVal)); } catch(e) {}
             }
             const pdfOut = await pdf.save();
             const blob = new Blob([pdfOut], { type: 'application/pdf' });
@@ -4603,8 +4645,14 @@ async function saveAndAddNewborn(printWin) {
                const pdf = await PDFLib.PDFDocument.load(bytes);
                const form = pdf.getForm();
                for (const [key, val] of Object.entries(nbValues)) {
-                   try { const f = form.getTextField(key); if(f) f.setText(String(val)); } catch(e) {}
-               }
+                let printVal = val;
+                // NEW: Intercept Text35 and format it right before printing
+                if (key === 'Text35' && printVal) {
+                    const match = String(printVal).match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/);
+                    if(match) printVal = `${match[3]}-${match[2]}-${match[1]}, ${match[4]} HRS`;
+                }
+                try { const f = form.getTextField(key); if(f) f.setText(String(printVal)); } catch(e) {}
+            }
                const pdfOut = await pdf.save();
                const blob = new Blob([pdfOut], { type: 'application/pdf' });
                printWin.location.href = URL.createObjectURL(blob);
