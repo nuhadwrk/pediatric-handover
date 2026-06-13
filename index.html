@@ -1372,28 +1372,6 @@ function getDisplayAge(p) {
     }
     return '';
 }
-  // Helper to calculate and format Today's Weight (TWT)
-    function getLiveTWTDisplay(p) {
-        if (!p.twt || p.twt.toString().trim() === '') return '';
-        
-        // Extract numbers safely (e.g., "3.2 Kg" -> 3.2)
-        const origMatch = String(p.weight || '').match(/[\d.]+/);
-        const origNum = origMatch ? parseFloat(origMatch[0]) : 0;
-        const twtNum = parseFloat(p.twt);
-
-        if (origNum > 0 && !isNaN(twtNum)) {
-            const diff = twtNum - origNum;
-            const percent = ((diff / origNum) * 100).toFixed(1);
-            const sign = percent > 0 ? '+' : '';
-            
-            // Add a subtle color shift for severe weight loss (> 10%)
-            const color = percent <= -10.0 ? '#d32f2f' : 'var(--primary)';
-            
-            return ` <span style="color:${color}; font-size:12px; font-weight:700;">(TWT: ${twtNum} Kg, ${sign}${percent}%)</span>`;
-        }
-        
-        return ` <span style="color:var(--primary); font-size:12px; font-weight:700;">(TWT: ${p.twt} Kg)</span>`;
-    }
     function calculateCompletedDOL(dob, dot) {
         if(!dob || !dot) return "";
         try {
@@ -2250,18 +2228,6 @@ async function generateDcDocx() {
              
              <p class="inline-fields"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
              <p><strong>Weight:</strong> <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span></p>
-
-<p>
-    <strong style="cursor:pointer;" onclick="toggleTWT('${id}')" title="Update Today's Weight">Weight:</strong> 
-    <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span>
-    <span id="twt-disp-${id}">${getLiveTWTDisplay(p)}</span>
-</p>
-<div class="age-toggle" id="twt-toggle-${id}" style="margin-top:0; border-top:none;">
-    <div class="auto-age-inputs" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-        <input type="number" step="0.01" id="twt-input-${id}" placeholder="Today's Wt (Kg)" value="${p.twt||''}" style="padding:4px; width:110px;" onblur="saveTWT('${id}')">
-        <span style="font-size:12px; font-weight:600;">Kg</span>
-    </div>
-</div>
              <p><strong>Diagnosis:</strong> <span data-field="diagnosis" contenteditable class="editable" onblur="updateField('${id}','diagnosis',this.innerText)">${p.diagnosis||''}</span></p>
              <p><strong>Medications:</strong></p><p><span data-field="medications" contenteditable class="editable" onblur="updateField('${id}','medications',this.innerText)">${p.medications||''}</span></p>
              <p><strong>Issues:</strong> <span data-field="issues" contenteditable class="editable" onblur="updateField('${id}','issues',this.innerText)">${p.issues||''}</span></p>
@@ -2393,15 +2359,7 @@ if (cgaLabel) {
         const gaDaysInput = document.getElementById(`ga-days-${p.docId}`);
         if (gaWeeksInput && document.activeElement !== gaWeeksInput) gaWeeksInput.value = p.gaWeeks || '';
         if (gaDaysInput && document.activeElement !== gaDaysInput) gaDaysInput.value = p.gaDays || '';
-// Update TWT label & input
-        const twtDisp = c.querySelector(`#twt-disp-${p.docId}`);
-        if (twtDisp) {
-            const twtHtml = getLiveTWTDisplay(p);
-            if (twtDisp.innerHTML !== twtHtml) twtDisp.innerHTML = twtHtml;
-        }
-        
-        const twtInput = document.getElementById(`twt-input-${p.docId}`);
-        if (twtInput && document.activeElement !== twtInput) twtInput.value = p.twt || '';
+
         const planInput = document.getElementById(`new-plan-${p.docId}`);
         const logBtn = document.getElementById(`btn-log-${p.docId}`);
         
@@ -2465,22 +2423,7 @@ if (cgaLabel) {
         }
     });
 }
-    function toggleTWT(id) { 
-        const e = document.getElementById(`twt-toggle-${id}`); 
-        e.style.display = e.style.display === 'block' ? 'none' : 'block'; 
-    }
 
-    function saveTWT(id) {
-        const twtVal = document.getElementById(`twt-input-${id}`).value;
-        db.collection('patients').doc(id).update({ twt: twtVal }).then(() => {
-            // Force a quick visual update on the card
-            if (localPatients[id]) {
-                localPatients[id].twt = twtVal;
-                const disp = document.getElementById(`twt-disp-${id}`);
-                if (disp) disp.innerHTML = getLiveTWTDisplay(localPatients[id]);
-            }
-        });
-    }
     function changeWard(id,w) { const u={ward:w}; if(w==='Discharge') u.dischargeTimestamp=Date.now(); db.collection('patients').doc(id).update(u); }
     function toggleNew(id) { db.collection('patients').doc(id).get().then(d=>db.collection('patients').doc(id).update({isNew:!d.data().isNew})); }
     
