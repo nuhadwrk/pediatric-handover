@@ -4998,45 +4998,13 @@ function handleRoundNoteClick(patientId) {
     let template = "";
 
     if (isPaeds) {
-        // Paediatric Template (>= 1 month)
-        template = `Morning Rounds S/B Dr.   
-Weight: ${p.weight || ''}
-
-Issues: 
-GC: 
-OE: T:     C, P:     bpm, RR:     , BP:     mmHg, SpO2:     
-\u00A0
-RS: 
-CVS: 
-PA: 
-Tx: ${medications}
-Advice:- `;
+        template = `Morning Rounds S/B Dr. \nWeight: ${p.weight || ''}\n\nIssues: \nGC: \nOE: T:     C, P:     bpm, RR:     , BP:     mmHg, SpO2:     \n\u00A0\nRS: \nCVS: \nPA: \nTx: ${medications}\nAdvice:- `;
     } else {
-        // Neonatal Template (< 1 month)
-        let bwt = '';
-        if (p.newbornData && p.newbornData['Text41']) {
-            bwt = p.newbornData['Text41'];
-        } else if (p.weight) {
-            bwt = p.weight;
-        }
+        let bwt = p.newbornData?.['Text41'] || p.weight || '';
+        const twtStr = p.twt ? `${p.twt} kg` : '';
         
-        template = `Morning Rounds S/B Dr. 
-BWT: ${bwt}
-TWT:
-
-Issues: 
-GC: 
-OE: T:     C, P:     bpm, RR:     , BP:     mmHg, SpO2:     
-RS: 
-CVS: 
-PA: 
-\u00A0
-Feed: 
-TF:     
-UOP (ml/kg/hr):     
-I/O:     
-Tx: ${medications}
-Advice:- `;
+        // NEW: WL added right beneath TWT
+        template = `Morning Rounds S/B Dr. \nBWT: ${bwt}\nTWT: ${twtStr}\nWL: -0%\n\nIssues: \nGC: \nOE: T:     C, P:     bpm, RR:     , BP:     mmHg, SpO2:     \nRS: \nCVS: \nPA: \n\u00A0\nFeed: \nTF:     \nUOP (ml/kg/hr):     \nI/O:     \nTx: ${medications}\nAdvice:- `;
     }
 
     draftInput.innerText = template;
@@ -5122,6 +5090,8 @@ let dobDisplay = patient.dob || '';
     let bwt = (patient.newbornData?.['Text41'] || patient.weight || '').replace(/kg/i, '').trim();
 
     let twtText = ""; // NEW: Variable for Today's Weight
+    let wlText = ""; // NEW variable for Weight Loss
+          let sbText = ""; // NEW variable for Doctor's Name
     let issuesText = "";
     let gcText = "";
     let oeText = "";
@@ -5131,15 +5101,24 @@ let dobDisplay = patient.dob || '';
     const text = (rawNoteText || "").trim();
 
     if (text.length > 5) {
-        // NEW: Match everything after TWT: but before Issues:
-        const twtMatch = text.match(/TWT:([\s\S]*?)(?=Issues:|GC:|OE:|Tx:|Advice:|$)/i);
+        // NEW: Regex to capture the Doctor's name (stops at the end of the line)
+        const sbMatch = text.match(/S\/B Dr\.([^\n]*)/i);
+        
+        // UPDATED: TWT regex now stops if it sees WL:
+        const twtMatch = text.match(/TWT:([\s\S]*?)(?=WL:|Issues:|GC:|OE:|Tx:|Advice:|$)/i);
+        
+        // NEW: Regex to capture the WL value
+        const wlMatch = text.match(/WL:([\s\S]*?)(?=Issues:|GC:|OE:|Tx:|Advice:|$)/i);
+        
         const issuesMatch = text.match(/Issues:([\s\S]*?)(?=GC:|OE:|Tx:|Advice:|$)/i);
         const gcMatch = text.match(/GC:([\s\S]*?)(?=OE:|Tx:|Advice:|$)/i);
         const oeMatch = text.match(/OE:([\s\S]*?)(?=Tx:|Advice:|$)/i);
         const txMatch = text.match(/Tx:([\s\S]*?)(?=Advice:|$)/i);
         const adviceMatch = text.match(/Advice:([\s\S]*)$/i);
 
-        twtText = twtMatch ? twtMatch[1].trim() : ""; // Extract TWT
+        sbText = sbMatch ? sbMatch[1].trim() : "";
+        twtText = twtMatch ? twtMatch[1].trim() : ""; 
+        wlText = wlMatch ? wlMatch[1].trim() : ""; 
         issuesText = issuesMatch ? issuesMatch[1].replace(/[\r\n]+/g, ' ').trim() : "";
         gcText = gcMatch ? gcMatch[1].trim() : "";
         oeText = oeMatch ? oeMatch[1].trim() : "";
@@ -5150,7 +5129,9 @@ let dobDisplay = patient.dob || '';
     const fieldMap = {
         'date': formatTimestamp(Date.now()),
         'doa': calculateDaysAdmitted(patient.doa),
-        'sb': 'Morning Rounds S/B Dr.',
+        
+        // UPDATED: Dynamically injects the doctor's name you typed
+        'sb': `Morning Rounds S/B Dr. ${sbText}`.trim(),
 
         'name': pName,
         'ID': hospNo,
@@ -5158,12 +5139,12 @@ let dobDisplay = patient.dob || '';
         'AGE': ageDisplay,
         'CGA': cgaDisplay,
 
-        // Maps weight to both bwt and weight to safely catch whichever field the PW_form uses
         'weight': isPaeds ? (patient.weight || '').replace(/kg/i, '').trim() : '',
         'bwt': isPaeds ? (patient.weight || '').replace(/kg/i, '').trim() : bwt,
-        
-        // FIX: Now maps your typed TWT value instead of an empty string
         'twt': twtText.replace(/kg/gi, '').trim(),
+        
+        // NEW: Maps directly to the 'wl' field on your PDF
+        'wl': wlText,
 
         'dx': patient.diagnosis || '',
         'issues': issuesText || (patient.issues || '').replace(/[\r\n]+/g, ' ').trim(),
