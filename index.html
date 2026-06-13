@@ -2558,12 +2558,8 @@ if (cgaLabel) {
     const hopiEl = document.getElementById('det-hopi');
     if(hopiEl) {
         let hopiText = p.hopi || '';
-// 1. Fix ugly dates
+// NEW: Automatically fix ugly dates on the fly before showing in the modal!
         hopiText = hopiText.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 HRS");
-        
-        // 2. Clear any old HTML, then apply bolding to your exact list
-        hopiText = hopiText.replace(/<\/?strong>/g, "");
-        hopiText = hopiText.replace(/(Para Gravida:|Blood Grp & Type:|Any other illness:|Type of Delivery:|Indication:|Date & Time of Delivery:|APGAR at:|1min|5min|10min|Resuscitation:|Sex of Baby:|Maturity:|Weight:|Problems:)/g, "<strong>$1</strong>");
         
         const admPlan = getFirstLoggedPlan(p.logs);
         if(admPlan) {
@@ -2597,16 +2593,8 @@ function refreshModalIfOpen() {
     const hopiEl = document.getElementById('det-hopi');
     if(hopiEl && document.activeElement !== hopiEl) {
         let hopiText = p.hopi || '';
-const hopiEl = document.getElementById('det-hopi');
-    if(hopiEl && document.activeElement !== hopiEl) {
-        let hopiText = p.hopi || '';
-        
-        // 1. Fix ugly dates
+// NEW: Automatically fix ugly dates on the fly before showing in the modal!
         hopiText = hopiText.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 HRS");
-        
-        // 2. Clear any old HTML, then apply bolding to your exact list
-        hopiText = hopiText.replace(/<\/?strong>/g, "");
-        hopiText = hopiText.replace(/(Para Gravida:|Blood Grp & Type:|Any other illness:|Type of Delivery:|Indication:|Date & Time of Delivery:|APGAR at:|1min|5min|10min|Resuscitation:|Sex of Baby:|Maturity:|Weight:|Problems:)/g, "<strong>$1</strong>");
         
         const admPlan = getFirstLoggedPlan(p.logs);
         if(admPlan) {
@@ -3686,7 +3674,7 @@ Booked / Unbooked: ${val(nbValues['Text5'])}
 Immunized / Un-immunized: ${val(nbValues['Text6'])}
 <strong>Para Gravida:</strong> ${val(nbValues['Text7'])}
 Previous Still Birth: ${val(nbValues['Text8'])}
-Weight: ${val(nbValues['Text9'])}
+<strong>Weight:</strong> ${val(nbValues['Text9'])}
 LMP: ${val(nbValues['Text10'])}
 EDD: ${val(nbValues['Text11'])}
 HB: ${val(nbValues['Text12'])}
