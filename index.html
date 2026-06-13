@@ -5023,10 +5023,10 @@ async function generatePrintOnly(patientId) {
     if (!printText) {
         const isPaeds = isPaediatric(p);
         if (isPaeds) {
-            printText = `Morning Rounds S/B Dr. \nWeight: ${p.weight || ''}\n\nIssues: \nGC: \nOE: T:       C, P:        bpm, RR:      , BP:          mmHg, SpO2:     \n\u00A0\nRS: \nCVS: \nPA: \nTx: ${p.medications || ''}\nAdvice:- `;
+            printText = `Morning Rounds S/B Dr. \nWeight: ${p.weight || ''}\n\nIssues: \nGC: \nOE: T:          C, P:           bpm, RR:        , BP:             mmHg, SpO2:     \n\u00A0\nRS: \nCVS: \nPA: \nTx: ${p.medications || ''}\nAdvice:- `;
         } else {
             let bwt = p.newbornData?.['Text41'] || p.weight || '';
-            printText = `Morning Rounds S/B Dr. \nBWT: ${bwt}\nTWT:\n\nIssues: \nGC: \nOE: T:       C, P:        bpm, RR:      , BP:          mmHg, SpO2:     \nRS: \nCVS: \nPA: \n\u00A0\nFeed: \nTF:     \nUOP (ml/kg/hr):     \nI/O:     \nTx: ${p.medications || ''}\nAdvice:- `;
+            printText = `Morning Rounds S/B Dr. \nBWT: ${bwt}\nTWT:\n\nIssues: \nGC: \nOE: T:          C, P:           bpm, RR:        , BP:             mmHg, SpO2:     \nRS: \nCVS: \nPA: \n\u00A0\nFeed: \nTF:     \nUOP (ml/kg/hr):     \nI/O:     \nTx: ${p.medications || ''}\nAdvice:- `;
         }
     }
 
