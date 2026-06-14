@@ -1743,7 +1743,7 @@ function selectDcPatient(id, forceReset = false) {
     const nameWithNid = nidOnly ? `${p.name} (${nidOnly})` : p.name;
     
     let ageDisplay = p.age;
-    if ((type === 'neonate' || type === 'neonate_hx') && p.isAutoAge && p.dob && p.dot) { ageDisplay = calculateCompletedDOL(p.dob, p.dot); }
+    if ((type === 'neonate' || type === 'neonate_hx') && p.isAutoAge && p.dob && p.dot) { ageDisplay = calculateNeonatalAge(p.dob, p.dot).display; }
 
     let formattedBirthDate = nb.Text35 || '';
     if (formattedBirthDate) {
