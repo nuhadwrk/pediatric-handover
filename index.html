@@ -2236,24 +2236,18 @@ async function generateDcDocx() {
              
             <p class="inline-fields"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
 
-<p>
-    <p>
-    <strong style="cursor:pointer;" onclick="toggleTWT('${id}')" title="Update Today's Weight">Weight:</strong> 
-    <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span><span id="twt-disp-${id}">${getLiveTWTDisplay(p)}</span>
-</p>
-<div class="age-toggle" id="twt-toggle-${id}" style="display:none; margin-top:4px;">
-    <label style="font-weight:600; display:block; margin-bottom:4px;">Today's Weight (TWT)</label>
-    <div style="display:flex; gap:6px; align-items:center;">
-        <input type="number" step="0.01" id="twt-input-${id}" placeholder="Kg" value="${p.twt||''}" style="padding:4px; width:80px;" onblur="saveTWT('${id}')">
-        <span>kg</span>
-    </div>
-</div>
-<div class="age-toggle" id="twt-toggle-${id}" style="margin-top:0; border-top:none;">
-    <div class="auto-age-inputs" style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-        <input type="number" step="0.01" id="twt-input-${id}" placeholder="Today's Wt (Kg)" value="${p.twt||''}" style="padding:4px; width:110px;" onblur="saveTWT('${id}')">
-        <span style="font-size:12px; font-weight:600;">Kg</span>
-    </div>
-</div>
+             <p>
+                 <strong style="cursor:pointer;" onclick="toggleTWT('${id}')" title="Update Today's Weight">Weight:</strong> 
+                 <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span><span id="twt-disp-${id}">${getLiveTWTDisplay(p)}</span>
+             </p>
+             <div class="age-toggle" id="twt-toggle-${id}" style="display:none; margin-top:4px;">
+                 <label style="font-weight:600; display:block; margin-bottom:4px;">Today's Weight (TWT)</label>
+                 <div style="display:flex; gap:6px; align-items:center;">
+                     <input type="number" step="0.01" id="twt-input-${id}" placeholder="Kg" value="${p.twt||''}" style="padding:4px; width:80px;" onblur="saveTWT('${id}')">
+                     <span>kg</span>
+                 </div>
+             </div>
+
              <p><strong>Diagnosis:</strong> <span data-field="diagnosis" contenteditable class="editable" onblur="updateField('${id}','diagnosis',this.innerText)">${p.diagnosis||''}</span></p>
              <p><strong>Medications:</strong></p><p><span data-field="medications" contenteditable class="editable" onblur="updateField('${id}','medications',this.innerText)">${p.medications||''}</span></p>
              <p><strong>Issues:</strong> <span data-field="issues" contenteditable class="editable" onblur="updateField('${id}','issues',this.innerText)">${p.issues||''}</span></p>
