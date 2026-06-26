@@ -30,21 +30,66 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     :root {
       --bg: #f4f7fb; --primary: #0066cc; --primary-dark: #004a99; --accent: #2a9d8f; --text: #1d3557;
+      --text-accent: #0066cc;
+      --text-secondary: #666666;
       --card-bg: #ffffff; --shadow: 0 3.8px 11.4px rgba(0,0,0,0.08); --border: #aaa;
       --editable-border: #ccc; --editable-focus: #888;
       --PW: #d1e7ff; --GW: #fde2e4; --SW: #e2f0cb; --PVT: #fff3cd; --ICU: #d4edda; --NICU: #f8d7da; --ER: #f5f5f5; --Discharge: #e2e3e5;
       --new-btn: #f6a623; --discharge-btn: #28a745;
       --panel-width: 437px; --panel-height: 342px;
+      /* Newborn Detail Box Variables */
+      --box-gray-bg: #f9f9f9; --box-gray-border: #eeeeee; --box-gray-text: #333333;
+      --box-red-bg: #fff0f0; --box-red-border: #f5c6cb; --box-red-text: #d32f2f;
+      --box-blue-bg: #e3f2fd; --box-blue-border: #b3e5fc; --box-blue-text: #0277bd;
+      --box-green-bg: #e8f5e9; --box-green-border: #c3e6cb; --box-green-text: #2e7d32;
+      /* Ward Banner Styles */
+      --ward-text: var(--text); --ward-shadow: none;
+      /* Card Label Color */
+      --card-label-color: var(--text);
     }
     [data-theme="dark"] {
       --bg: #1a202c; --primary: #4299e1; --primary-dark: #2b6cb0; --accent: #38b2ac; --text: #e2e8f0;
+      --text-accent: #75a4d0;
+      --text-secondary: #a0aec0;
       --card-bg: #2d3748; --shadow: 0 3.8px 11.4px rgba(0,0,0,0.3); --border: #4a5568;
-      --editable-border: #718096; --editable-focus: #a0aec0;
+      --editable-border: #718096; --editable-focus: #75a4d0;
       --PW: #2c5282; --GW: #9b2c2c; --SW: #5a7f3f; --PVT: #b7791f; --ICU: #276749; --NICU: #9b2c2c; --ER: #4a5568; --Discharge: #3f3f46;
       --new-btn: #f6a623; --discharge-btn: #28a745;
+      /* Newborn Detail Box Variables */
+      --box-gray-bg: #2d3748; --box-gray-border: #4a5568; --box-gray-text: #e2e8f0;
+      --box-red-bg: rgba(229, 62, 62, 0.15); --box-red-border: rgba(229, 62, 62, 0.4); --box-red-text: #feb2b2;
+      --box-blue-bg: rgba(66, 153, 225, 0.15); --box-blue-border: rgba(66, 153, 225, 0.4); --box-blue-text: var(--text-accent);
+      --box-green-bg: rgba(72, 187, 120, 0.15); --box-green-border: rgba(72, 187, 120, 0.4); --box-green-text: #9ae6b4;
+      /* Ward Banner Styles */
+      --ward-text: #ffffff; --ward-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      /* Card Label Color */
+      --card-label-color: var(--text-accent);
+    }
+    [data-theme="superdark"] {
+      --bg: #000000; --primary: #3182ce; --primary-dark: #2b6cb0; --accent: #2a9d8f; --text: #b8c2cc;
+      --text-accent: #5e85aa;
+      --text-secondary: #888888;
+      --card-bg: #121212; --shadow: 0 4px 12px rgba(0,0,0,0.4); --border: #262626;
+      --editable-border: #3a3a3a; --editable-focus: #5e85aa;
+      --PW: #162a45; --GW: #4a1212; --SW: #22381b; --PVT: #4a3412; --ICU: #123022; --NICU: #4a1212; --ER: #262626; --Discharge: #1e1e1e;
+      --new-btn: #f59e0b; --discharge-btn: #10b981;
+      /* Newborn Detail Box Variables */
+      --box-gray-bg: #121212; --box-gray-border: #262626; --box-gray-text: #b8c2cc;
+      --box-red-bg: rgba(239, 68, 68, 0.15); --box-red-border: rgba(239, 68, 68, 0.4); --box-red-text: #feb2b2;
+      --box-blue-bg: rgba(59, 130, 246, 0.15); --box-blue-border: rgba(59, 130, 246, 0.4); --box-blue-text: var(--text-accent);
+      --box-green-bg: rgba(16, 185, 129, 0.15); --box-green-border: rgba(16, 185, 129, 0.4); --box-green-text: #9ae6b4;
+      /* Ward Banner Styles */
+      --ward-text: #ffffff; --ward-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      /* Card Label Color */
+      --card-label-color: var(--text-accent);
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { margin: 0; padding: 22.8px; background: var(--bg); color: var(--text); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    @media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+        body:not(.is-mobile) {
+            zoom: 0.9;
+        }
+    }
     h1 { margin: 0 0 22.8px; text-align: center; font-weight: 700; font-size: 28.5px; }
     
     .top-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 7.6px; margin-bottom: 15.2px; align-items: stretch; }
@@ -69,6 +114,7 @@
     .theme-toggle { background: #6b7280; color: #fff; font-size: 17.1px; width: 42px; padding: 0; }
     .theme-toggle::before { content: '☀'; }
     [data-theme="dark"] .theme-toggle::before { content: '🌙'; }
+    [data-theme="superdark"] .theme-toggle::before { content: '🌑'; }
     
     .top-panel { display: flex; gap: 15.2px; align-items: stretch; justify-content: center; margin: 0 auto 22.8px; max-width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3.8px; }
     .panel-card { background: var(--card-bg); padding: 17.1px; border-radius: 11.4px; box-shadow: var(--shadow); width: var(--panel-width); height: var(--panel-height); flex: 0 0 var(--panel-width); }
@@ -93,7 +139,7 @@
     .new-checkbox label { display: inline-flex; align-items: center; font-size: 15px; }
     .new-checkbox input { width: auto; margin-right: 5px; }
     
-    .ward-header { text-align: center; font-size: 19px; font-weight: 600; margin: 30.4px 0 7.6px; padding: 7.6px; border-radius: 7.6px; }
+    .ward-header { text-align: center; font-size: 19px; font-weight: 600; margin: 30.4px 0 7.6px; padding: 7.6px; border-radius: 7.6px; color: var(--ward-text); text-shadow: var(--ward-shadow); }
     .ward-header.discharge-header { cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .ward-header.discharge-header::before { content: '►'; margin-right: 7.6px; font-size: 15.2px; }
     .ward-header.discharge-header.expanded::before { content: '▼'; }
@@ -106,7 +152,42 @@
     .patient-card { background: var(--card-bg); padding: 17.1px; border-radius: 11.4px; box-shadow: var(--shadow); position: relative; transition: transform 0.18s; padding-top: 50px; font-size: 15px; width: 285px; }
     .patient-card:hover { transform: scale(1.015); }
     .patient-card p { margin: 3.8px 0; font-size: 15px; }
-    .patient-card p strong { font-weight: 700; font-size: 15px; }
+    .patient-card p strong { font-weight: 700; font-size: 15px; color: var(--card-label-color); }
+    
+    /* Modern Key-Value Grid Layout */
+    .patient-card .card-field {
+        display: flex;
+        justify-content: flex-start;
+        align-items: baseline;
+        padding: 3px 0;
+        margin: 2px 0;
+    }
+    .patient-card .card-field strong {
+        color: var(--card-label-color);
+        font-weight: 700;
+        font-size: 15px;
+        flex-shrink: 0;
+        margin-right: 6px;
+    }
+    .patient-card .card-field .editable {
+        color: var(--text);
+        text-align: left;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .patient-card .card-field.block-field {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .patient-card .card-field.block-field strong {
+        margin-bottom: 4px;
+        margin-right: 0;
+    }
+    .patient-card .card-field.block-field .editable {
+        display: block;
+        width: 100%;
+    }
+
     
     .card-ctrl { position: absolute; top: 10px; height: 26px; border-radius: 3.8px; display: flex; align-items: center; justify-content: center; font-size: 12.4px; z-index: 10; font-weight: 600; }
     .delete-btn { right: 9.5px; border: none; cursor: pointer; opacity: 0.7; background: #e63946; color: #fff; padding: 0 8px; min-width: 26px; }
@@ -127,7 +208,7 @@
     }
 
     /* ARROW & EXPANSION STYLES */
-    .hopi-toggle { cursor: pointer; color: var(--text); font-weight: 600; margin: 3.8px 0; font-size: 15px; display: inline-flex; align-items: center; }
+    .hopi-toggle { cursor: pointer; color: var(--card-label-color); font-weight: 600; margin: 3.8px 0; font-size: 15px; display: inline-flex; align-items: center; }
     .hopi-toggle::after { content: '►'; margin-left: 5px; font-size: 12px; transition: transform 0.2s; display: inline-block; }
     .hopi-toggle.expanded::after { transform: rotate(90deg); }
 
@@ -159,7 +240,7 @@
         content: ''; position: absolute; left: -4px; top: 6px; 
         width: 6px; height: 6px; border-radius: 50%; background: var(--primary); 
     }
-    .patient-card .history-date { font-size: 11px; opacity: 0.8; font-weight: 700; color: var(--primary); }
+    .patient-card .history-date { font-size: 11px; font-weight: 700; color: var(--text-accent); }
     .patient-card .history-text { font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
     
     .recent-logs-container { margin: 8px 0; max-height: 275px; overflow-y: auto; padding-left: 4px; transition: opacity 0.2s; }
@@ -170,7 +251,7 @@
     .recent-logs-container:hover::-webkit-scrollbar-thumb, .hopi-content:hover::-webkit-scrollbar-thumb { visibility: visible; }
 
     /* EDIT & DELETE STYLES FOR LOGS */
-    .edit-history-link { font-size: 12px; color: var(--primary); cursor: pointer; margin-left: auto; margin-right: 10px; font-weight: 600; }
+    .edit-history-link { font-size: 12px; color: var(--text-accent); cursor: pointer; margin-left: auto; margin-right: 10px; font-weight: 600; }
     .edit-history-link:hover { text-decoration: underline; }
 
     .history-text[contenteditable="true"]:hover,
@@ -193,19 +274,25 @@
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
     .modal-overlay.active { display: flex; }
     .modal-content { background: var(--card-bg); width: 95%; max-width: 1000px; height: 85vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    @media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+        body:not(.is-mobile) .modal-content {
+            width: 1000px;
+            height: 900px;
+        }
+    }
     .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 12px 12px 0 0; flex-shrink: 0; flex-wrap: wrap; gap: 10px; }
     .modal-header h2 { margin: 0; font-size: 20px; }
     .close-modal { background: none; border: none; font-size: 32px; color: var(--text); cursor: pointer; padding: 10px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
     .modal-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--card-bg); padding: 0 20px; overflow-x: auto; flex-shrink: 0; }
     .tab-btn { padding: 12px 20px; background: none; border: none; font-weight: 600; color: var(--text); opacity: 0.6; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; font-size: 14px; }
-    .tab-btn.active { opacity: 1; border-bottom-color: var(--primary); color: var(--primary); }
+    .tab-btn.active { opacity: 1; border-bottom-color: var(--text-accent); color: var(--text-accent); }
     .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; animation: fadeIn 0.2s; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .sleek-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 10px; }
     .sleek-row { margin-bottom: 15px; }
-    .sleek-label { font-size: 12px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sleek-label { font-size: 12px; font-weight: 700; color: var(--text-accent); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
     .sleek-input { font-size: 14px; color: var(--text); background: transparent; border-bottom: none; width: 100%; display: block; padding-bottom: 2px; min-height: 20px; outline: none; word-wrap: break-word; line-height: 1.5; }
     .compact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 15px; margin-bottom: 15px; }
     .lab-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
@@ -225,35 +312,35 @@
     .history-list { list-style: none; padding: 0; margin: 15px 0; }
     .history-item { border-left: 2px solid var(--border); padding-left: 15px; margin-bottom: 20px; position: relative; }
     .history-item::before { content: ''; position: absolute; left: -5px; top: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
-    .history-date { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .history-date { font-size: 12px; font-weight: 700; color: var(--text-accent); margin-bottom: 4px; }
     .history-text { white-space: pre-wrap; font-size: 14px; }
     .btn-sm { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; background: var(--primary); color: white; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .form-control { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 
-    /* ADMISSION SYSTEM STYLES */
-    #admission-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
-    #adm-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; height: 50px; }
+    #admission-system { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: none; flex-direction: column; }
+    #adm-header { background: var(--card-bg); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); height: 50px; color: var(--text); }
     #adm-body { flex: 1; display: flex; overflow: hidden; position: relative; }
-    .adm-sidebar { width: 250px; background: white; border-right: 1px solid #ccc; display: flex; flex-direction: column; padding: 15px; transition: transform 0.3s; z-index: 5500; }
+    .adm-sidebar { width: 250px; background: var(--card-bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 15px; transition: transform 0.3s; z-index: 5500; color: var(--text); }
     .adm-sidebar-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary); margin-right: 15px; }
-    .mode-card { border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; background: #f8f9fa; }
+    .mode-card { border: 1px solid var(--border); padding: 12px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; background: var(--bg); color: var(--text); }
     .mode-card.active { background: var(--primary); color: white; border-color: var(--primary); }
     .adm-viewport { flex: 1; position: relative; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; padding-bottom: 80px; }
     
     /* Shared style for both Detail boxes */
-    #adm-std-details, #adm-newborn-details { width: 100%; max-width: 800px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
+    #adm-std-details, #adm-newborn-details { width: 100%; max-width: 800px; background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); color: var(--text); }
     
     /* Use common form group styles within them */
     #adm-std-details .form-group, #adm-newborn-details .form-group { margin-bottom: 8px; }
     #adm-std-details label, #adm-newborn-details label { font-size: 10px; margin-bottom: 2px; }
-    #adm-std-details input, #adm-std-details select, #adm-newborn-details input, #adm-newborn-details select { padding: 4px; height: auto; font-size: 13px; }
+    #adm-std-details input, #adm-std-details select, #adm-newborn-details input, #adm-newborn-details select { padding: 4px; height: auto; font-size: 13px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; }
 
-    #view-form { width: 100%; max-width: 800px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; margin-bottom: 50px; overflow: visible; }
+    #view-form { width: 100%; max-width: 800px; background: var(--card-bg); padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; margin-bottom: 50px; overflow: visible; color: var(--text); }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 3px; text-transform: uppercase; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .form-group label { display: block; font-size: 11px; font-weight: bold; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; background: var(--bg); color: var(--text); }
     .form-group textarea { min-height: 60px; resize: vertical; }
+    #f-past, #f-personal, #f-ge { min-height: 120px; }
     #view-pdf { width: 100%; display: none; flex-direction: column; align-items: center; }
     #pdf-stage { margin-bottom: 80px; position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
 
@@ -301,8 +388,8 @@
 
     .warning-text { color: #d32f2f; font-size: 12px; margin-top: 4px; display: none; font-weight: bold; }
 
-    #adm-toolbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 8px 20px; border-radius: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; gap: 10px; align-items: center; z-index: 6000; border: 1px solid #ddd; }
-    .tool-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: 600; font-size: 13px; }
+    #adm-toolbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--card-bg); padding: 8px 20px; border-radius: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; gap: 10px; align-items: center; z-index: 6000; border: 1px solid var(--border); color: var(--text); }
+    .tool-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--card-bg); cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text); }
     .tool-btn.primary { background: var(--primary); color: white; border: none; }
     
     body.is-mobile .adm-sidebar { position: absolute; top: 0; left: 0; bottom: 0; transform: translateX(-100%); box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
@@ -342,8 +429,8 @@
     }
 
     /* DISCHARGE CENTER STYLES */
-    #discharge-system { position: fixed; inset: 0; background: #eaeff5; z-index: 5000; display: none; flex-direction: column; }
-    #dc-header { background: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; min-height: 60px; flex-wrap: wrap; }
+    #discharge-system { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: none; flex-direction: column; }
+    #dc-header { background: var(--card-bg); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); min-height: 60px; flex-wrap: wrap; color: var(--text); }
     .dc-selector { font-size: 16px; padding: 5px; min-width: 300px; }
     .dc-header-content { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex: 1; }
     .dc-selects { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -354,11 +441,13 @@
     .dc-split-view { display: flex; width: 100%; height: 100%; }
 
     /* Left Pane: The Form */
-    .dc-form-pane { flex: 6; overflow-y: auto; padding: 20px; background: #fff; border-right: 2px solid #ccc; }
-    .dc-paper { background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 850px; margin: 0 auto; }
+    .dc-form-pane { flex: 6; overflow-y: auto; padding: 20px; background: var(--bg); border-right: 2px solid var(--border); }
+    .dc-paper { background: var(--card-bg); padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 850px; margin: 0 auto; }
+    .dc-paper, .dc-paper * { color: var(--text) !important; }
+    .dc-paper textarea, .dc-paper input { color: var(--text) !important; background: transparent !important; }
 
     /* Right Pane: History */
-    .dc-history-pane { flex: 4; overflow-y: auto; padding: 20px; background: #f4f7fb; }
+    .dc-history-pane { flex: 4; overflow-y: auto; padding: 20px; background: var(--bg); }
     
     /* REUSED CLASSES FROM MODAL for consistency */
     .dc-history-item { 
@@ -369,7 +458,7 @@
         content: ''; position: absolute; left: -5px; top: 0; 
         width: 8px; height: 8px; border-radius: 50%; background: var(--primary); 
     }
-    .dc-history-date { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .dc-history-date { font-size: 12px; font-weight: 700; color: var(--text-accent); margin-bottom: 4px; }
     .dc-history-text { white-space: pre-wrap; font-size: 14px; }
 
     /* SCOPED STYLES FOR DC TEMPLATE */
@@ -380,7 +469,7 @@
     #dc-form-container h1.dc-title { font-family: "Times New Roman", serif; font-weight: bold; text-decoration: underline; font-size: 14pt; text-align: center; margin: 10px 0; color: black; }
     
     #dc-form-container table { width: 100%; border-collapse: collapse; font-family: "Times New Roman", serif; table-layout: fixed; }
-    #dc-form-container td { border: 1px solid black !important; padding: 2px; vertical-align: top; }
+    #dc-form-container td { border: 1px solid var(--border) !important; padding: 2px; vertical-align: top; }
     #dc-form-container textarea { width: 100%; border: none; font-family: "Times New Roman", serif; font-size: 11pt; resize: both; overflow: hidden; min-height: 25px; background: transparent; padding: 0; display: block; vertical-align: top; }
     
     /* SLEEK BUTTON STYLE for DC Download & Reset */
@@ -525,6 +614,14 @@
   </style>
 
   <script>
+    // Load theme immediately to prevent flashing
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    })();
+
     // === LAZY LOADING UTILITIES ===
     // Track loaded libraries to avoid loading twice
     const loadedLibraries = {};
@@ -681,7 +778,7 @@
              <div>
                 <div class="sleek-row"><span class="sleek-label">Name</span><div contenteditable="true" id="det-name" class="sleek-input" data-field="name" onblur="updateFromDetail('name', this.innerText)"></div></div>
                 <div class="sleek-grid" style="grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
-                   <div><span class="sleek-label">Hosp. No.</span><div contenteditable="true" id="det-hosp" class="sleek-input" onblur="updateIdFromDetail()"></div></div>
+                   <div><span class="sleek-label" style="cursor:pointer;" title="Search HNo in Dharaka" onclick="openDharakaSearch(document.getElementById('det-hosp').innerText)">Hosp. No.</span><div contenteditable="true" id="det-hosp" class="sleek-input" onblur="updateIdFromDetail()"></div></div>
                    <div><span class="sleek-label">NID No.</span><div contenteditable="true" id="det-nid" class="sleek-input" onblur="updateIdFromDetail()"></div></div>
                 </div>
              </div>
@@ -881,8 +978,8 @@
 
 <div id="view-newborn" style="display:none;" class="nb-two-column">
       <div class="nb-col">
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
-         <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Mother's Identity</h4>
+            <div style="background: var(--box-gray-bg); padding:15px; border-radius:8px; border:1px solid var(--box-gray-border);">
+         <h4 style="margin:0 0 15px; color: var(--box-gray-text); font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--box-gray-border); padding-bottom:5px;">Mother's Identity</h4>
          <div class="form-grid">
             <div class="form-group"><label>Name</label><input type="text" id="nb-m-name" oninput="updateNbField('Text1', this.value); syncBabyName(); syncNbVisualField('Text1', this.value);"></div>
             <div class="form-group"><label>Age</label><input type="text" id="nb-m-age" value="years" oninput="updateNbField('Text2', this.value)"></div>
@@ -914,8 +1011,8 @@
          <div class="form-group"><label>Weight / BMI</label><input id="nb-weight-bmi" type="text" value="Kg/m2" oninput="updateNbField('Text9', this.value)"></div>
       </div>
 
-      <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #eee;">
-         <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #ddd; padding-bottom:5px;">Antenatal Labs</h4>
+      <div style="background: var(--box-gray-bg); padding:15px; border-radius:8px; border:1px solid var(--box-gray-border);">
+         <h4 style="margin:0 0 15px; color: var(--box-gray-text); font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--box-gray-border); padding-bottom:5px;">Antenatal Labs</h4>
          <div class="form-grid">
             <div class="form-group"><label>LMP</label><input id="nb-lmp" type="text" placeholder="DD/MM/YYYY" oninput="updateNbField('Text10', this.value)"></div>
             <div class="form-group"><label>EDD</label><input id="nb-edd" type="text" placeholder="DD/MM/YYYY" oninput="updateNbField('Text11', this.value)"></div>
@@ -940,8 +1037,8 @@
          </div>
       </div>
       
-      <div style="background:#fff0f0; padding:15px; border-radius:8px; border:1px solid #f5c6cb;">
-         <h4 style="margin:0 0 15px; color:#d32f2f; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #f5c6cb; padding-bottom:5px;">Risk Factors & Labor</h4>
+      <div style="background: var(--box-red-bg); padding:15px; border-radius:8px; border:1px solid var(--box-red-border); color: var(--text);">
+         <h4 style="margin:0 0 15px; color: var(--box-red-text); font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--box-red-border); padding-bottom:5px;">Risk Factors & Labor</h4>
          <div class="form-grid">
             <div class="form-group"><label>Toxemia</label><input id="nb-toxemia" type="text" value="-" oninput="updateNbField('Text16', this.value)"></div>
             <div class="form-group"><label>Hydramnios</label><input id="nb-hydramnios" type="text" value="-" oninput="updateNbField('Text17', this.value)"></div>
@@ -979,8 +1076,8 @@
    </div>
 
    <div class="nb-col">
-      <div style="background:#e3f2fd; padding:15px; border-radius:8px; border:1px solid #b3e5fc;">
-         <h4 style="margin:0 0 15px; color:#0277bd; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #b3e5fc; padding-bottom:5px;">Baby's Birth Details</h4>
+      <div style="background: var(--box-blue-bg); padding:15px; border-radius:8px; border:1px solid var(--box-blue-border); color: var(--text);">
+         <h4 style="margin:0 0 15px; color: var(--box-blue-text); font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--box-blue-border); padding-bottom:5px;">Baby's Birth Details</h4>
          <div class="form-grid">
             <div class="form-group">
                 <label>Delivery Mode</label>
@@ -1037,8 +1134,8 @@
          </div>
       </div>
 
-      <div style="padding:15px; border:1px solid #eee; border-radius:8px;">
-         <h4 style="margin:0 0 15px; color:#555; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #eee; padding-bottom:5px;">Baby Exam & Inv</h4>
+      <div style="background: var(--box-gray-bg); padding:15px; border-radius:8px; border:1px solid var(--box-gray-border);">
+         <h4 style="margin:0 0 15px; color: var(--box-gray-text); font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--box-gray-border); padding-bottom:5px;">Baby Exam & Inv</h4>
          <div class="form-grid">
             <div class="form-group"><label>Cong. Anomalies</label>
                 <input list="lst-cong-anom" value="" placeholder="Select..." onfocus="this.select()" oninput="updateNbField('Text43', this.value)">
@@ -1073,8 +1170,8 @@
          <div class="form-group"><label>Any other (Inv)</label><input id="nb-any-other-inv" type="text" value="-" oninput="updateNbField('Text53', this.value)"></div>
       </div>
    </div>
-   <div class="nb-bottom-span" style="background:#e8f5e9; padding:15px; border-radius:8px; border:1px solid #c3e6cb;">
-       <h4 style="margin:0 0 15px; color:#2e7d32; font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid #c3e6cb; padding-bottom:5px;">Assessment & Plan</h4>
+   <div class="nb-bottom-span" style="background: var(--box-green-bg); padding:15px; border-radius:8px; border:1px solid var(--box-green-border); color: var(--text);">
+       <h4 style="margin:0 0 15px; color: var(--box-green-text); font-size:13px; text-transform:uppercase; font-weight:700; border-bottom:1px solid var(--box-green-border); padding-bottom:5px;">Assessment & Plan</h4>
        <div class="form-group"><label>Condition</label>
            <textarea id="nb-condition" rows="2" oninput="updateNbField('Text66', this.value)">Baby born vigorous, cried immediately after birth</textarea>
        </div>
@@ -2208,53 +2305,53 @@ async function generateDcDocx() {
              <button class="delete-btn card-ctrl" onclick="deletePatient('${id}')">×</button>
              <span class="new-badge${p.isNew?' new-active':''} card-ctrl">NEW</span>${disTag}
              
-             <p><strong>Name:</strong> <span data-field="name" contenteditable class="editable" onblur="updateField('${id}','name',this.innerText)">${p.name}</span></p>
-             <p><strong style="cursor:pointer;" title="Click to copy HNo" onclick="copyFromLabel('val-hno-${id}', this, 'HNo:')">HNo:</strong> <span id="val-hno-${id}" data-field="id" contenteditable class="editable" onblur="updateField('${id}','id',this.innerText)">${p.id||''}</span></p>
+             <p class="card-field"><strong>Name:</strong> <span data-field="name" contenteditable class="editable" onblur="updateField('${id}','name',this.innerText)">${p.name}</span></p>
+             <p class="card-field"><strong style="cursor:pointer;" title="Search HNo in Dharaka" onclick="openDharakaSearch(document.getElementById('val-hno-${id}').innerText)">HNo:</strong> <span id="val-hno-${id}" data-field="id" contenteditable class="editable" onblur="updateField('${id}','id',this.innerText)">${p.id||''}</span></p>
     
-    <p><strong style="cursor:pointer;" title="Click to copy NID" onclick="copyFromLabel('val-nid-${id}', this, 'NID:')">NID:</strong> <span id="val-nid-${id}" data-field="nid" contenteditable class="editable" onblur="updateField('${id}','nid',this.innerText)">${p.nid||''}</span></p>
-             <p><strong>DOA:</strong> <span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></p>
-             <p><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
-             <p><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
-             <p><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span><span id="cga-label-${id}">${getLiveCGA(p)}</span>
-
-             <div class="age-toggle" id="age-toggle-${id}">
-                <label><input type="radio" name="ageMode-${id}" value="manual" ${!p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Man</label>
-                <label><input type="radio" name="ageMode-${id}" value="auto" ${p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Auto</label>
-                <div class="auto-age-inputs" id="auto-age-${id}" style="display:${p.isAutoAge?'flex':'none'}">
-                   <input type="date" id="dob-${id}" value="${p.dob||''}" onblur="saveAgeMode('${id}')"><input type="time" id="dot-${id}" value="${p.dot||''}" onblur="saveAgeMode('${id}')">
-                </div>
-                <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #ccc;">
-                   <label style="font-weight:600; display:block; margin-bottom:4px;">GA (Gestational Age)</label>
-                   <div style="display:flex; gap:6px; align-items:center;">
-                      <input type="number" id="ga-weeks-${id}" placeholder="Weeks" min="0" max="50" value="${p.gaWeeks||''}" style="padding:4px; width:60px;" onblur="saveGAData('${id}')">
-                      <span>weeks</span>
-                      <input type="number" id="ga-days-${id}" placeholder="Days" min="0" max="6" value="${p.gaDays||''}" style="padding:4px; width:50px;" onblur="saveGAData('${id}')">
-                      <span>days</span>
-                   </div>
-                </div>
-             </div>
-             
-            <p class="inline-fields"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
-
-             <p>
-                 <strong style="cursor:pointer;" onclick="toggleTWT('${id}')" title="Update Today's Weight">Weight:</strong> 
-                 <span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span><span id="twt-disp-${id}">${getLiveTWTDisplay(p)}</span>
-             </p>
-             <div class="age-toggle" id="twt-toggle-${id}" style="display:none; margin-top:4px;">
-                 <label style="font-weight:600; display:block; margin-bottom:4px;">Today's Weight (TWT)</label>
-                 <div style="display:flex; gap:6px; align-items:center;">
-                     <input type="number" step="0.01" id="twt-input-${id}" placeholder="Kg" value="${p.twt||''}" style="padding:4px; width:80px;" onblur="saveTWT('${id}')">
-                     <span>kg</span>
+    <p class="card-field"><strong style="cursor:pointer;" title="Click to copy NID" onclick="copyFromLabel('val-nid-${id}', this, 'NID:')">NID:</strong> <span id="val-nid-${id}" data-field="nid" contenteditable class="editable" onblur="updateField('${id}','nid',this.innerText)">${p.nid||''}</span></p>
+             <p class="card-field"><strong>DOA:</strong> <span style="display:inline-flex; gap:5px; align-items:baseline;"><span data-field="doa" contenteditable class="editable" onblur="updateField('${id}','doa',this.innerText)">${p.doa||''}</span> <span>(${days})</span></span></p>
+             <p class="card-field"><strong>Shift:</strong> <span data-field="shift" contenteditable class="editable" onblur="updateField('${id}','shift',this.innerText)">${p.shift||''}</span></p>
+             <p class="card-field"><strong>Bed:</strong> <span data-field="bed" contenteditable class="editable" onblur="updateField('${id}','bed',this.innerText)">${p.bed||''}</span></p>
+             <p class="card-field"><strong onclick="toggleAgeMode('${id}')">Age:</strong> <span style="display:inline-flex; gap:5px; align-items:baseline;"><span data-field="age" id="age-disp-${id}" contenteditable="${!p.isAutoAge}" onblur="updateField('${id}','age',this.innerText)">${age}</span><span id="cga-label-${id}">${getLiveCGA(p)}</span></span></p>
+ 
+              <div class="age-toggle" id="age-toggle-${id}">
+                 <label><input type="radio" name="ageMode-${id}" value="manual" ${!p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Man</label>
+                 <label><input type="radio" name="ageMode-${id}" value="auto" ${p.isAutoAge?'checked':''} onchange="toggleAutoInputs('${id}')"> Auto</label>
+                 <div class="auto-age-inputs" id="auto-age-${id}" style="display:${p.isAutoAge?'flex':'none'}">
+                    <input type="date" id="dob-${id}" value="${p.dob||''}" onblur="saveAgeMode('${id}')"><input type="time" id="dot-${id}" value="${p.dot||''}" onblur="saveAgeMode('${id}')">
                  </div>
-             </div>
-
-             <p><strong>Diagnosis:</strong> <span data-field="diagnosis" contenteditable class="editable" onblur="updateField('${id}','diagnosis',this.innerText)">${p.diagnosis||''}</span></p>
-             <p><strong>Medications:</strong></p><p><span data-field="medications" contenteditable class="editable" onblur="updateField('${id}','medications',this.innerText)">${p.medications||''}</span></p>
-             <p><strong>Issues:</strong> <span data-field="issues" contenteditable class="editable" onblur="updateField('${id}','issues',this.innerText)">${p.issues||''}</span></p>
+                 <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #ccc;">
+                    <label style="font-weight:600; display:block; margin-bottom:4px;">GA (Gestational Age)</label>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                       <input type="number" id="ga-weeks-${id}" placeholder="Weeks" min="0" max="50" value="${p.gaWeeks||''}" style="padding:4px; width:60px;" onblur="saveGAData('${id}')">
+                       <span>weeks</span>
+                       <input type="number" id="ga-days-${id}" placeholder="Days" min="0" max="6" value="${p.gaDays||''}" style="padding:4px; width:50px;" onblur="saveGAData('${id}')">
+                       <span>days</span>
+                    </div>
+                 </div>
+              </div>
+              
+             <p class="card-field"><strong>Sex:</strong> <span data-field="sex" contenteditable class="editable" onblur="updateField('${id}','sex',this.innerText)">${p.sex||''}</span></p>
+ 
+              <p class="card-field">
+                  <strong style="cursor:pointer;" onclick="toggleTWT('${id}')" title="Update Today's Weight">Weight:</strong> 
+                  <span style="display:inline-flex; gap:5px; align-items:baseline;"><span data-field="weight" contenteditable class="editable" onblur="updateField('${id}','weight',this.innerText)">${p.weight||''}</span><span id="twt-disp-${id}">${getLiveTWTDisplay(p)}</span></span>
+              </p>
+              <div class="age-toggle" id="twt-toggle-${id}" style="display:none; margin-top:4px;">
+                  <label style="font-weight:600; display:block; margin-bottom:4px;">Today's Weight (TWT)</label>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                      <input type="number" step="0.01" id="twt-input-${id}" placeholder="Kg" value="${p.twt||''}" style="padding:4px; width:80px;" onblur="saveTWT('${id}')">
+                      <span>kg</span>
+                  </div>
+              </div>
+ 
+              <p class="card-field block-field"><strong>Diagnosis:</strong> <span data-field="diagnosis" contenteditable class="editable" onblur="updateField('${id}','diagnosis',this.innerText)">${p.diagnosis||''}</span></p>
+              <p class="card-field block-field"><strong>Medications:</strong> <span data-field="medications" contenteditable class="editable" onblur="updateField('${id}','medications',this.innerText)">${p.medications||''}</span></p>
+              <p class="card-field block-field"><strong>Issues:</strong> <span data-field="issues" contenteditable class="editable" onblur="updateField('${id}','issues',this.innerText)">${p.issues||''}</span></p>
              
              <p><strong class="hopi-toggle" id="hopi-toggle-btn-${id}" onclick="toggleHopi('${id}')">HOPI:</strong></p>
              <div class="hopi-content" id="hopi-content-${id}">
-                <span data-field="hopi" contenteditable class="editable" onblur="updateField('${id}','hopi',this.innerText)">${p.hopi||''}</span>
+                <span data-field="hopi" contenteditable class="editable" onblur="updateField('${id}','hopi',this.innerText)">${renderHopi(p.hopi||'')}</span>
              </div>
              
              <p style="display:flex; justify-content:space-between; align-items:center;">
@@ -2308,6 +2405,82 @@ async function generateDcDocx() {
             db.collection('patients').doc(id).update({ currentPlanDraft: text });
         }, 800);
     }
+  function openDharakaSearch(hno) {
+      const cleanHno = hno ? hno.trim() : '';
+      if (!cleanHno) return;
+      const url = `http://dharaka.hmh.mv/Home/SearchOrder?criteria=HNO&searchValue=${encodeURIComponent(cleanHno)}`;
+      window.open(url, '_blank');
+  }
+
+  function renderHopi(rawText) {
+      if (!rawText) return '';
+      let text = rawText;
+      
+      // Strip any existing strong tags first to prevent duplicate nesting
+      text = text.replace(/<\/?strong>/g, '');
+      
+      // Format any YYYY-MM-DD[T/ ]HH:MM dates to DD-MM-YYYY, HH:MM Hrs
+      text = text.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 Hrs");
+      
+      // Split into lines to track context (Mother vs Baby details)
+      let lines = text.split('\n');
+      let inBabyDetails = false;
+      
+      for (let i = 0; i < lines.length; i++) {
+          let line = lines[i];
+          
+          if (line.includes("BABY'S DETAILS")) {
+              inBabyDetails = true;
+          }
+          if (line.includes("MOTHER'S DETAILS")) {
+              inBabyDetails = false;
+          }
+          
+          // Specific important labels to bold along with their values on that line
+          const boldLineLabels = [
+              "Para Gravida", "Blood Grp & Type", "Any other illness",
+              "Type of Delivery", "Indication", "Date & Time of Delivery",
+              "APGAR at", "Resuscitation", "Sex of Baby", "Maturity"
+          ];
+          
+          // Bold Baby's weight, but not Mother's weight
+          if (inBabyDetails) {
+              boldLineLabels.push("Weight");
+          }
+          
+          boldLineLabels.forEach(label => {
+              const escaped = label.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+              const regex = new RegExp(`(^|\\b)(${escaped}):([^\n]*)`, 'g');
+              line = line.replace(regex, `$1<strong>$2:$3</strong>`);
+          });
+          
+          // Bold only the label for Problems
+          if (line.includes("Problems:")) {
+              line = line.replace(/(Problems):/g, '<strong>$1:</strong>');
+          }
+          
+          // Bold Summary header
+          if (line.includes("Summary:")) {
+              line = line.replace(/(Summary):/g, '<strong>$1:</strong>');
+          }
+          
+          // Bold Maternal details sub-headers
+          if (line.includes("Maternal:")) {
+              line = line.replace(/(Maternal):/g, '<strong>$1:</strong>');
+              line = line.replace(/\b(KCO|BG):/g, '<strong>$1:</strong>');
+          }
+          
+          // Bold internal APGAR subheadings (only 1min, 5min, 10min) if not already wrapped
+          if (line.includes("APGAR at:") && !line.includes("<strong>")) {
+              line = line.replace(/\b(1min|5min|10min)\b/g, '<strong>$1</strong>');
+          }
+          
+          lines[i] = line;
+      }
+      
+      return lines.join('\n');
+  }
+
   function copyFromLabel(valueId, labelEl, originalText) {
         const textToCopy = document.getElementById(valueId).innerText.trim();
         if (!textToCopy) return;
@@ -2337,7 +2510,12 @@ async function generateDcDocx() {
                     if(el.innerText !== val) el.innerText = val;
                     if(el.nextElementSibling) el.nextElementSibling.innerText = `(${calculateDaysAdmitted(val)})`;
                 } else {
-                    if(el.innerText !== val) el.innerText = val;
+                    if (f === 'hopi') {
+                        const formatted = renderHopi(val);
+                        if(el.innerHTML !== formatted) el.innerHTML = formatted;
+                    } else {
+                        if(el.innerText !== val) el.innerText = val;
+                    }
                 }
             }
         });
@@ -2579,7 +2757,20 @@ if (cgaLabel) {
          timestamp:Date.now(), logs: initialLogs, lastLoggedPlan: initialPlan, labs:{dates:[],tests:{}}, images:[], cardNotes: ''
        }).then(()=>document.getElementById('formSection').style.display='none');
     }
-    function toggleDarkMode() { const h=document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); }
+    function toggleDarkMode() {
+        const h = document.documentElement;
+        const current = h.getAttribute('data-theme') || 'light';
+        let next = 'light';
+        if (current === 'light') {
+            next = 'dark';
+        } else if (current === 'dark') {
+            next = 'superdark';
+        } else {
+            next = 'light';
+        }
+        h.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+    }
 
     // --- DETAIL MODAL ---
     function openModal(id) {
@@ -2602,13 +2793,13 @@ if (cgaLabel) {
     if(hopiEl) {
         let hopiText = p.hopi || '';
 // NEW: Automatically fix ugly dates on the fly before showing in the modal!
-        hopiText = hopiText.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 HRS");
+        hopiText = hopiText.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 Hrs");
         
         const admPlan = getFirstLoggedPlan(p.logs);
         if(admPlan) {
-            hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
+            hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
         }
-        hopiEl.innerHTML = hopiText;
+        hopiEl.innerHTML = renderHopi(hopiText);
     }
 
     const hosp = document.getElementById('det-hosp');
@@ -2637,13 +2828,13 @@ function refreshModalIfOpen() {
     if(hopiEl && document.activeElement !== hopiEl) {
         let hopiText = p.hopi || '';
 // NEW: Automatically fix ugly dates on the fly before showing in the modal!
-        hopiText = hopiText.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 HRS");
+        hopiText = hopiText.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 Hrs");
         
         const admPlan = getFirstLoggedPlan(p.logs);
         if(admPlan) {
-            hopiText = hopiText ? `${hopiText}\n\n<strong>Admission Plan:</strong>\n${admPlan}` : `<strong>Admission Plan:</strong>\n${admPlan}`;
+            hopiText = hopiText ? `${hopiText}\n\nAdmission Plan:\n${admPlan}` : `Admission Plan:\n${admPlan}`;
         }
-        hopiEl.innerHTML = hopiText;
+        hopiEl.innerHTML = renderHopi(hopiText);
     }
     if(document.getElementById('tab-labs').classList.contains('active')) renderLabMatrix();
     if(document.getElementById('tab-imaging').classList.contains('active')) renderImages();
@@ -3700,34 +3891,52 @@ function syncFromVisualToForm(fieldName, value) {
 // --- HOPI GENERATOR HELPER ---
     function getNewbornHopiText() {
         const val = (v) => v || '-';
-// NEW: Helper to format the ugly ISO date into a nice string
         const niceDate = (v) => {
             if (!v) return '-';
             const match = v.match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/);
-            if (match) return `${match[3]}-${match[2]}-${match[1]}, ${match[4]} HRS`;
+            if (match) return `${match[3]}-${match[2]}-${match[1]}, ${match[4]} Hrs`;
             return v;
         };
 
-        return `MOTHER'S DETAILS
+        const sex = nbValues['Text39'] ? `${nbValues['Text39']} Baby` : 'Baby';
+        const birthDate = niceDate(nbValues['Text35']);
+        const deliveryType = nbValues['Text30'] || '-';
+        const indication = nbValues['Text31'] ? ` (${nbValues['Text31']})` : '';
+        const maturity = nbValues['Text40'] || '-';
+        const birthWeight = nbValues['Text41'] || '-';
+        const apgar = `${val(nbValues['Text32'])}, ${val(nbValues['Text33'])}, ${val(nbValues['Text34'])}`;
+        const problems = val(nbValues['Text66']);
+        
+        const maternalAge = nbValues['Text2'] || '-';
+        const paraGravida = nbValues['Text7'] || '-';
+        const maternalIllness = nbValues['Text20'] || '-';
+        const maternalBloodGroup = nbValues['Text13'] || '-';
+
+        return `Summary:
+${sex} born on ${birthDate} via ${deliveryType}${indication} at ${maturity}, Birth weight: ${birthWeight}, Apgar: ${apgar}
+${problems}
+Maternal: ${maternalAge}, ${paraGravida}, KCO: ${maternalIllness}, BG: ${maternalBloodGroup}
+
+MOTHER'S DETAILS
 Name: ${val(nbValues['Text1'])}
 Age: ${val(nbValues['Text2'])}
 MRD No: ${val(nbValues['Text3'])}
 Consanguinity: ${val(nbValues['Text4'])}
 Booked / Unbooked: ${val(nbValues['Text5'])}
 Immunized / Un-immunized: ${val(nbValues['Text6'])}
-<strong>Para Gravida:</strong> ${val(nbValues['Text7'])}
+Para Gravida: ${paraGravida}
 Previous Still Birth: ${val(nbValues['Text8'])}
-<strong>Weight:</strong> ${val(nbValues['Text9'])}
+Weight: ${val(nbValues['Text9'])}
 LMP: ${val(nbValues['Text10'])}
 EDD: ${val(nbValues['Text11'])}
 HB: ${val(nbValues['Text12'])}
-<strong>Blood Grp & Type:</strong> ${val(nbValues['Text13'])}
+Blood Grp & Type: ${maternalBloodGroup}
 VDRL: ${val(nbValues['Text14'])}, Other tests: ${val(nbValues['Text15'])}
 Toxemia: ${val(nbValues['Text16'])}
 Hydramnios: ${val(nbValues['Text17'])}
 P.I.H: ${val(nbValues['Text18'])}
 A.P.H: ${val(nbValues['Text19'])}
-<strong>Any other illness:</strong> ${val(nbValues['Text20'])}
+Any other illness: ${maternalIllness}
 Presentation: ${val(nbValues['Text21'])}
 Time of Membrane rupture: ${val(nbValues['Text22'])}
 Liquor Quality: ${val(nbValues['Text23'])}, Quantity: ${val(nbValues['Text24'])}
@@ -3736,16 +3945,16 @@ Any Evidence of Foetal Distress: ${val(nbValues['Text26'])}
 ${val(nbValues['Text27'])}
 
 BABY'S DETAILS
-<strong>Type of Delivery:</strong> ${val(nbValues['Text30'])}
-<strong>Indication:</strong> ${val(nbValues['Text31'])}
-<strong>Date & Time of Delivery:</strong> ${val(nbValues['Text35'])}
-<strong>APGAR at:</strong> <strong>1min</strong> ${val(nbValues['Text32'])} <strong>5min</strong> ${val(nbValues['Text33'])} <strong>10min</strong> ${val(nbValues['Text34'])}
-<strong>Resuscitation:</strong> ${val(nbValues['Text36'])}
+Type of Delivery: ${deliveryType}
+Indication: ${val(nbValues['Text31'])}
+Date & Time of Delivery: ${birthDate}
+APGAR at: 1min ${val(nbValues['Text32'])} 5min ${val(nbValues['Text33'])} 10min ${val(nbValues['Text34'])}
+Resuscitation: ${val(nbValues['Text36'])}
 Intubation & IPPR: ${val(nbValues['Text37'])}
 Bicarbonate / Lethedron: ${val(nbValues['Text38'])}
-<strong>Sex of Baby:</strong> ${val(nbValues['Text39'])}
-<strong>Maturity:</strong> ${val(nbValues['Text40'])}
-<strong>Weight:</strong> ${val(nbValues['Text41'])}
+Sex of Baby: ${nbValues['Text39'] || '-'}
+Maturity: ${maturity}
+Weight: ${birthWeight}
 Congenital Anomalies: ${val(nbValues['Text43'])}
 Anal Patency: ${val(nbValues['Text44'])}
 Oesophageal Patency: ${val(nbValues['Text45'])}
@@ -3758,7 +3967,7 @@ Gastric Aspirate - Microscopy: ${val(nbValues['Text51'])}
 Culture: ${val(nbValues['Text52'])}
 Any Other: ${val(nbValues['Text53'])}
 
-<strong>Problems:</strong> ${val(nbValues['Text66'])}
+Problems: ${problems}
 
 ${val(nbValues['Text67'])}`;
     }
