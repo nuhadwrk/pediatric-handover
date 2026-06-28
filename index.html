@@ -685,7 +685,7 @@
         <a href="https://tinyurl.com/neonatecal" target="_blank">Neonate Cal</a>
         <a href="https://tinyurl.com/dosepedia" target="_blank">Dosage Cal</a>
         <a href="https://vinavi.aasandha.mv/#/dashboard" target="_blank">Vinavi</a>
-        <a href="http://radiology.hmh.mv/zfp/?lights=off" target="_blank">Xray</a>
+        <a href="http://radiology.hmh.mv/zfp" target="_blank">Xray</a>
         <a href="http://dharaka.hmh.mv/Home/LandingScreen?opd=1" target="_blank">Dharaka</a>
         
         <div style="border-top: 1px solid var(--border); margin: 4px 0;"></div>
@@ -856,7 +856,7 @@
           <button class="adm-sidebar-toggle" onclick="toggleAdmSidebar()">☰</button>
           <h2 style="margin:0; font-size:18px;">Admission Center</h2>
       </div>
-      <button onclick="closeAdmissionSystem()" style="background:none; border:none; font-size:24px; cursor:pointer;">×</button>
+      <button onclick="closeAdmissionSystem()" style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--text);">×</button>
     </div>
     <div id="adm-body">
       <div class="adm-sidebar" id="admSidebar">
@@ -871,6 +871,10 @@
         <div class="mode-card" id="btn-mode-newborn" onclick="setMode('newborn')">
           <div style="font-weight:bold;">👶 Newborn Mode</div>
           <div style="font-size:11px; opacity:0.8;">Newborn Sheet PDF</div>
+        </div>
+        <div style="margin-top: 15px; border-top: 1px solid var(--box-gray-border); padding-top: 8px;">
+          <small style="font-weight: 700; font-size: 11px; text-transform: uppercase; color: var(--box-gray-text);">Saved Drafts (24h)</small>
+          <div id="drafts-list" style="max-height: 150px; overflow-y: auto; margin-top: 5px; display: flex; flex-direction: column; gap: 4px;"></div>
         </div>
         <div style="margin-top:auto;">
           <small>Templates (PDF)</small>
@@ -927,7 +931,7 @@
                           <input type="checkbox" id="nb-auto-name" onchange="toggleAutoName()" checked> Auto
                       </label>
                   </div>
-                  <input type="text" id="nb-f-name">
+                  <input type="text" id="nb-f-name" oninput="syncSidebarNameToPdf(this.value)">
               </div>
 
               <div class="form-group"><label>Hosp. No.</label><input type="text" id="nb-f-hosp-no" oninput="updateNbField('Text29', this.value); syncNbVisualField('Text29', this.value);"></div>
@@ -1085,8 +1089,7 @@
                 <datalist id="lst-mode"><option value="SVD"><option value="Em LSCS"><option value="El LSCS"><option value="Instrumental"></datalist>
             </div>
             <div class="form-group"><label>Indication</label><input type="text" id="nb-b-ind" oninput="updateNbField('Text31', this.value); generateDiagnosis();"></div>
-         </div>
-         <div class="form-group">
+         </div>          <div class="form-group">
             <label>Date & Time</label>
             <input type="datetime-local" id="nb-b-datetime" oninput="updateNbField('Text35', this.value.replace('T', ' ')); syncBirthDate(this.value);">
          </div>
@@ -1148,11 +1151,11 @@
             </div>
          </div>
          <div class="form-grid">
-            <div class="form-group"><label>Anal Patency</label>
+            <div class="form-grid"><label>Anal Patency</label>
                 <input list="lst-anal" value="" placeholder="Select..." onfocus="this.select()" oninput="updateNbField('Text44', this.value)">
                 <datalist id="lst-anal"><option value="Patent"></datalist>
             </div>
-            <div class="form-group"><label>Esophageal Patency</label>
+            <div class="form-grid"><label>Esophageal Patency</label>
                 <input list="lst-eso" value="" placeholder="Select..." onfocus="this.select()" oninput="updateNbField('Text45', this.value)">
                 <datalist id="lst-eso"><option value="To be established"></datalist>
             </div>
@@ -1228,6 +1231,7 @@
           </label>
        </span>
        <button class="tool-btn" onclick="printOnly()">Print Only</button>
+       <button class="tool-btn" id="btn-save-draft" style="background:#17a2b8; color:white; border:none;" onclick="saveAsDraft()">Save Draft</button>
        <button class="tool-btn" id="btn-save-edits" style="display:none; background:#ffc107; color:black; border:none;" onclick="saveEdits()">Save Edits</button>
        <button class="tool-btn primary" id="btn-print-add" onclick="saveAndAdd()">Print & Add</button>
     </div>
@@ -1256,7 +1260,7 @@
           </div>
       </div>
       <div class="dc-close-btn">
-          <button onclick="closeDischargeSystem()" style="background:none; border:none; font-size:32px; cursor:pointer; padding:10px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center;">×</button>
+          <button onclick="closeDischargeSystem()" style="background:none; border:none; font-size:32px; cursor:pointer; padding:10px; min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; color:var(--text);">×</button>
       </div>
     </div>
     
@@ -2061,6 +2065,25 @@ async function generateDcDocx() {
                     await doc.ref.delete();
                 }
             });
+
+            // Clean up drafts older than 24 hours
+            const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+            const draftsSnapshot = await db.collection('patients').where('ward', '==', 'Draft').get();
+            draftsSnapshot.forEach(async (doc) => {
+                const p = doc.data();
+                const ts = p.timestamp || 0;
+                if (ts > 0 && ts < twentyFourHoursAgo) {
+                    console.log(`Auto-cleanup: Deleting draft ${doc.id} created on ${new Date(ts).toLocaleDateString()}`);
+                    if (p.images && p.images.length > 0) {
+                        for (const img of p.images) {
+                            if (img.url && img.url.includes('firebasestorage')) {
+                                try { await storage.refFromURL(img.url).delete(); } catch(e) {}
+                            }
+                        }
+                    }
+                    await doc.ref.delete();
+                }
+            });
         } catch (error) {
             console.error('Auto-cleanup error:', error);
         }
@@ -2100,7 +2123,7 @@ async function generateDcDocx() {
     }
 
     // --- MAIN LOGIC ---
-    let currentPatientId=null, localPatients={}, chartInstance=null;
+    let currentPatientId=null, currentDraftId=null, isLoadingDraft=false, localPatients={}, chartInstance=null;
     document.getElementById("doa").value = getLocalISODate();
 
     // --- HANDOVER SUMMARY ---
@@ -2213,6 +2236,49 @@ async function generateDcDocx() {
             });
 
             if(currentPatientId && localPatients[currentPatientId]) refreshModalIfOpen();
+        });
+
+        // Drafts Realtime Listener
+        if(window.draftsUnsub) window.draftsUnsub();
+        window.draftsUnsub = db.collection('patients').where('ward', '==', 'Draft').onSnapshot(snap => {
+            const draftsContainer = document.getElementById('drafts-list');
+            if (!draftsContainer) return;
+            draftsContainer.innerHTML = '';
+            
+            if (snap.empty) {
+                draftsContainer.innerHTML = '<div style="font-size: 11px; color: #888; padding: 4px;">No saved drafts</div>';
+                return;
+            }
+            
+            snap.docs.forEach(doc => {
+                const d = doc.data();
+                const docId = doc.id;
+                const name = d.name || "Unnamed Draft";
+                const hno = d.id ? ` (${d.id})` : '';
+                const isNb = d.newbornData ? '👶 ' : '📝 ';
+                
+                const row = document.createElement('div');
+                row.style = "display: flex; align-items: center; justify-content: space-between; background: var(--box-gray-bg); padding: 5px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 4px; border: 1px solid var(--box-gray-border); color: var(--text);";
+                
+                const label = document.createElement('span');
+                label.style = "cursor: pointer; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 8px;";
+                label.innerText = `${isNb}${name}${hno}`;
+                label.onclick = () => loadDraft(docId);
+                
+                const delBtn = document.createElement('button');
+                delBtn.style = "background: none; border: none; color: #dc3545; cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1;";
+                delBtn.innerHTML = "&times;";
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete draft for "${name}"?`)) {
+                        db.collection('patients').doc(docId).delete();
+                    }
+                };
+                
+                row.appendChild(label);
+                row.appendChild(delBtn);
+                draftsContainer.appendChild(row);
+            });
         });
     }
 
@@ -2422,57 +2488,56 @@ async function generateDcDocx() {
       // Format any YYYY-MM-DD[T/ ]HH:MM dates to DD-MM-YYYY, HH:MM Hrs
       text = text.replace(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2})/g, "$3-$2-$1, $4 Hrs");
       
-      // Split into lines to track context (Mother vs Baby details)
+      // Split into lines to track context (Summary vs Mother vs Baby details)
       let lines = text.split('\n');
       let inBabyDetails = false;
+      let inSummary = true;
       
       for (let i = 0; i < lines.length; i++) {
           let line = lines[i];
           
-          if (line.includes("BABY'S DETAILS")) {
-              inBabyDetails = true;
-          }
           if (line.includes("MOTHER'S DETAILS")) {
+              inSummary = false;
               inBabyDetails = false;
           }
-          
-          // Specific important labels to bold along with their values on that line
-          const boldLineLabels = [
-              "Para Gravida", "Blood Grp & Type", "Any other illness",
-              "Type of Delivery", "Indication", "Date & Time of Delivery",
-              "APGAR at", "Resuscitation", "Sex of Baby", "Maturity"
-          ];
-          
-          // Bold Baby's weight, but not Mother's weight
-          if (inBabyDetails) {
-              boldLineLabels.push("Weight");
+          if (line.includes("BABY'S DETAILS")) {
+              inSummary = false;
+              inBabyDetails = true;
           }
           
-          boldLineLabels.forEach(label => {
-              const escaped = label.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-              const regex = new RegExp(`(^|\\b)(${escaped}):([^\n]*)`, 'g');
-              line = line.replace(regex, `$1<strong>$2:$3</strong>`);
-          });
-          
-          // Bold only the label for Problems
-          if (line.includes("Problems:")) {
-              line = line.replace(/(Problems):/g, '<strong>$1:</strong>');
-          }
-          
-          // Bold Summary header
-          if (line.includes("Summary:")) {
-              line = line.replace(/(Summary):/g, '<strong>$1:</strong>');
-          }
-          
-          // Bold Maternal details sub-headers
-          if (line.includes("Maternal:")) {
-              line = line.replace(/(Maternal):/g, '<strong>$1:</strong>');
-              line = line.replace(/\b(KCO|BG):/g, '<strong>$1:</strong>');
-          }
-          
-          // Bold internal APGAR subheadings (only 1min, 5min, 10min) if not already wrapped
-          if (line.includes("APGAR at:") && !line.includes("<strong>")) {
-              line = line.replace(/\b(1min|5min|10min)\b/g, '<strong>$1</strong>');
+          if (inSummary) {
+              // Only bold the main "Summary:" header, nothing else under the summary
+              if (line.includes("Summary:")) {
+                  line = line.replace(/(Summary):/g, '<strong>$1:</strong>');
+              }
+          } else {
+              // Specific important labels to bold along with their values on that line
+              const boldLineLabels = [
+                  "Para Gravida", "Blood Grp & Type", "Any other illness",
+                  "Type of Delivery", "Indication", "Date & Time of Delivery",
+                  "APGAR at", "Resuscitation", "Sex of Baby", "Maturity"
+              ];
+              
+              // Bold Baby's weight, but not Mother's weight
+              if (inBabyDetails) {
+                  boldLineLabels.push("Weight");
+              }
+              
+              boldLineLabels.forEach(label => {
+                  const escaped = label.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                  const regex = new RegExp(`(^|\\b)(${escaped}):([^\n]*)`, 'g');
+                  line = line.replace(regex, `$1<strong>$2:$3</strong>`);
+              });
+              
+              // Bold only the label for Problems
+              if (line.includes("Problems:")) {
+                  line = line.replace(/(Problems):/g, '<strong>$1:</strong>');
+              }
+              
+              // Bold internal APGAR subheadings (only 1min, 5min, 10min) if not already wrapped
+              if (line.includes("APGAR at:") && !line.includes("<strong>")) {
+                  line = line.replace(/\b(1min|5min|10min)\b/g, '<strong>$1</strong>');
+              }
           }
           
           lines[i] = line;
@@ -3491,7 +3556,7 @@ const MAP_FORM_PDF = {
 
     let pdfDoc = null;
     let anchors = {};
-    let nbAnchors = {};
+    let nbAnchors = {}, nbAnchorsLoadingPromise = null;
     let pdfValues = {};
     let nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF));
     let currentMode = 'form';
@@ -3871,6 +3936,29 @@ function syncFromVisualToForm(fieldName, value) {
         }
     }
 
+    function syncSidebarNameToPdf(val) {
+        if (isSyncing) return;
+        const autoChecked = document.getElementById('nb-auto-name').checked;
+        if (autoChecked) {
+            let motherName = val;
+            if (motherName.toLowerCase().startsWith('bo ')) {
+                motherName = motherName.substring(3);
+            } else if (motherName.toLowerCase().startsWith('baby of ')) {
+                motherName = motherName.substring(8);
+            } else if (motherName.toLowerCase().startsWith('baby of')) {
+                motherName = motherName.substring(7);
+            }
+            motherName = motherName.trim();
+            
+            nbValues['Text1'] = motherName;
+            
+            const el = document.getElementById('nb-m-name');
+            if (el) el.value = motherName;
+            
+            syncNbVisualField('Text1', motherName);
+        }
+    }
+
     function generateDiagnosis() {
        const gest = document.getElementById('nb-gest-sel').value || ''; const sexVal = document.getElementById('nb-sex-combo').value || '';
        const size = document.getElementById('nb-size-sel').value || ''; const mode = document.getElementById('nb-b-mode').value || ''; const ind = (document.getElementById('nb-b-ind').value || '').trim();
@@ -3973,30 +4061,40 @@ ${val(nbValues['Text67'])}`;
     }
 
     function launchAdmissionSystem(clearData = true) {
-       document.getElementById('admission-system').style.display='flex';
-       if(clearData) {
-           document.querySelectorAll('#admission-system input, #admission-system textarea').forEach(e => { if(e.type === 'checkbox') e.checked = false; else e.value = e.defaultValue || ''; });
-           document.querySelectorAll('#admission-system select').forEach(e => {
-    // If the select has a defaultSelected option, revert to it. Otherwise index 0.
-    const options = Array.from(e.options);
-    const defaultOption = options.find(opt => opt.defaultSelected);
-    e.selectedIndex = defaultOption ? defaultOption.index : 0;
-});
-           document.getElementById('f-doa').value = getLocalISODate(); document.getElementById('nb-f-doa').value = getLocalISODate();
-           document.getElementById('f-shift').value = getCurrentShift(); document.getElementById('nb-f-shift').value = getCurrentShift();
-           pdfValues = {}; nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF)); currentPatientId = null;
-           const autoName = document.getElementById('nb-auto-name'); if(autoName) autoName.checked = true;
-       }
-       setMode('form');
-       if(Object.keys(anchors).length === 0) fetch(ANCHORS_URL).then(r=>r.json()).then(d=> anchors = d.anchorsByPage || d);
-       loadTemplates();
-       document.getElementById('admSidebar').classList.remove('show');
-       const btnSave = document.getElementById('btn-save-edits'); if(btnSave) btnSave.style.display = 'none';
-       const btnPrint = document.getElementById('btn-print-add'); if(btnPrint) btnPrint.style.display = 'inline-block';
+        document.getElementById('admission-system').style.display='flex';
+        if(clearData) {
+            document.querySelectorAll('#admission-system input, #admission-system textarea').forEach(e => { if(e.type === 'checkbox') e.checked = false; else e.value = e.defaultValue || ''; });
+            document.querySelectorAll('#admission-system select').forEach(e => {
+                // If the select has a defaultSelected option, revert to it. Otherwise index 0.
+                const options = Array.from(e.options);
+                const defaultOption = options.find(opt => opt.defaultSelected);
+                e.selectedIndex = defaultOption ? defaultOption.index : 0;
+            });
+            document.getElementById('f-doa').value = getLocalISODate(); document.getElementById('nb-f-doa').value = getLocalISODate();
+            document.getElementById('f-shift').value = getCurrentShift(); document.getElementById('nb-f-shift').value = getCurrentShift();
+            pdfValues = {}; nbValues = JSON.parse(JSON.stringify(MAP_NB_PDF)); currentPatientId = null; currentDraftId = null;
+            const autoName = document.getElementById('nb-auto-name'); if(autoName) autoName.checked = true;
+        }
+        setMode('form');
+        if(Object.keys(anchors).length === 0) fetch(ANCHORS_URL).then(r=>r.json()).then(d=> anchors = d.anchorsByPage || d);
+        loadTemplates();
+        document.getElementById('admSidebar').classList.remove('show');
+        const btnSave = document.getElementById('btn-save-edits'); if(btnSave) btnSave.style.display = 'none';
+        const btnPrint = document.getElementById('btn-print-add'); if(btnPrint) btnPrint.style.display = 'inline-block';
+        const btnDraft = document.getElementById('btn-save-draft'); if(btnDraft) btnDraft.style.display = 'inline-block';
     }
-    function closeAdmissionSystem() { document.getElementById('admission-system').style.display='none'; }
+    function closeAdmissionSystem() { 
+        document.getElementById('admission-system').style.display='none'; 
+        currentDraftId = null;
+    }
     
     function setMode(mode) {
+        if (!isLoadingDraft) {
+            const isChangingCategory = (currentMode === 'newborn' && mode !== 'newborn') || (currentMode !== 'newborn' && mode === 'newborn');
+            if (isChangingCategory) {
+                currentDraftId = null;
+            }
+        }
        if (currentMode === 'form' && mode === 'pdf') syncFormToPdf();
        if (currentMode === 'pdf' && mode === 'form') syncPdfToForm();
 
@@ -4179,6 +4277,29 @@ async function renderPdfVisual() {
 
     async function renderNbVisual() {
         const stage = document.getElementById('nb-visual-stage');
+
+        // Load newborn anchors if not loaded (using a shared loading promise to prevent concurrent race conditions)
+        if(Object.keys(nbAnchors).length === 0) {
+            console.log('Loading newborn anchors...');
+            if(!nbAnchorsLoadingPromise) {
+                nbAnchorsLoadingPromise = fetch(NB_ANCHORS_URL)
+                    .then(r => r.json())
+                    .then(d => {
+                        nbAnchors = d;
+                        console.log('Newborn anchors loaded:', Object.keys(nbAnchors).length, 'pages');
+                    })
+                    .catch(e => {
+                        console.error('Failed to load anchors:', e);
+                        nbAnchorsLoadingPromise = null;
+                    });
+            }
+            await nbAnchorsLoadingPromise;
+            if(Object.keys(nbAnchors).length === 0) {
+                stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
+                return;
+            }
+        }
+
         stage.innerHTML = '';
 
         // Sync values from form
@@ -4188,20 +4309,6 @@ async function renderPdfVisual() {
         if(nidNo) nbValues['Text42'] = nidNo;
 
         const activeFontSize = isAutoFit ? calculatedFontSize : nbFontSize;
-
-        // Load newborn anchors if not loaded
-        if(Object.keys(nbAnchors).length === 0) {
-            console.log('Loading newborn anchors...');
-            try {
-                const response = await fetch(NB_ANCHORS_URL);
-                nbAnchors = await response.json();
-                console.log('Newborn anchors loaded:', Object.keys(nbAnchors).length, 'pages');
-            } catch(e) {
-                console.error('Failed to load anchors:', e);
-                stage.innerHTML = '<div style="padding:40px;text-align:center;color:#999;">Newborn anchors not found. Please upload newborn-anchors.json to your repository.</div>';
-                return;
-            }
-        }
 
         const imgUrl = 'https://raw.githubusercontent.com/nuhadwrk/admission/main/Newborn.jpg';
         const numPages = Object.keys(nbAnchors).length || 1;
@@ -4508,7 +4615,14 @@ async function renderPdfVisual() {
     function openAdmissionForPatient() {
         if(!currentPatientId || !localPatients[currentPatientId]) return; const p = localPatients[currentPatientId];
         launchAdmissionSystem(false);
-        setTimeout(() => { const btnSave = document.getElementById('btn-save-edits'); const btnPrint = document.getElementById('btn-print-add'); if(btnSave) { btnSave.style.display = 'inline-block'; btnSave.innerText = "Save Edits"; btnSave.style.background = "#ffc107"; btnSave.disabled = false; } if(btnPrint) btnPrint.style.display = 'none'; }, 50);
+        setTimeout(() => { 
+            const btnSave = document.getElementById('btn-save-edits'); 
+            const btnPrint = document.getElementById('btn-print-add'); 
+            const btnDraft = document.getElementById('btn-save-draft');
+            if(btnSave) { btnSave.style.display = 'inline-block'; btnSave.innerText = "Save Edits"; btnSave.style.background = "#ffc107"; btnSave.disabled = false; } 
+            if(btnPrint) btnPrint.style.display = 'none'; 
+            if(btnDraft) btnDraft.style.display = 'none';
+        }, 50);
 
         if(p.newbornData) {
             setMode('newborn');
@@ -4862,7 +4976,13 @@ async function saveAndAddNewborn(printWin) {
         }
 
         try {
-            await db.collection('patients').add(p);
+            p.isDraft = false;
+            if (currentDraftId) {
+                await db.collection('patients').doc(currentDraftId).set(p);
+                currentDraftId = null;
+            } else {
+                await db.collection('patients').add(p);
+            }
             
             await ensurePDFLib(); 
             const bytes = await fetch(NEWBORN_URL).then(r => r.arrayBuffer());
@@ -5037,6 +5157,152 @@ async function saveAndAddNewborn(printWin) {
     }
 
     function saveTemplate() { const name = prompt("Template Name:"); if(name) { db.collection('admissions').add({ type:'template', name, values: {...pdfValues} }).then(loadTemplates); } }
+
+    async function saveAsDraft() {
+        const p = {
+            timestamp: Date.now(),
+            isDraft: true,
+            ward: "Draft"
+        };
+        
+        if (currentMode === 'newborn') {
+            const getVal = (nbKey, domId) => {
+                const valFromPdf = nbValues[nbKey];
+                const valFromDom = document.getElementById(domId)?.value;
+                return (valFromPdf !== undefined && valFromPdf !== null && valFromPdf !== '') ? valFromPdf : (valFromDom || '');
+            };
+            p.id = getVal('Text29', 'nb-f-hosp-no');
+            p.nid = getVal('Text42', 'nb-f-nid-no');
+            const motherName = getVal('Text1', 'nb-m-name') || "Unknown";
+            const manualBabyName = document.getElementById('nb-f-name').value;
+            p.name = manualBabyName || ("Baby of " + motherName);
+            p.doa = document.getElementById('nb-f-doa').value || getLocalISODate();
+            p.shift = document.getElementById('nb-f-shift').value || "Morning";
+            p.bed = document.getElementById('nb-f-bed').value || "";
+            p.targetWard = document.getElementById('nb-f-ward').value || "GW";
+            p.isAutoName = document.getElementById('nb-auto-name').checked;
+            p.diagnosis = getVal('Text69', 'nb-f-adm-dx');
+            
+            nbValues['Text29'] = p.id;
+            nbValues['Text42'] = p.nid;
+            
+            p.newbornData = { ...nbValues };
+        } else {
+            syncFormToPdf();
+            p.name = document.getElementById('f-name').value || "Unnamed Draft";
+            p.id = document.getElementById('f-hosp-no').value || "";
+            p.nid = document.getElementById('f-nid-no').value || "";
+            p.doa = document.getElementById('f-doa').value || getLocalISODate();
+            p.shift = document.getElementById('f-shift').value || "Morning";
+            p.bed = document.getElementById('f-bed').value || "";
+            p.targetWard = document.getElementById('f-ward').value || "PW";
+            p.age = document.getElementById('f-age').value || "";
+            p.sex = document.getElementById('f-sex').value || "Male";
+            p.weight = document.getElementById('f-weight').value || "";
+            p.diagnosis = document.getElementById('f-finaldx').value || document.getElementById('f-adm-dx').value || "";
+            p.admissionData = { ...pdfValues };
+            
+            const autoRadio = document.getElementById('adm-radio-auto');
+            if(autoRadio && autoRadio.checked) {
+                const dob = document.getElementById('f-dob').value;
+                const dot = document.getElementById('f-dot').value;
+                if (dob && dot) {
+                    p.age = calculateNeonatalAge(dob, dot).display;
+                    p.dob = dob; p.dot = dot; p.isAutoAge = true;
+                }
+            }
+        }
+        
+        try {
+            if (currentDraftId) {
+                await db.collection('patients').doc(currentDraftId).set(JSON.parse(JSON.stringify(p)));
+                alert("Draft updated successfully.");
+            } else {
+                const docRef = await db.collection('patients').add(JSON.parse(JSON.stringify(p)));
+                currentDraftId = docRef.id;
+                alert("Draft saved successfully.");
+            }
+        } catch(e) {
+            alert("Error saving draft: " + e.message);
+        }
+    }
+    
+    async function loadDraft(draftId) {
+        isLoadingDraft = true;
+        try {
+            const doc = await db.collection('patients').doc(draftId).get();
+            if (!doc.exists) {
+                alert("Draft not found.");
+                isLoadingDraft = false;
+                return;
+            }
+            const d = doc.data();
+            currentDraftId = draftId;
+            
+            // Revert edit button and show print
+            const btnSave = document.getElementById('btn-save-edits'); if(btnSave) btnSave.style.display = 'none';
+            const btnPrint = document.getElementById('btn-print-add'); if(btnPrint) btnPrint.style.display = 'inline-block';
+            const btnDraft = document.getElementById('btn-save-draft'); if(btnDraft) btnDraft.style.display = 'inline-block';
+
+            if (d.newbornData) {
+                setMode('newborn');
+                nbValues = { ...d.newbornData };
+                
+                // Populate Newborn fields
+                document.getElementById('nb-f-name').value = d.name || '';
+                document.getElementById('nb-f-hosp-no').value = d.id || '';
+                document.getElementById('nb-f-nid-no').value = d.nid || '';
+                document.getElementById('nb-f-doa').value = d.doa || '';
+                document.getElementById('nb-f-shift').value = d.shift || 'Morning';
+                document.getElementById('nb-f-ward').value = d.targetWard || 'GW';
+                document.getElementById('nb-f-bed').value = d.bed || '';
+                document.getElementById('nb-auto-name').checked = (d.isAutoName !== false);
+                document.getElementById('nb-f-adm-dx').value = d.diagnosis || '';
+                document.getElementById('nb-generated-dx').value = d.diagnosis || '';
+                
+                loadAllNbFieldsFromValues();
+            } else {
+                setMode('form');
+                pdfValues = { ...d.admissionData };
+                
+                // Populate Standard fields
+                document.getElementById('f-name').value = d.name || '';
+                document.getElementById('f-hosp-no').value = d.id || '';
+                document.getElementById('f-nid-no').value = d.nid || '';
+                document.getElementById('f-doa').value = d.doa || '';
+                document.getElementById('f-shift').value = d.shift || 'Morning';
+                document.getElementById('f-ward').value = d.targetWard || 'PW';
+                document.getElementById('f-bed').value = d.bed || '';
+                document.getElementById('f-age').value = d.age || '';
+                document.getElementById('f-sex').value = d.sex || 'Male';
+                document.getElementById('f-weight').value = d.weight || '';
+                document.getElementById('f-finaldx').value = d.diagnosis || '';
+                document.getElementById('f-adm-dx').value = d.diagnosis || '';
+                
+                const autoRadio = document.getElementById('adm-radio-auto');
+                const manualRadio = document.getElementById('adm-radio-manual');
+                if (d.isAutoAge && d.dob && d.dot) {
+                    if (autoRadio) autoRadio.checked = true;
+                    document.getElementById('f-dob').value = d.dob;
+                    document.getElementById('f-dot').value = d.dot;
+                } else {
+                    if (manualRadio) manualRadio.checked = true;
+                }
+                toggleAdmAutoInputs();
+                
+                syncPdfToForm();
+            }
+            
+            if (currentMode === 'pdf') renderPdfVisual();
+            if (currentMode === 'newborn') renderNbVisual();
+            
+        } catch(e) {
+            alert("Error loading draft: " + e.message);
+        } finally {
+            isLoadingDraft = false;
+        }
+    }
+
     function loadTemplates() {
        db.collection('admissions').where('type','==','template').onSnapshot(snap => {
           const list = document.getElementById('template-list'); list.innerHTML='';
@@ -5126,7 +5392,15 @@ async function saveAndAddNewborn(printWin) {
     p.logs = logs;
     // --- FIX ENDS HERE ---
 
-       try { await db.collection('patients').add(JSON.parse(JSON.stringify(p))); } 
+       try {
+           p.isDraft = false;
+           if (currentDraftId) {
+               await db.collection('patients').doc(currentDraftId).set(JSON.parse(JSON.stringify(p)));
+               currentDraftId = null;
+           } else {
+               await db.collection('patients').add(JSON.parse(JSON.stringify(p)));
+           }
+       }
        catch (dbError) { alert("CRITICAL ERROR: " + dbError.message); if(printWin) printWin.close(); return; }
        
        try { await generatePdfBlob(currentMode === 'form', printWin); } 
